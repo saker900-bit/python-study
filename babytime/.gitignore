@@ -4,3 +4,5 @@ activity_*
 *.html
 __pycache__/
 data*.json
+!report/_css.html
+!report/month_template.html

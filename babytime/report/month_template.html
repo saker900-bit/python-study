@@ -1,0 +1,490 @@
+<title>11월 육아 리포트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+__CSS__
+<style>
+:root { --oct: #a3abbb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --oct: #5f687b; } }
+:root[data-theme="dark"] { --oct: #5f687b; }
+.notice { background: var(--info-bg); color: var(--ink-2); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+.notice b { color: var(--ink); }
+.chg-list { display: grid; gap: 0; }
+.chg { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 4px 18px; padding: 14px 0; border-top: 1px solid var(--line); align-items: center; }
+.chg:first-child { border-top: 0; }
+.chg .what { display: grid; gap: 4px; }
+.chg .what b { font-size: 14.5px; }
+.chg .vals { font-family: var(--mono); font-size: 14px; color: var(--ink-2); }
+.chg .vals strong { color: var(--ink); font-weight: 500; font-size: 18px; }
+.chg .note { grid-column: 2; font-size: 13px; color: var(--ink-2); }
+.pill.big { background: var(--info-bg); color: var(--accent); }
+.pill.same { background: var(--band); color: var(--ink-2); }
+.pill.watch { background: var(--warn-bg); color: var(--warn); }
+@media (max-width: 600px) { .chg { grid-template-columns: 1fr; } .chg .note { grid-column: 1; } }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.sw { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); }
+.sw-row { display: grid; gap: 4px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">2026년 11월 1~4일 · 생후 5.5개월 · 남아 9kg · 베이비타임 기록 87건</span>
+    <h1>새벽 수유 없이 아침까지,<br>밤잠이 한 덩어리가 됐어요</h1>
+    <p class="lede">11월 첫 4일 기록을 10월 리포트와 같은 방식으로 정리하고, 10월과 비교해 달라진 점을 따로 모았어요. 감기로 병원을 한 번 더 다녀온 주이기도 해요.</p>
+    <div class="stats" id="stats"></div>
+    <p class="notice"><b>4일 치 중간 리포트예요.</b> 11/4 밤잠은 아직 진행 중이라 수면 평균은 11/1~3, 수유·낮잠·기저귀는 11/1~4 기준이에요. 며칠만 보고 판단하기엔 이르니 "달라지는 신호" 정도로 봐주세요.</p>
+  </header>
+
+  <section class="block" id="change">
+    <div class="sec-head">
+      <span class="eyebrow">10월 → 11월</span>
+      <h2>10월과 비교해 달라진 것</h2>
+      <p class="lede">회색 점이 10월 평균, 파란 점이 11월이에요. 변화가 큰 것부터 놓았어요.</p>
+    </div>
+    <div class="card"><div class="chg-list" id="chg"></div></div>
+    <div class="card">
+      <h3>10월 마지막 주와 11월, 밤마다 새벽 수유가 있었나</h3>
+      <p class="cap">막대 하나가 하룻밤이에요. 위쪽 끝이 잠든 시각, 아래쪽 끝이 아침에 일어난 시각. 주황 점은 밤사이 분유를 먹은 횟수예요.</p>
+      <div class="chart" id="c-night"></div>
+      <div class="legend"><span><i style="background:var(--oct)"></i>10월 밤</span><span><i style="background:var(--night)"></i>11월 밤</span><span><i style="background:var(--feed);border-radius:50%"></i>밤사이 수유 1번</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="peer">
+    <div class="sec-head">
+      <span class="eyebrow">또래 비교</span>
+      <h2>같은 월령 아기들과 비교하면</h2>
+      <p class="lede">회색 띠는 권장 범위 또는 연구에서 본 보통 범위, 세로 눈금은 연구에서 나온 평균값, 파란 점이 11월 우리 아기, 회색 점이 10월이에요.</p>
+    </div>
+    <div class="card"><div class="cmp" id="cmp"></div></div>
+  </section>
+
+  <section class="block" id="sleep">
+    <div class="sec-head">
+      <span class="eyebrow">잠</span>
+      <h2>하루 <span class="num" id="s-sleep"></span>시간, 가장 길게 이어 잔 잠 <span class="num" id="s-long"></span>시간</h2>
+    </div>
+    <div class="card">
+      <h3>수면 지도 (10/25 ~ 11/4)</h3>
+      <p class="cap">한 줄이 하루예요. 왼쪽 끝이 0시, 오른쪽 끝이 24시. 진한 파랑은 밤잠, 연한 파랑은 낮잠, 주황 점은 분유 먹은 시각. 위 7줄이 10월 마지막 주예요. 새벽(왼쪽)의 주황 점이 11월엔 사라졌어요.</p>
+      <div class="chart" id="c-acto"></div>
+      <div class="legend"><span><i style="background:var(--night)"></i>밤잠</span><span><i style="background:var(--nap)"></i>낮잠</span><span><i style="background:var(--feed);border-radius:50%"></i>분유</span></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>낮잠 한 번의 길이</h3>
+        <p class="cap">10월과 11월의 비율을 나란히 놓았어요. 11월은 30~40분짜리 짧은 낮잠이 많아졌어요.</p>
+        <div class="chart" id="c-nap"></div>
+        <div class="legend"><span><i style="background:var(--oct)"></i>10월</span><span><i style="background:var(--night)"></i>11월</span></div>
+      </div>
+      <div class="card">
+        <h3>깨어 있는 시간</h3>
+        <p class="cap">낮에 깬 뒤 다음 잠까지. 중간값은 두 달 모두 2시간 20분으로 그대로예요.</p>
+        <div class="chart" id="c-ww"></div>
+        <div class="legend"><span><i style="background:var(--oct)"></i>10월</span><span><i style="background:var(--night)"></i>11월</span><span><i style="background:var(--band)"></i>흔한 기준 2~2.5시간</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="feed">
+    <div class="sec-head">
+      <span class="eyebrow">먹기</span>
+      <h2>하루 <span class="num" id="f-milk"></span>ml, 한 번에 <span class="num" id="f-per"></span>ml씩 4번</h2>
+    </div>
+    <div class="card">
+      <h3>하루 분유량 (10/25 ~ 11/4)</h3>
+      <p class="cap">점선은 10월 평균(916ml)이에요. 11월은 네 날 모두 평균보다 적었어요.</p>
+      <div class="chart" id="c-milk"></div>
+      <div class="legend"><span><i style="background:var(--oct)"></i>10월</span><span><i style="background:var(--feed)"></i>11월</span><span><i class="line" style="border-top:2px dashed var(--ink-2);background:none;width:18px"></i>10월 평균 916ml</span></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>언제 먹었나</h3>
+        <p class="cap">하루를 3시간씩 나눠 각 시간대 수유 비율을 비교했어요. 0~6시 수유가 11월엔 0%예요.</p>
+        <div class="chart" id="c-hour"></div>
+        <div class="legend"><span><i style="background:var(--oct)"></i>10월</span><span><i style="background:var(--feed)"></i>11월</span></div>
+      </div>
+      <div class="card">
+        <h3>한 번에 먹는 양</h3>
+        <p class="cap">회색 띠는 이 시기 보통 1회량(210~240ml). 11월은 140~200ml로 적게 먹은 회차가 늘었어요.</p>
+        <div class="chart" id="c-amt"></div>
+        <div class="legend"><span><i style="background:var(--oct)"></i>10월</span><span><i style="background:var(--feed)"></i>11월</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="etc">
+    <div class="sec-head">
+      <span class="eyebrow">그 밖의 기록</span>
+      <h2>감기약이 늘고, 목욕은 하루씩 번갈아</h2>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>약과 목욕</h3>
+        <p class="cap">기침약, 비타민(마이타민), 네뷸라이저, 유산균 기록이 생겼어요. 보습제는 하루에도 여러 번 발라서 11월부터 따로 기록하지 않아요. 목욕은 하루 목욕, 하루 물수건으로 번갈아 하고 있어요.</p>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="card">
+        <h3>11월의 일들</h3>
+        <ul class="events" id="events"></ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3>기저귀와 변 색깔</h3>
+      <p class="cap">기저귀 하루 <span class="num" id="d-avg"></span>회(10월 10.8회). 4일 중 3일 대변을 봤어요. 베이비타임에 남긴 변 색깔은 모두 노란 갈색 계열이에요.</p>
+      <div class="sw-row" id="swatches"></div>
+      <p class="src">아기 변이 노랑·갈색·초록이면 정상이에요. 흰색·회색·연한 크림색이거나 빨강·검정이면 바로 소아과에 가야 해요(대변 색깔 카드 선별검사 기준).</p>
+    </div>
+  </section>
+
+  <section class="block" id="trend">
+    <div class="sec-head">
+      <span class="eyebrow">숫자로 한 번에</span>
+      <h2>10월 평균과 11월 1~4일</h2>
+    </div>
+    <div class="card scroll"><table class="tbl" id="trend-tbl"></table></div>
+  </section>
+
+  <section class="block" id="recs">
+    <div class="sec-head">
+      <span class="eyebrow">11월에 해볼 것</span>
+      <h2>개선하면 좋을 점</h2>
+      <p class="lede">10월 리포트 제안이 어떻게 됐는지 먼저 짚고, 11월 기록에 맞춰 순서를 다시 정했어요.</p>
+    </div>
+    <div class="recs" id="rec-list"></div>
+  </section>
+
+  <section class="block" id="refs">
+    <div class="sec-head"><span class="eyebrow">출처</span><h2>참고한 자료</h2></div>
+    <div class="card">
+      <ol class="sources">
+        <li>WHO (2019). 5세 미만 아동의 신체활동·좌식행동·수면 가이드라인. 4~11개월 수면 12~16시간, 하루 여러 번 바닥 놀이. <a href="https://www.paho.org/en/news/24-4-2019-grow-healthy-children-need-sit-less-and-play-more" target="_blank" rel="noopener">요약 기사</a> · <a href="https://rise.mmu.ac.uk/wp-content/uploads/WHO-guidelines.pdf" target="_blank" rel="noopener">원문 PDF</a></li>
+        <li>Galland et al. (2012). 영유아 정상 수면 패턴 체계적 문헌고찰 (34개 연구). 영아 총수면 평균 12.8시간. <a href="https://pubmed.ncbi.nlm.nih.gov/21784676/" target="_blank" rel="noopener">PubMed</a></li>
+        <li>Mindell et al. (2010). 17개국 영유아 수면 비교. 국가별 평균 취침 19:27~22:17. <a href="https://pubmed.ncbi.nlm.nih.gov/20138578/" target="_blank" rel="noopener">PubMed</a></li>
+        <li>Ahn et al. (2016). 한국 영유아 1,036명 수면 패턴. 평균 취침 22:08, 깼을 때 수유로 다시 재우면 밤중 깸이 많음. <a href="https://jkms.org/DOIx.php?id=10.3346%2Fjkms.2016.31.2.261" target="_blank" rel="noopener">JKMS</a> · <a href="https://www.koreatimes.co.kr/southkorea/20160219/korean-babies-sleep-less-go-to-bed-late" target="_blank" rel="noopener">Korea Times</a></li>
+        <li>Mindell et al. (2009). 3단계 잠자리 루틴 3주 실험. 최장 연속 수면 6.9 → 8.5시간. <a href="https://aasm.org/study-shows-that-children-sleep-better-when-they-have-a-nightly-bedtime-routine/" target="_blank" rel="noopener">AASM 보도자료</a></li>
+        <li>미국소아과학회 HealthyChildren.org. 분유 하루 32온스(약 950ml) 이내, 1회 7~8온스. <a href="https://www.healthychildren.org/english/tips-tools/ask-the-pediatrician/pages/how-much-formula-does-my-baby-need.aspx" target="_blank" rel="noopener">HealthyChildren</a></li>
+        <li>WHO 성장 기준 (남아 몸무게). 5개월 중앙값 7.5kg, 6개월 7.9kg. <a href="https://www.who.int/tools/child-growth-standards/standards/weight-for-age" target="_blank" rel="noopener">WHO</a></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <p>근거 표시: <span class="pill strong">공식 권고</span> WHO·학회 가이드라인, <span class="pill mid">연구</span> 논문 결과, <span class="pill tip">통용 팁</span> 육아서에서 흔히 쓰지만 연구 근거는 약한 기준.</p>
+    <p>보습제는 11월부터 기록하지 않기로 해서 분석에서 뺐어요. 밤중 깸과 새벽 수유는 이번부터 아침 6시 이후 수유하고 다시 잔 잠을 밤잠에서 빼고 계산해요. 10월 수치도 같은 방식으로 다시 계산해서, 10월 리포트에 적힌 값(밤중 깸 1.6번)과 조금 달라요.</p>
+    <p>이 페이지는 기록을 정리한 참고 자료이고 진료를 대신하지 않아요. 걱정되는 점은 영유아 검진 때 소아과 선생님과 상의하세요.</p>
+  </footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = __DATA__;
+__HELPERS__
+const O = D.O, N = D.N;
+const dayLabel = iso => (iso.endsWith("-01") || iso === "2026-10-25") ? md(iso) : String(+iso.slice(8, 10));
+
+// ---------- stat tiles ----------
+const delta = (n, o, unit, digits = 0) => { const d = n - o; return `${d >= 0 ? "+" : "−"}${Math.abs(d).toFixed(digits)}${unit}`; };
+$("#stats").innerHTML = [
+  ["새벽 수유", N.night_feeds.toFixed(0), "번", `10월엔 밤마다 ${O.night_feeds.toFixed(1)}번 → 10/30부터 5일째 0번`],
+  ["가장 길게 이어 잔 잠", N.longest.toFixed(1), "시간", `10월 ${O.longest.toFixed(1)}시간 (${delta(N.longest, O.longest, "시간", 1)})`],
+  ["하루 분유", Math.round(N.milk), "ml", `10월 ${Math.round(O.milk)}ml (${delta(N.milk, O.milk, "ml")})`],
+  ["하루 수면", N.sleep.toFixed(1), "시간", `10월 ${O.sleep.toFixed(1)}시간, 거의 그대로`],
+].map(([l, v, u, s]) => `<div class="stat"><span class="label">${l}</span><span class="value">${v}<small>${u}</small></span><span class="sub">${s}</span></div>`).join("");
+$("#s-sleep").textContent = N.sleep.toFixed(1);
+$("#s-long").textContent = N.longest.toFixed(1);
+$("#f-milk").textContent = Math.round(N.milk);
+$("#f-per").textContent = Math.round(N.per_feed);
+$("#d-avg").textContent = N.diapers.toFixed(1);
+
+// ---------- 두 값 눈금자 (10월 회색 점 → 11월 파란 점) ----------
+function ruler(box, c) {
+  const { svg, w } = svgFor(box, 58);
+  const pad = 10, x = v => pad + (Math.min(Math.max(v, c.min), c.max) - c.min) / (c.max - c.min) * (w - pad * 2);
+  el("line", { x1: pad, x2: w - pad, y1: 26, y2: 26, stroke: css("--line"), "stroke-width": 2, "stroke-linecap": "round" }, svg);
+  if (c.band) {
+    el("rect", { x: x(c.band[0]), y: 19, width: x(c.band[1]) - x(c.band[0]), height: 14, rx: 7, fill: css("--band") }, svg);
+    txt(svg, (x(c.band[0]) + x(c.band[1])) / 2, 12, c.bandLabel, { "text-anchor": "middle" });
+  }
+  (c.ticks || []).forEach(([v, label], i) => {
+    el("line", { x1: x(v), x2: x(v), y1: 16, y2: 36, stroke: css("--ink-2"), "stroke-width": 1.5 }, svg);
+    const anchor = x(v) > w - 70 ? "end" : x(v) < 70 ? "start" : "middle";
+    txt(svg, x(v), i % 2 ? 12 : 52, label, { "text-anchor": anchor, class: "t2" });
+  });
+  const near = px => (c.ticks || []).some(([v], i) => i % 2 === 0 && Math.abs(x(v) - px) < 80);
+  if (!near(pad)) txt(svg, pad, 52, c.fmt(c.min), { "text-anchor": "start" });
+  if (!near(w - pad)) txt(svg, w - pad, 52, c.fmt(c.max), { "text-anchor": "end" });
+  if (c.prev != null) {
+    const x0 = x(c.prev), x1 = x(c.ours);
+    if (Math.abs(x1 - x0) > 14) el("line", { x1: x0, x2: x1 + (x1 > x0 ? -9 : 9), y1: 26, y2: 26, stroke: css("--ink-3"), "stroke-width": 2 }, svg);
+    const p = el("circle", { cx: x0, cy: 26, r: 6, fill: css("--oct"), stroke: css("--paper"), "stroke-width": 2 }, svg);
+    hover(p, `<b>10월</b> ${c.fmt(c.prev)}${c.unit}`);
+  }
+  const dot = el("circle", { cx: x(c.ours), cy: 26, r: 7, fill: css("--night"), stroke: css("--paper"), "stroke-width": 2 }, svg);
+  hover(dot, `<b>11월</b> ${c.fmt(c.ours)}${c.unit}`);
+}
+
+// ---------- 10월 → 11월 변화 ----------
+const f1 = v => v.toFixed(1), f0 = v => Math.round(v) + "";
+const CHG = [
+  { what: "새벽 수유 (밤사이)", tag: ["big", "큰 변화"], prev: O.night_feeds, ours: N.night_feeds, unit: "번", min: 0, max: 2, fmt: f1,
+    note: "10월엔 거의 매일 밤 1번씩 먹었는데, 10/30부터 5일 연속 밤새 안 먹었어요. 11/1 밤엔 메모대로 저녁 7시 분유 뒤 아침 7시까지 12시간을 버텼어요." },
+  { what: "가장 길게 이어 잔 잠", tag: ["big", "큰 변화"], prev: O.longest, ours: N.longest, unit: "시간", min: 4, max: 12, fmt: f1,
+    note: "11/3 밤엔 21:09부터 08:24까지 11시간 15분을 한 번도 안 깨고 잤어요. 루틴 실험에서 3주 뒤 나온 8.5시간을 이미 넘었어요." },
+  { what: "밤중에 깬 횟수", tag: ["big", "큰 변화"], prev: O.wakings, ours: N.wakings, unit: "번", min: 0, max: 3, fmt: f1,
+    note: "세 밤 중 한 번만 깼고(11/2 새벽 3시, 기저귀만 갈고 다시 잠), 나머지는 아침까지 쭉 잤어요." },
+  { what: "하루 분유량", tag: ["watch", "지켜볼 것"], prev: O.milk, ours: N.milk, unit: "ml", min: 600, max: 1100, fmt: f0,
+    note: "새벽 수유가 빠지고 1회량도 줄어서 하루 100ml쯤 덜 먹어요. 감기로 병원을 다녀온 주라 입맛이 떨어졌을 수 있어요. 기저귀는 하루 9~11번으로 충분히 젖고 있어요." },
+  { what: "한 번에 먹는 양", tag: ["watch", "지켜볼 것"], prev: O.per_feed, ours: N.per_feed, unit: "ml", min: 100, max: 300, fmt: f0,
+    note: "250ml까지 먹는 회차도 있지만 140~160ml로 끝나는 회차가 3번 있었어요." },
+  { what: "낮잠 한 번의 길이 (중간값)", tag: ["watch", "지켜볼 것"], prev: O.nap_med, ours: N.nap_med, unit: "분", min: 20, max: 90, fmt: f0,
+    note: "낮잠이 짧아지고 횟수도 2.8번에서 2.5번으로 줄었어요. 11/4엔 '재우기 너무 힘듦' 메모가 있어요. 2번 낮잠으로 넘어가는 신호일 수 있어요." },
+  { what: "목욕 (하루)", tag: ["same", "일부러 바꿈"], prev: 1, ours: 0.5, unit: "번", min: 0, max: 1.2, fmt: v => v.toFixed(1),
+    note: "감기 때문에 추울까 봐 하루는 목욕, 하루는 물수건으로 닦는 방식으로 바꿨어요. 10월엔 거의 매일 저녁 목욕했어요." },
+  { what: "평균 취침 시각", tag: ["same", "그대로"], prev: O.bed, ours: N.bed, unit: "", min: 19.5, max: 23, fmt: clock,
+    note: "21시대 그대로인데, 날마다 오르내림이 크게 줄었어요. 10월은 19:42~22:21였는데 11월 네 밤은 21:03~21:33, 30분 안이에요." },
+  { what: "하루 총 수면", tag: ["same", "그대로"], prev: O.sleep, ours: N.sleep, unit: "시간", min: 10, max: 17, fmt: f1,
+    note: "총량은 그대로예요. 밤에 덩어리로 더 길게 자고, 낮잠은 조금 줄었어요." },
+];
+$("#chg").innerHTML = CHG.map((c, i) => `<div class="chg"><div class="what"><b>${c.what} <span class="pill ${c.tag[0]}">${c.tag[1]}</span></b>
+  <span class="vals">${c.fmt(c.prev)}${c.unit} → <strong>${c.fmt(c.ours)}${c.unit}</strong></span></div><div class="chart" data-i="${i}"></div><p class="note">${c.note}</p></div>`).join("");
+const drawChg = () => document.querySelectorAll("#chg .chart").forEach(b => ruler(b, CHG[+b.dataset.i]));
+
+// ---------- 또래 비교 ----------
+const CMP = [
+  { what: "하루 총 수면", ours: N.sleep, prev: O.sleep, unit: "시간", min: 9, max: 17, band: [12, 16], bandLabel: "권장 12~16", ticks: [[12.8, "연구 평균 12.8"]], fmt: f1, tag: ["strong", "공식 권고"],
+    note: "WHO·미국수면의학회 권장 범위 안이고, 연구 평균(12.8시간)보다 1시간 더 자요." },
+  { what: "평균 취침 시각", ours: N.bed, prev: O.bed, unit: "", min: 19, max: 23, band: [19.45, 22.28], bandLabel: "17개국 평균 범위", ticks: [[22.13, "한국 평균 22:08"]], fmt: clock, tag: ["mid", "연구"],
+    note: "한국 영유아 평균(22:08)보다 50분쯤 빨라요. 11월은 매일 비슷한 시각에 자고 있어요." },
+  { what: "가장 길게 이어 잔 잠", ours: N.longest, prev: O.longest, unit: "시간", min: 4, max: 12, ticks: [[6.9, "실험 전 6.9"], [8.5, "루틴 3주 후 8.5"]], fmt: f1, tag: ["mid", "연구"],
+    note: "7~18개월 아기 루틴 실험에서 3주 뒤 나온 8.5시간을 넘었어요." },
+  { what: "하루 분유량", ours: N.milk, prev: O.milk, unit: "ml", min: 500, max: 1200, band: [700, 950], bandLabel: "보통 범위 ~ 상한 950", fmt: f0, tag: ["strong", "공식 권고"],
+    note: "줄었지만 여전히 보통 범위 안이에요. 하루 상한(약 950ml)을 넘긴 날은 없어요." },
+  { what: "한 번에 먹는 양", ours: N.per_feed, prev: O.per_feed, unit: "ml", min: 100, max: 300, band: [210, 240], bandLabel: "7~8온스", fmt: f0, tag: ["strong", "공식 권고"],
+    note: "보통 1회량(210~240ml)보다 조금 아래로 내려왔어요." },
+  { what: "몸무게", ours: 9, unit: "kg", min: 6, max: 10.5, ticks: [[7.7, "WHO 중앙값 7.7"]], fmt: f1, tag: ["strong", "공식 권고"],
+    note: "11월 새 측정값이 없어서 10월과 같은 9kg으로 봤어요. WHO 기준 약 90백분위로 큰 편이에요." },
+  { what: "낮에 깨어 있는 시간", ours: N.ww_med / 60, prev: O.ww_med / 60, unit: "시간", min: 1, max: 4, band: [2, 2.5], bandLabel: "흔한 기준 2~2.5", fmt: v => fmtH(v).replace("시간 ", ":").replace("분", ""), tag: ["tip", "통용 팁"],
+    note: "중간값 2시간 20분으로 10월과 같아요." },
+];
+function drawCmp() {
+  const box = $("#cmp"); box.innerHTML = "";
+  CMP.forEach(c => {
+    const row = document.createElement("div"); row.className = "cmp-row";
+    row.innerHTML = `<div class="what"><b>${c.what} <span class="pill ${c.tag[0]}">${c.tag[1]}</span></b><span class="ours">${c.fmt(c.ours)}${c.unit ? `<small style="font-size:12px;color:var(--ink-3);margin-left:2px">${c.unit}</small>` : ""}</span></div><div class="chart"></div><p class="note">${c.note}</p>`;
+    box.appendChild(row);
+    ruler(row.querySelector(".chart"), c);
+  });
+}
+
+// ---------- 밤마다 (10월 마지막 주 + 11월) ----------
+function drawNights() {
+  const box = $("#c-night"), H = 250, left = 42, top = 10, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const nights = [...D.nights, { date: "2026-11-04", bedh: 21.05, wakeh: null, wakings: 0, feeds: 0, open: true }];
+  const y0 = 19.5, y1 = 34.8, y = h => top + (h - y0) / (y1 - y0) * (H - top - bottom);
+  [20, 22, 24, 26, 28, 30, 32, 34].forEach(h => {
+    el("line", { x1: left, x2: w, y1: y(h), y2: y(h), stroke: css("--line"), "stroke-width": 1 }, svg);
+    txt(svg, left - 6, y(h) + 4, clock(h), { "text-anchor": "end" });
+  });
+  const band = (w - left) / nights.length, bw = Math.min(18, band - 6);
+  nights.forEach((n, i) => {
+    const cx = left + band * i + band / 2, isNov = n.date >= "2026-11-01";
+    const bed = n.bedh < 12 ? n.bedh + 24 : n.bedh;
+    if (n.open) {
+      const r = el("rect", { x: cx - bw / 2, y: y(bed), width: bw, height: y(26) - y(bed), rx: 4, fill: css("--night"), opacity: .35 }, svg);
+      txt(svg, cx + bw / 2, y(26) + 14, "자는 중", { "text-anchor": "end", class: "t2" });
+      hover(r, `<b>11/4 밤</b><br>21:03 취침, 아직 자는 중`);
+    } else {
+      const wake = n.wakeh + 24;
+      const r = el("rect", { x: cx - bw / 2, y: y(bed), width: bw, height: y(wake) - y(bed), rx: 4, fill: isNov ? css("--night") : css("--oct") }, svg);
+      hover(r, `<b>${md(n.date)} 밤</b><br>${clock(bed)} 취침 → ${n.wake} 기상<br>중간에 ${n.wakings}번 깸 · 밤사이 수유 ${n.feeds}번`);
+      for (let k = 0; k < n.feeds; k++) el("circle", { cx, cy: y(wake) + 10 + k * 11, r: 4, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 1.5 }, svg);
+    }
+    txt(svg, cx, H - 6, dayLabel(n.date), { "text-anchor": "middle", class: isNov ? "t1" : "" });
+  });
+  const xDiv = left + band * D.nights.filter(n => n.date < "2026-11-01").length;
+  el("line", { x1: xDiv, x2: xDiv, y1: top, y2: H - bottom, stroke: css("--ink-3"), "stroke-width": 1, "stroke-dasharray": "2 3" }, svg);
+}
+
+// ---------- 수면 지도 ----------
+function drawActo() {
+  const days = D.days, rowH = 16, gap = 4, left = 40, top = 6, bottom = 22;
+  const box = $("#c-acto");
+  const { svg, w } = svgFor(box, top + days.length * (rowH + gap) + bottom + 6);
+  const x = h => left + h / 24 * (w - left - 4);
+  const rowY = i => top + i * (rowH + gap) + (days[i].date >= "2026-11-01" ? 6 : 0);
+  const end = rowY(days.length - 1) + rowH;
+  [0, 6, 12, 18, 24].forEach(h => {
+    el("line", { x1: x(h), x2: x(h), y1: top, y2: end, stroke: css("--line"), "stroke-width": 1 }, svg);
+    txt(svg, x(h), end + 14, h + "시", { "text-anchor": h === 0 ? "start" : h === 24 ? "end" : "middle" });
+  });
+  days.forEach((d, i) => {
+    const y = rowY(i), isNov = d.date >= "2026-11-01";
+    txt(svg, left - 6, y + rowH - 4, md(d.date), { "text-anchor": "end", class: isNov ? "t1" : "" });
+    el("rect", { x: x(0), y, width: x(24) - x(0), height: rowH, rx: 3, fill: css("--band"), opacity: .55 }, svg);
+    d.segs.forEach(([a, b, k]) => {
+      if (b - a <= 0) return;
+      const r = el("rect", { x: x(a), y, width: Math.max(1.5, x(b) - x(a) - 1), height: rowH, rx: 3, fill: k === "n" ? css("--night") : css("--nap"), opacity: isNov ? 1 : .55 }, svg);
+      hover(r, `<b>${md(d.date)} ${k === "n" ? "밤잠" : "낮잠"}</b><br>${clock(a)} ~ ${clock(b)} (${fmtH(b - a)})`);
+    });
+    d.feedpts.forEach(([t, ml]) => {
+      const c = el("circle", { cx: x(t), cy: y + rowH / 2, r: 4.5, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 1.5 }, svg);
+      hover(c, `<b>${md(d.date)} 분유</b><br>${clock(t)} · ${ml}ml`);
+    });
+  });
+  const last = days[days.length - 1];
+  if (last.date === "2026-11-04") {
+    const y = rowY(days.length - 1);
+    el("rect", { x: x(21.05), y, width: x(24) - x(21.05) - 1, height: rowH, rx: 3, fill: css("--night"), opacity: .35 }, svg);
+  }
+}
+
+// ---------- 두 달 비율 히스토그램 ----------
+function pairHist(sel, a, b, bins, labelFmt, colorB, bandRange) {
+  const box = $(sel), H = 200, left = 30, top = 16, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const pct = vals => bins.slice(0, -1).map((v, i) => vals.filter(x => x >= v && x < bins[i + 1]).length / (vals.length || 1) * 100);
+  const pa = pct(a), pb = pct(b), max = Math.max(...pa, ...pb);
+  const y = v => top + (1 - v / max) * (H - top - bottom);
+  const band = (w - left) / pa.length, bw = Math.max(3, Math.min(14, (band - 6) / 2));
+  if (bandRange) {
+    const xb = v => left + (v - bins[0]) / (bins.at(-1) - bins[0]) * (w - left);
+    el("rect", { x: xb(bandRange[0]), y: top - 8, width: xb(bandRange[1]) - xb(bandRange[0]), height: H - top - bottom + 8, fill: css("--band") }, svg);
+  }
+  el("line", { x1: left, x2: w, y1: y(0), y2: y(0), stroke: css("--line") }, svg);
+  pa.forEach((v, i) => {
+    const cx = left + band * i + band / 2;
+    el("path", { d: colPath(cx - bw - 1, y(v), bw, y(0) - y(v), 3), fill: css("--oct") }, svg);
+    el("path", { d: colPath(cx + 1, y(pb[i]), bw, y(0) - y(pb[i]), 3), fill: colorB }, svg);
+    const hit = el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg);
+    hover(hit, `<b>${labelFmt(bins[i])} ~ ${labelFmt(bins[i + 1])}</b><br>10월 ${Math.round(v)}% · 11월 ${Math.round(pb[i])}%`);
+  });
+  [0, Math.round(max / 2 / 10) * 10].forEach(v => v && txt(svg, left - 4, y(v) + 4, v + "%", { "text-anchor": "end" }));
+  const step = Math.ceil(pa.length / 6);
+  bins.forEach((v, i) => { if (i % step === 0 && i < bins.length - 1) txt(svg, left + band * i, H - 8, labelFmt(v), { "text-anchor": i === 0 ? "start" : "middle" }); });
+}
+
+// ---------- 하루 분유량 ----------
+function drawMilk() {
+  const box = $("#c-milk"), H = 230, left = 44, top = 18, bottom = 24;
+  const { svg, w } = svgFor(box, H);
+  const max = 1100, y = v => top + (1 - v / max) * (H - top - bottom);
+  grid(svg, left, w, [0, 300, 600, 900], v => v.toLocaleString(), y);
+  const band = (w - left) / D.days.length, bw = Math.min(22, band - 6);
+  D.days.forEach((d, i) => {
+    const x = left + band * i + (band - bw) / 2, isNov = d.date >= "2026-11-01";
+    el("path", { d: colPath(x, y(d.milk), bw, y(0) - y(d.milk)), fill: isNov ? css("--feed") : css("--oct") }, svg);
+    if (isNov) txt(svg, x + bw / 2, y(d.milk) - 6, Math.round(d.milk), { "text-anchor": "middle", class: "t2" });
+    const hit = el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg);
+    hover(hit, `<b>${md(d.date)}</b> ${Math.round(d.milk)}ml · ${d.feeds}번`);
+    txt(svg, x + bw / 2, H - 6, dayLabel(d.date), { "text-anchor": "middle", class: isNov ? "t1" : "" });
+  });
+  el("line", { x1: left, x2: w, y1: y(O.milk), y2: y(O.milk), stroke: css("--ink-2"), "stroke-width": 1.5, "stroke-dasharray": "4 4" }, svg);
+}
+
+// ---------- 시간대별 (3시간 묶음) ----------
+function drawHours() {
+  const box = $("#c-hour"), H = 200, left = 30, top = 16, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const grp = arr => { const t = arr.reduce((s, x) => s + x, 0) || 1; return [0, 1, 2, 3, 4, 5, 6, 7].map(k => arr.slice(k * 3, k * 3 + 3).reduce((s, x) => s + x, 0) / t * 100); };
+  const pa = grp(D.fh.o), pb = grp(D.fh.n), max = Math.max(...pa, ...pb);
+  const y = v => top + (1 - v / max) * (H - top - bottom);
+  const band = (w - left) / 8, bw = Math.min(16, (band - 8) / 2);
+  el("line", { x1: left, x2: w, y1: y(0), y2: y(0), stroke: css("--line") }, svg);
+  pa.forEach((v, i) => {
+    const cx = left + band * i + band / 2;
+    el("path", { d: colPath(cx - bw - 1, y(v), bw, y(0) - y(v), 3), fill: css("--oct") }, svg);
+    el("path", { d: colPath(cx + 1, y(pb[i]), bw, y(0) - y(pb[i]), 3), fill: css("--feed") }, svg);
+    const hit = el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg);
+    hover(hit, `<b>${i * 3}~${i * 3 + 3}시</b><br>10월 ${Math.round(v)}% · 11월 ${Math.round(pb[i])}%`);
+    txt(svg, cx, H - 8, `${i * 3}시`, { "text-anchor": "middle" });
+  });
+  [Math.round(max / 2 / 5) * 5].forEach(v => txt(svg, left - 4, y(v) + 4, v + "%", { "text-anchor": "end" }));
+}
+
+// ---------- 칩, 이벤트, 변 색 ----------
+$("#chips").innerHTML = [
+  ...D.meds.n.map(([k, v]) => [k, v + "번"]),
+  ["목욕", N.baths + "번 (사이 날은 물수건)"], ["터미타임", N.tummy + "번"],
+].map(([k, v]) => `<span class="chip">${k}<b>${v}</b></span>`).join("");
+const events = [
+  ["2026-11-01", "저녁 7시 분유 후 아침 7시까지 12시간 안 먹고 잠 (\"진짜 안 잤는데 밥은 12시간 참음\")"],
+  ["2026-11-02", "병원 · 감기 (기침약 계속, 11/3엔 네뷸라이저도 함)"],
+  ["2026-11-03", "21:09부터 08:24까지 한 번도 안 깨고 11시간 15분"],
+  ["2026-11-04", "낮잠 재우기가 아주 힘들었음 · 21:03 취침"],
+];
+$("#events").innerHTML = events.map(([d, t]) => `<li><span class="d">${md(d)}</span><span>${t}</span></li>`).join("");
+const swRow = (label, list) => `<div>${label} <span class="num">${list.length}</span>번<div class="swatches">${list.map(([d, c]) => `<span class="sw" style="background:${c}" title="${md(d)} ${c}"></span>`).join("")}</div></div>`;
+$("#swatches").innerHTML = swRow("10월", D.colors.o) + swRow("11월", D.colors.n);
+
+// ---------- 표 ----------
+(function () {
+  const rows = [
+    ["하루 분유", O.milk, N.milk, v => Math.round(v) + "ml", 0],
+    ["한 번에 먹는 양", O.per_feed, N.per_feed, v => Math.round(v) + "ml", 0],
+    ["새벽 수유 (밤마다)", O.night_feeds, N.night_feeds, v => v.toFixed(1) + "번", -1],
+    ["밤중에 깬 횟수", O.wakings, N.wakings, v => v.toFixed(1) + "번", -1],
+    ["가장 길게 이어 잔 잠", O.longest, N.longest, v => v.toFixed(1) + "h", 1],
+    ["하루 수면", O.sleep, N.sleep, v => v.toFixed(1) + "h", 0],
+    ["밤잠", O.night, N.night, v => v.toFixed(1) + "h", 0],
+    ["낮잠", O.nap, N.nap, v => v.toFixed(1) + "h", 0],
+    ["낮잠 횟수", O.naps, N.naps, v => v.toFixed(1) + "번", 0],
+    ["평균 취침", O.bed, N.bed, v => clock(v), 0],
+    ["평균 기상", O.wake, N.wake, v => clock(v), 0],
+    ["기저귀", O.diapers, N.diapers, v => v.toFixed(1) + "번", 0],
+  ];
+  $("#trend-tbl").innerHTML = `<tr><th></th><th>10월 평균</th><th>11월 1~4일</th><th>변화</th></tr>` + rows.map(([k, a, b, f, good]) => {
+    let d = b - a; if (Math.abs(d) < 0.05) d = 0;
+    const cls = good === 0 || !d ? "" : (d * good > 0 ? "up" : "down");
+    const isClock = f(1).includes(":");
+    const ch = !d ? "그대로" : isClock ? `${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 60)}분` : `${d > 0 ? "+" : "−"}${f(Math.abs(d))}`;
+    return `<tr><td>${k}</td><td>${f(a)}</td><td>${f(b)}</td><td class="${cls}">${ch}</td></tr>`;
+  }).join("");
+})();
+
+// ---------- 제안 ----------
+const RECS = [
+  { title: "이유식 시작: 생후 6개월이 되는 11월 중하순", tag: ["strong", "공식 권고"], status: "10월 제안 2번 · 아직 시작 전",
+    saw: "11월에도 이유식 기록이 없어요. 새벽 수유가 빠지면서 하루 분유가 820ml로 줄었어요.",
+    why: "WHO는 생후 6개월부터 이유식을 권해요. 6개월 이후엔 철분이 더 필요해져서 분유만으로는 부족해지기 시작해요. 국내 자료도 4~6개월 사이 준비 신호(목 가누기, 받쳐 앉기, 음식에 관심)를 보고 시작하라고 해요.",
+    todo: "감기가 좀 나아지면 시작하세요. <b>하루 1번, 오전 10시 수유 전후</b>에 쌀미음 한두 숟가락부터, 익숙해지면 <b>철분이 많은 재료</b>(소고기 등)를 넣는 게 흔한 방법이에요. 베이비타임에 '이유식'으로 기록하면 다음 리포트에 같이 분석할게요." },
+  { title: "새벽에 깨도 바로 수유하지 않는 흐름 지키기", tag: ["mid", "연구"], status: "10월 제안 5번 · 잘 되고 있어요",
+    saw: "10/30부터 5일 연속 밤새 분유를 안 먹었어요. 11/2 새벽 3시에 깼을 때도 기저귀만 갈고 다시 잤어요.",
+    why: "한국 영유아 1,036명 연구에서 밤에 깼을 때 수유로 다시 재우는 아기가 밤중 깸이 더 많았어요. 지금처럼 수유 없이 다시 잠드는 경험이 쌓이면 통잠이 굳어지기 쉬워요.",
+    todo: "감기로 기침하다 깨는 밤엔 다시 먹이고 싶어지지만, 먼저 토닥이거나 안아서 달래보세요. 대신 <b>저녁 마지막 분유를 충분히</b>(200~250ml) 먹이고 재우세요. 하루 분유가 계속 줄면 검진 때 몸무게를 확인하세요." },
+  { title: "분유량 줄어든 것 일주일 지켜보기", tag: ["strong", "공식 권고"], status: "11월에 새로 생긴 변화",
+    saw: `하루 ${Math.round(N.milk)}ml로 10월보다 ${Math.round(O.milk - N.milk)}ml 적고, 140~160ml로 끝난 회차가 3번 있었어요. 기저귀는 하루 ${N.diapers.toFixed(1)}번이에요.`,
+    why: "아플 때 잠깐 덜 먹는 건 흔해요. 미국소아과학회는 하루 32온스(약 950ml) 이내를 말할 뿐 최소량을 정하진 않아요. 탈수는 젖은 기저귀 수로 확인하는데, 하루 6번 이상이면 충분히 마시고 있는 거예요.",
+    todo: "적게 먹은 회차를 억지로 채우기보다 다음 수유 때 충분히 먹이세요. <b>젖은 기저귀가 하루 6번 아래로 떨어지거나, 열이 나거나, 처지면</b> 바로 소아과에 가세요. 감기가 나으면 보통 원래 양으로 돌아와요." },
+  { title: "짧아진 낮잠: 3번에서 2번으로 넘어가는지 보기", tag: ["tip", "통용 팁"], status: "11월에 새로 생긴 변화",
+    saw: `낮잠 중간값이 ${O.nap_med}분에서 ${N.nap_med}분으로 줄었고, 11/2·11/3은 낮잠을 2번만 잤어요. 11/4엔 낮잠 재우기가 아주 힘들었다는 메모가 있어요. 깨어 있는 시간(2시간 20분)은 그대로예요.`,
+    why: "6~9개월 사이에 낮잠이 3번에서 2번으로 줄어드는 아기가 많아요. 감기로 코가 막히거나 기침하면 낮잠이 짧아지기도 해요. 이 부분은 연구 근거가 약한 육아 경험칙이에요.",
+    todo: "세 번째 낮잠(오후 4~5시)을 계속 거부하면 억지로 재우지 말고, 그날은 <b>취침을 20~30분 당기세요</b>. 낮잠은 졸린 신호(눈 비비기, 멍해짐)가 보이면 바로, 어둡고 조용한 곳에서 재우는 게 쉬워요." },
+  { title: "엎드려 노는 시간 기록해보기", tag: ["strong", "공식 권고"], status: "10월 제안 4번 · 기록 없음",
+    saw: "11월엔 터미타임 기록이 없어요. 10월에도 한 달에 7번뿐이었어요.",
+    why: "WHO는 1세 미만 아기에게 하루 여러 번 바닥 놀이를 권하고, 아직 기지 못하는 아기는 깨어 있을 때 엎드리는 시간을 하루 30분 이상 나눠서 갖도록 권해요.",
+    todo: "감기가 있어도 컨디션이 괜찮은 시간엔 <b>5~10분씩 하루 3~4번</b> 매트에서 엎드려 놀게 해주세요. 수유 직후는 피하세요." },
+  { title: "그대로 계속할 것", tag: ["tip", "잘하고 있어요"], status: "10월 제안 1번 · 잘 되고 있어요",
+    saw: "취침 시각이 10월엔 19:42~22:21로 들쭉날쭉했는데, 11월 네 밤은 21:03~21:33으로 30분 안에 들어왔어요. 그 사이 가장 길게 이어 잔 잠이 6.6시간에서 8.9시간으로 늘었어요. 감기 중엔 목욕과 물수건 닦기를 하루씩 번갈아 하고, 보습제는 계속 자주 바르고 있어요.",
+    why: "매일 같은 잠자리 루틴을 지킨 아기들이 더 빨리 잠들고 더 길게 잤다는 실험 결과와 같은 흐름이에요. 아플 때 목욕 횟수를 줄이는 건 괜찮고, 아토피 피부엔 보습을 꾸준히 하는 게 기본 관리예요.",
+    todo: "지금 리듬(저녁 분유 → 21시 전후 소등)을 그대로 유지하세요. 물수건으로 닦는 날도 <b>닦기 → 보습 → 마지막 분유 → 불 끄기</b> 순서를 목욕하는 날과 똑같이 하면 루틴이 흔들리지 않아요. 목욕하는 날은 욕실을 미리 데우고 5~10분 짧게 씻긴 뒤 바로 보습해주세요." },
+];
+$("#rec-list").innerHTML = RECS.map((r, i) => `
+  <article class="rec">
+    <div class="rec-top"><span class="rank">${i < RECS.length - 1 ? i + 1 : "✓"}</span><h3>${r.title}</h3><span class="pill ${r.tag[0]}">${r.tag[1]}</span></div>
+    <dl><dt>지난 제안</dt><dd>${r.status}</dd><dt>기록에서</dt><dd>${r.saw}</dd><dt>근거</dt><dd>${r.why}</dd><dt>해볼 것</dt><dd>${r.todo}</dd></dl>
+  </article>`).join("");
+
+// ---------- 렌더 ----------
+function drawAll() {
+  drawChg(); drawNights(); drawCmp(); drawActo(); drawMilk(); drawHours();
+  pairHist("#c-nap", D.nap.o, D.nap.n, [0, 20, 40, 60, 80, 100, 120, 140, 160, 180], m => m + "분", css("--night"));
+  pairHist("#c-ww", D.ww.o.map(m => m / 60), D.ww.n.map(m => m / 60), [0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5], h => h + "h", css("--night"), [2, 2.5]);
+  pairHist("#c-amt", D.amt.o, D.amt.n, [120, 140, 160, 180, 200, 220, 240, 260, 280], v => v + "", css("--feed"), [210, 240]);
+}
+drawAll();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
