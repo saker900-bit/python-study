@@ -2,3 +2,4 @@
 Activity_*
 activity_*
 *.html
+__pycache__/
