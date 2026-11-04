@@ -502,7 +502,7 @@ def period_text(p, months, weight_kg=None):
     a, e, l = p["all"], p["early"], p["late"]
     n = p["trend_days"]
     lines = [
-        f"===== {p['first']} ~ {p['last']} 종합 분석 (생후 {months}개월 기준, {len(p['days'])}일) =====",
+        f"===== {p['first']} ~ {p['last']} 종합 분석 (생후 {months:g}개월 기준, {len(p['days'])}일) =====",
         "",
         "[먹기]",
         f"  하루 평균 {a['milk']:.0f}ml / {a['feeds']:.1f}회, 1회 평균 {p['per_feed_ml']:.0f}ml (최대 {p['max_feed_ml']:.0f}ml)",
@@ -552,7 +552,7 @@ STATUS_ICON = {"적정": "✅", "부족": "⚠️", "많음": "⚠️"}
 
 def text_report(r, week=None):
     lines = [
-        f"===== {r['date']} 하루 리포트 (생후 {r['months']}개월) =====",
+        f"===== {r['date']} 하루 리포트 (생후 {r['months']:g}개월) =====",
         f"종합 점수: {score(r)}점",
         "",
         "[수유]",
@@ -652,7 +652,7 @@ def html_report(r, week=None):
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>아기 하루 리포트</title>
 {_CSS}</head><body><main>
-<h1>{r['date']:%Y년 %m월 %d일} · 생후 {r['months']}개월</h1>
+<h1>{r['date']:%Y년 %m월 %d일} · 생후 {r['months']:g}개월</h1>
 <section><h2>오늘 종합 점수</h2><div class="score">{score(r)}점</div></section>
 <section class="grid">
 <div><b>{r['milk_ml']:.0f}ml</b><small>수유 {r['feed_count']}회</small></div>
@@ -725,7 +725,7 @@ def html_period(p, months, weight_kg=None):
 .grid{{grid-template-columns:repeat(3,1fr)}}
 </style></head><body><main>
 <h1>{p['first']:%Y.%m.%d} ~ {p['last']:%m.%d} 종합 분석</h1>
-<p style="color:var(--mute);margin:0 0 4px">생후 {months}개월 기준 · {len(p['days'])}일 기록</p>
+<p style="color:var(--mute);margin:0 0 4px">생후 {months:g}개월 기준 · {len(p['days'])}일 기록</p>
 <section class="grid">
 <div><b>{a['milk']:.0f}ml</b><small>하루 수유량</small></div>
 <div><b>{a['feeds']:.1f}회</b><small>하루 수유</small></div>
@@ -757,7 +757,7 @@ def html_period(p, months, weight_kg=None):
 def main():
     p = argparse.ArgumentParser(description="베이비타임 기록 분석기")
     p.add_argument("csv", help="베이비타임 내보내기 파일 (.zip / .txt) 또는 CSV")
-    p.add_argument("--months", type=int, required=True, help="아기 월령 (개월)")
+    p.add_argument("--months", type=float, required=True, help="아기 월령 (개월, 5.5처럼 소수 가능)")
     p.add_argument("--weight", type=float, help="아기 체중 kg (수유량 권장치 계산에 사용)")
     p.add_argument("--date", help="하루만 분석할 날짜 YYYY-MM-DD (없으면 기간 전체 종합 분석)")
     p.add_argument("--html", help="HTML 리포트 저장 경로")
