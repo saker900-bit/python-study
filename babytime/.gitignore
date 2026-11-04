@@ -3,3 +3,4 @@ Activity_*
 activity_*
 *.html
 __pycache__/
+data*.json
