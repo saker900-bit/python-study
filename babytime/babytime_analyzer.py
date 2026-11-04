@@ -55,6 +55,7 @@ class Record:
     end: datetime | None
     amount: float | None
     memo: str
+    label: str = ""  # 앱에 적힌 원래 기록 종류 (예: 밤잠, 낮잠, 목욕)
 
 
 def _find_column(headers, key):
@@ -114,6 +115,64 @@ def load_records(path):
             records.append(Record(kind, start, end, amount, memo))
     records.sort(key=lambda r: r.start)
     return records
+
+
+# 베이비타임 앱의 "기록 내보내기" 텍스트 형식:
+#   2026-10-01 01:05 AM ~ 2026-10-01 01:13 AM
+#   기록 종류: 분유
+#   분유 총 양(ml): 245 (ml)
+#   ====================
+def parse_babytime_text(text):
+    records = []
+    for block in text.replace("\r", "").split("===================="):
+        lines = [l.strip() for l in block.strip().splitlines() if l.strip()]
+        if not lines:
+            continue
+        times = [t.strip() for t in lines[0].split("~")]
+        try:
+            start = datetime.strptime(times[0], "%Y-%m-%d %I:%M %p")
+            end = datetime.strptime(times[1], "%Y-%m-%d %I:%M %p") if len(times) > 1 else None
+        except ValueError:
+            continue
+        fields = {}
+        for line in lines[1:]:
+            key, _, value = line.partition(":")
+            fields[key.strip()] = value.strip()
+        label = fields.get("기록 종류", "")
+        kind = _normalize_type(label) or "etc"
+        amount = None
+        for key, value in fields.items():
+            if "(ml)" in key or key in ("양", "용량"):
+                amount = _parse_amount(value.replace("(ml)", ""))
+        if label == "병원":
+            memo = fields.get("방문사유") or fields.get("방문유형", "")
+        elif kind == "diaper":
+            # "둘다"는 소변+대변이라 대변으로도 센다
+            memo = fields.get("배변 형태", "")
+            memo = memo + " 대변" if memo == "둘다" else memo
+        else:
+            detail = [v for k, v in fields.items() if k not in ("기록 종류", "소요시간") and "(ml)" not in k and k != "image"]
+            memo = ", ".join(detail)
+        records.append(Record(kind, start, end, amount, memo, label))
+    records.sort(key=lambda r: r.start)
+    return records
+
+
+def load_any(path):
+    """CSV, 베이비타임 텍스트(.txt), 또는 베이비타임 내보내기 zip을 읽는다."""
+    if path.lower().endswith(".zip"):
+        import zipfile
+
+        with zipfile.ZipFile(path) as z:
+            names = [n for n in z.namelist() if n.lower().endswith(".txt")]
+            if not names:
+                raise SystemExit("zip 안에 .txt 기록 파일이 없습니다.")
+            return parse_babytime_text(z.read(names[0]).decode("utf-8-sig"))
+    with open(path, encoding="utf-8-sig") as f:
+        head = f.read(64)
+    if head[:4].isdigit() and "기록 종류" in open(path, encoding="utf-8-sig").read(500):
+        return parse_babytime_text(open(path, encoding="utf-8-sig").read())
+    return load_records(path)
 
 
 # ---------------------------------------------------------------------------
@@ -199,13 +258,23 @@ def analyze_day(records, day, months, weight_kg=None):
         (day_start - timedelta(days=1) + timedelta(hours=NIGHT_START_HOUR), day_start + timedelta(hours=NIGHT_END_HOUR)),
         (day_start + timedelta(hours=NIGHT_START_HOUR), day_start + timedelta(days=1, hours=NIGHT_END_HOUR)),
     ]
+    # 앱이 낮잠/밤잠을 구분해 주면 그걸 쓰고, 아니면 시간대(19시~7시)로 나눈다
+    labeled = any(s.label in ("낮잠", "밤잠") for s in sleeps)
     for s in sleeps:
-        total_sleep += _overlap(s.start, s.end, day_start, day_end)
-        for ws, we in night_windows:
-            night_sleep += _overlap(s.start, s.end, max(ws, day_start), min(we, day_end))
+        part = _overlap(s.start, s.end, day_start, day_end)
+        total_sleep += part
+        if labeled:
+            night_sleep += part if s.label == "밤잠" else timedelta(0)
+        else:
+            for ws, we in night_windows:
+                night_sleep += _overlap(s.start, s.end, max(ws, day_start), min(we, day_end))
     day_sleep = total_sleep - night_sleep
-    naps = [s for s in sleeps if NIGHT_END_HOUR <= s.start.hour < NIGHT_START_HOUR and s.start >= day_start]
-    longest = max(sleeps, key=lambda s: s.end - s.start) if sleeps else None
+    if labeled:
+        naps = [s for s in sleeps if s.label == "낮잠" and s.start >= day_start]
+    else:
+        naps = [s for s in sleeps if NIGHT_END_HOUR <= s.start.hour < NIGHT_START_HOUR and s.start >= day_start]
+    started = [s for s in sleeps if s.start >= day_start] or sleeps
+    longest = max(started, key=lambda s: s.end - s.start) if started else None
 
     # 밤중 깬 횟수: 밤 시간대(0~7시)에 시작한 수유 횟수로 대략 추정
     night_feeds = [r for r in feeds if r.start.hour < NIGHT_END_HOUR]
@@ -227,15 +296,19 @@ def analyze_day(records, day, months, weight_kg=None):
         findings.append((label, status, f"{fmt(value)}{unit} (권장 {fmt(low)}~{fmt(high)}{unit})"))
         return status
 
-    fc_low, fc_high = feeding_count_range(months)
-    judge("수유 횟수", len(feeds), fc_low, fc_high, "회")
     if any(r.amount for r in feeds):
+        # 양 기록이 있으면 총량으로 평가한다 (1회량이 크면 횟수가 적어도 괜찮다)
         ml_low, ml_high = milk_ml_range(months, weight_kg)
         judge("하루 수유량", milk_ml, ml_low, ml_high, "ml")
+    else:
+        fc_low, fc_high = feeding_count_range(months)
+        judge("수유 횟수", len(feeds), fc_low, fc_high, "회")
     sl_low, sl_high = sleep_range(months)
     judge("총 수면", total_sleep.total_seconds() / 3600, sl_low, sl_high, "시간", fmt=lambda v: f"{v:.1f}")
     if months < 4 or len(diapers) > 0:
-        judge("기저귀(소변 포함)", len(diapers), 6 if months < 12 else 4, 12, "회")
+        low = 6 if months < 12 else 4
+        status = "적정" if len(diapers) >= low else "부족"
+        findings.append(("기저귀", status, f"{len(diapers)}회 (하루 {low}회 이상이면 충분)"))
 
     tips = []
     statuses = {label: status for label, status, _ in findings}
@@ -291,6 +364,185 @@ def analyze_week(records, end_day, months, weight_kg=None, days=7):
     return [analyze_day(records, end_day - timedelta(days=i), months, weight_kg) for i in reversed(range(days))]
 
 
+def _avg(values):
+    values = list(values)
+    return sum(values) / len(values) if values else 0
+
+
+def _avg_clock(times, pivot_hour=12):
+    """시각들의 평균 (자정을 넘나드는 취침 시각도 처리하도록 pivot 기준으로 펼침)."""
+    if not times:
+        return None
+    mins = [(t.hour * 60 + t.minute - pivot_hour * 60) % 1440 for t in times]
+    m = (round(_avg(mins)) + pivot_hour * 60) % 1440
+    return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def _count(items):
+    counts = {}
+    for x in items:
+        counts[x] = counts.get(x, 0) + 1
+    return sorted(counts.items(), key=lambda kv: -kv[1])
+
+
+def _sick_compare(days, visit_dates):
+    """병원 간 날 앞뒤 하루씩을 '아픈 기간'으로 보고 평소와 비교한다."""
+    if not visit_dates:
+        return None
+    sick_days = {v + timedelta(days=k) for v in visit_dates for k in (-1, 0, 1)}
+    sick = [d for d in days if d["date"] in sick_days]
+    normal = [d for d in days if d["date"] not in sick_days]
+    if not sick or not normal:
+        return None
+    h = lambda ds: _avg(d["total_sleep"].total_seconds() / 3600 for d in ds)
+    m = lambda ds: _avg(d["milk_ml"] for d in ds)
+    return {"sick_sleep": h(sick), "normal_sleep": h(normal), "sick_milk": m(sick), "normal_milk": m(normal), "n": len(sick)}
+
+
+def analyze_period(records, months, weight_kg=None):
+    """기록 전체 기간을 날짜별로 분석하고 한 달 종합 요약을 만든다."""
+    first, last = records[0].start.date(), records[-1].start.date()
+    days = [analyze_day(records, first + timedelta(days=i), months, weight_kg) for i in range((last - first).days + 1)]
+    days = [d for d in days if d["feed_count"]]  # 수유 기록이 없는 날은 기록 누락으로 보고 뺀다
+
+    def stats(ds):
+        return {
+            "milk": _avg(d["milk_ml"] for d in ds),
+            "feeds": _avg(d["feed_count"] for d in ds),
+            "sleep": _avg(d["total_sleep"].total_seconds() / 3600 for d in ds),
+            "night": _avg(d["night_sleep"].total_seconds() / 3600 for d in ds),
+            "nap": _avg(d["day_sleep"].total_seconds() / 3600 for d in ds),
+            "naps": _avg(d["nap_count"] for d in ds),
+            "longest": _avg(d["longest_sleep"].total_seconds() / 3600 for d in ds if d["longest_sleep"]),
+            "diapers": _avg(d["diaper_count"] for d in ds),
+            "score": _avg(score(d) for d in ds),
+        }
+
+    feeds = [r for r in records if r.kind in ("formula", "breast") and r.amount]
+    nights = [r for r in records if r.kind == "sleep" and r.label == "밤잠" and r.end]
+    # 취침: 저녁 6시 이후 시작한 밤잠, 기상: 오전(4~11시)에 끝난 밤잠 중 그날 마지막
+    bedtimes, wakes = {}, {}
+    for s in nights:
+        if s.start.hour >= 18:
+            bedtimes.setdefault(s.start.date(), s.start)
+        if 4 <= s.end.hour < 12:
+            wakes[s.end.date()] = s.end
+    etc = [r for r in records if r.kind == "etc"]
+    etc_counts = {}
+    for r in etc:
+        etc_counts[r.label] = etc_counts.get(r.label, 0) + 1
+
+    week = 7 if len(days) >= 14 else max(len(days) // 2, 1)
+    return {
+        "first": first,
+        "last": last,
+        "days": days,
+        "all": stats(days),
+        "early": stats(days[:week]),
+        "late": stats(days[-week:]),
+        "trend_days": week,
+        "per_feed_ml": _avg(r.amount for r in feeds),
+        "max_feed_ml": max((r.amount for r in feeds), default=0),
+        "bedtime": _avg_clock(list(bedtimes.values())),
+        "wake": _avg_clock(list(wakes.values()), pivot_hour=0),
+        "poo_days": sum(1 for d in days if d["poo_count"]),
+        "etc_counts": etc_counts,
+        "hospital": [r for r in etc if r.label == "병원"],
+        "notes": [r for r in etc if r.label in ("기타", "기록A") and r.memo and r.memo != "산책"],
+        "custom_counts": _count(r.memo for r in etc if r.label == "기록A" and r.memo),
+        "med_counts": _count(m.strip() for r in etc if r.label == "투약" for m in r.memo.split(",") if m.strip()),
+        "sick": _sick_compare(days, [r.start.date() for r in etc if r.label == "병원"]),
+        "meds": [r for r in etc if r.label == "투약"],
+        "low_milk": sorted(days, key=lambda d: d["milk_ml"])[:3],
+        "low_sleep": sorted(days, key=lambda d: d["total_sleep"])[:3],
+    }
+
+
+def _trend(early, late, unit, fmt="{:.0f}"):
+    diff = late - early
+    arrow = "▲" if diff > 0 else "▼" if diff < 0 else "="
+    return f"{fmt.format(early)}{unit} → {fmt.format(late)}{unit} ({arrow}{fmt.format(abs(diff))})"
+
+
+def period_comments(p, months, weight_kg=None):
+    a, e, l = p["all"], p["early"], p["late"]
+    out = []
+    ml_low, ml_high = milk_ml_range(months, weight_kg)
+    if a["milk"] < ml_low:
+        out.append(f"하루 평균 수유량 {a['milk']:.0f}ml로 권장({ml_low}~{ml_high}ml)보다 조금 적어요.")
+    elif a["milk"] > ml_high:
+        out.append(f"하루 평균 수유량 {a['milk']:.0f}ml로 권장({ml_low}~{ml_high}ml)보다 많은 편이에요. 1회량이 많지 않은지 봐주세요.")
+    else:
+        out.append(f"하루 평균 수유량 {a['milk']:.0f}ml로 권장 범위({ml_low}~{ml_high}ml) 안이에요. 잘 먹고 있어요. 👍")
+    sl_low, sl_high = sleep_range(months)
+    if a["sleep"] < sl_low:
+        out.append(f"하루 평균 수면 {a['sleep']:.1f}시간으로 권장({sl_low}~{sl_high}시간)보다 짧게 기록됐어요. 기록이 빠진 잠이 있는지도 확인해 보세요.")
+    else:
+        out.append(f"하루 평균 수면 {a['sleep']:.1f}시간으로 권장 범위({sl_low}~{sl_high}시간) 안이에요.")
+    if l["longest"] - e["longest"] >= 0.5:
+        out.append(f"가장 길게 이어 잔 시간이 월초 {e['longest']:.1f}시간 → 월말 {l['longest']:.1f}시간으로 늘었어요. 통잠이 자리 잡는 중이에요.")
+    elif e["longest"] - l["longest"] >= 0.5:
+        out.append(f"가장 길게 이어 잔 시간이 월초보다 줄었어요({e['longest']:.1f} → {l['longest']:.1f}시간). 감기·이앓이·뒤집기 같은 발달 시기에 흔히 그래요.")
+    if abs(l["milk"] - e["milk"]) >= 80:
+        word = "늘었어요" if l["milk"] > e["milk"] else "줄었어요"
+        out.append(f"월말 수유량이 월초보다 {abs(l['milk'] - e['milk']):.0f}ml {word}.")
+    sick = p["sick"]
+    if sick:
+        msg = (f"병원 다녀온 날 전후({sick['n']}일)엔 평균 수면 {sick['sick_sleep']:.1f}시간, 수유 {sick['sick_milk']:.0f}ml로 "
+               f"평소({sick['normal_sleep']:.1f}시간, {sick['normal_milk']:.0f}ml)")
+        if sick["normal_sleep"] - sick["sick_sleep"] >= 0.5 or sick["normal_milk"] - sick["sick_milk"] >= 50:
+            msg += "보다 줄었어요. 감기 때문에 잠·식사가 흔들린 걸로 보여요."
+        else:
+            msg += "와 큰 차이가 없어요. 아플 때도 잘 버텨줬네요."
+        out.append(msg)
+    return out
+
+
+def period_text(p, months, weight_kg=None):
+    a, e, l = p["all"], p["early"], p["late"]
+    n = p["trend_days"]
+    lines = [
+        f"===== {p['first']} ~ {p['last']} 종합 분석 (생후 {months}개월 기준, {len(p['days'])}일) =====",
+        "",
+        "[먹기]",
+        f"  하루 평균 {a['milk']:.0f}ml / {a['feeds']:.1f}회, 1회 평균 {p['per_feed_ml']:.0f}ml (최대 {p['max_feed_ml']:.0f}ml)",
+        f"  첫 {n}일 → 마지막 {n}일: {_trend(e['milk'], l['milk'], 'ml')}",
+        "",
+        "[잠]",
+        f"  하루 평균 {a['sleep']:.1f}시간 (밤잠 {a['night']:.1f}h + 낮잠 {a['nap']:.1f}h, 낮잠 {a['naps']:.1f}회)",
+        f"  평균 취침 {p['bedtime'] or '-'}, 평균 기상 {p['wake'] or '-'}",
+        f"  가장 길게 이어 잔 시간 평균 {a['longest']:.1f}시간",
+        f"  첫 {n}일 → 마지막 {n}일: 총 수면 {_trend(e['sleep'], l['sleep'], 'h', '{:.1f}')}, 최장 수면 {_trend(e['longest'], l['longest'], 'h', '{:.1f}')}",
+        "",
+        "[기저귀]",
+        f"  하루 평균 {a['diapers']:.1f}회, 대변 본 날 {p['poo_days']}/{len(p['days'])}일",
+        "",
+        "[그 밖의 기록]",
+        "  " + ", ".join(f"{k} {v}회" for k, v in sorted(p["etc_counts"].items(), key=lambda kv: -kv[1])),
+    ]
+    if p["med_counts"]:
+        lines.append("  투약 내역: " + ", ".join(f"{k} {v}회" for k, v in p["med_counts"][:4]))
+    if p["custom_counts"]:
+        lines.append("  기록A: " + ", ".join(f"{k} {v}회" for k, v in p["custom_counts"][:3]))
+    for h in p["hospital"]:
+        lines.append(f"  - {h.start:%m/%d} 병원: {h.memo}")
+    for note in p["notes"]:
+        lines.append(f"  - {note.start:%m/%d} {note.memo}")
+    lines += ["", "[덜 먹은 날 / 덜 잔 날]"]
+    lines.append("  수유량 적은 날: " + ", ".join(f"{d['date']:%m/%d}({d['milk_ml']:.0f}ml)" for d in p["low_milk"]))
+    lines.append("  수면 짧은 날: " + ", ".join(f"{d['date']:%m/%d}({d['total_sleep'].total_seconds() / 3600:.1f}h)" for d in p["low_sleep"]))
+    lines += ["", "[종합 코멘트]"] + [f"  - {c}" for c in period_comments(p, months, weight_kg)]
+    lines += ["", "[날짜별]", "  날짜    수유량  횟수  총수면  밤잠  낮잠  최장  기저귀  점수"]
+    for d in p["days"]:
+        h = lambda td: td.total_seconds() / 3600 if td else 0
+        lines.append(
+            f"  {d['date']:%m/%d}  {d['milk_ml']:5.0f}ml  {d['feed_count']:2d}회  {h(d['total_sleep']):5.1f}h  "
+            f"{h(d['night_sleep']):4.1f}  {h(d['day_sleep']):4.1f}  {h(d['longest_sleep']):4.1f}  {d['diaper_count']:4d}회  {score(d):3d}점"
+        )
+    lines += ["", "※ 일반 권장 범위와 비교한 참고용 분석입니다. 의학적 판단은 소아과와 상담하세요."]
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # 출력
 # ---------------------------------------------------------------------------
@@ -336,6 +588,28 @@ def text_report(r, week=None):
     return "\n".join(lines)
 
 
+_CSS = """<style>
+:root{--bg:#fffaf5;--card:#fff;--fg:#2d2a26;--mute:#8a8178;--sleep:#7c8cf0;--feed:#f2994a;--solid:#6fcf97;--warn:#eb5757}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1b19;--card:#2a2724;--fg:#f2ede8;--mute:#a59d94}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+main{max-width:560px;margin:auto;padding:16px} section{background:var(--card);border-radius:16px;padding:16px;margin:12px 0}
+h1{font-size:20px;margin:8px 0} h2{font-size:15px;margin:0 0 10px;color:var(--mute)}
+.score{font-size:44px;font-weight:700} .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.grid b{display:block;font-size:20px} .grid small{color:var(--mute)}
+.tl{position:relative;height:36px;background:rgba(128,128,128,.12);border-radius:8px;overflow:hidden}
+.bar{position:absolute;top:0;bottom:0} .sleep{background:var(--sleep)}
+.dot{position:absolute;top:12px;width:12px;height:12px;margin-left:-6px;border-radius:50%;border:2px solid var(--card)}
+.feed{background:var(--feed)} .solid{background:var(--solid)}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);margin-top:4px}
+.legend{font-size:12px;color:var(--mute);margin-top:8px} .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px}
+ul{padding:0;margin:0;list-style:none} li{padding:8px 0;border-bottom:1px solid rgba(128,128,128,.15)}
+li span{display:block;font-size:13px;color:var(--mute)} li.warn b{color:var(--warn)}
+table{width:100%;font-size:13px;border-collapse:collapse} td{padding:4px;white-space:nowrap}
+.h{height:8px;border-radius:4px;margin-bottom:2px} .milk{background:var(--feed)} .sl{background:var(--sleep)}
+footer{font-size:12px;color:var(--mute);text-align:center;padding:8px}
+</style>"""
+
+
 def html_report(r, week=None):
     """휴대폰에서 보기 좋은 단일 HTML 리포트 (24시간 타임라인 포함)."""
     esc = html.escape
@@ -377,26 +651,7 @@ def html_report(r, week=None):
     gap = _fmt_hours(r["avg_gap"]) if r["avg_gap"] else "-"
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>아기 하루 리포트</title>
-<style>
-:root{{--bg:#fffaf5;--card:#fff;--fg:#2d2a26;--mute:#8a8178;--sleep:#7c8cf0;--feed:#f2994a;--solid:#6fcf97;--warn:#eb5757}}
-@media (prefers-color-scheme:dark){{:root{{--bg:#1d1b19;--card:#2a2724;--fg:#f2ede8;--mute:#a59d94}}}}
-body{{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}}
-main{{max-width:560px;margin:auto;padding:16px}} section{{background:var(--card);border-radius:16px;padding:16px;margin:12px 0}}
-h1{{font-size:20px;margin:8px 0}} h2{{font-size:15px;margin:0 0 10px;color:var(--mute)}}
-.score{{font-size:44px;font-weight:700}} .grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}}
-.grid b{{display:block;font-size:20px}} .grid small{{color:var(--mute)}}
-.tl{{position:relative;height:36px;background:rgba(128,128,128,.12);border-radius:8px;overflow:hidden}}
-.bar{{position:absolute;top:0;bottom:0}} .sleep{{background:var(--sleep)}}
-.dot{{position:absolute;top:12px;width:12px;height:12px;margin-left:-6px;border-radius:50%;border:2px solid var(--card)}}
-.feed{{background:var(--feed)}} .solid{{background:var(--solid)}}
-.ticks{{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);margin-top:4px}}
-.legend{{font-size:12px;color:var(--mute);margin-top:8px}} .legend i{{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px}}
-ul{{padding:0;margin:0;list-style:none}} li{{padding:8px 0;border-bottom:1px solid rgba(128,128,128,.15)}}
-li span{{display:block;font-size:13px;color:var(--mute)}} li.warn b{{color:var(--warn)}}
-table{{width:100%;font-size:13px;border-collapse:collapse}} td{{padding:4px;white-space:nowrap}}
-.h{{height:8px;border-radius:4px;margin-bottom:2px}} .milk{{background:var(--feed)}} .sl{{background:var(--sleep)}}
-footer{{font-size:12px;color:var(--mute);text-align:center;padding:8px}}
-</style></head><body><main>
+{_CSS}</head><body><main>
 <h1>{r['date']:%Y년 %m월 %d일} · 생후 {r['months']}개월</h1>
 <section><h2>오늘 종합 점수</h2><div class="score">{score(r)}점</div></section>
 <section class="grid">
@@ -417,18 +672,111 @@ footer{{font-size:12px;color:var(--mute);text-align:center;padding:8px}}
 </main></body></html>"""
 
 
+def _timeline(d):
+    day_start = datetime.combine(d["date"], datetime.min.time())
+    day_end = day_start + timedelta(days=1)
+
+    def pct(t):
+        return (min(max(t, day_start), day_end) - day_start).total_seconds() / 864
+
+    parts = []
+    for s in d["sleeps"]:
+        cls = "sleep" if s.label != "낮잠" else "sleep nap"
+        parts.append(f'<div class="bar {cls}" style="left:{pct(s.start):.2f}%;width:{max(pct(s.end) - pct(s.start), 0.3):.2f}%"></div>')
+    for f in d["feeds"]:
+        parts.append(f'<div class="tick" style="left:{pct(f.start):.2f}%"></div>')
+    return "".join(parts)
+
+
+def html_period(p, months, weight_kg=None):
+    """한 달 종합 리포트 HTML (날짜별 24시간 수면 타임라인 포함)."""
+    esc = html.escape
+    a, e, l = p["all"], p["early"], p["late"]
+    n = p["trend_days"]
+    comments = "".join(f"<li>{esc(c)}</li>" for c in period_comments(p, months, weight_kg))
+    rows = "".join(
+        f'<div class="row"><span>{d["date"]:%m/%d}</span><div class="tl small">{_timeline(d)}</div></div>'
+        for d in p["days"]
+    )
+    max_ml = max(d["milk_ml"] for d in p["days"]) or 1
+    max_sl = max(d["total_sleep"].total_seconds() for d in p["days"]) or 1
+    table = "".join(
+        f'<tr><td>{d["date"]:%m/%d}</td>'
+        f'<td><div class="h milk" style="width:{d["milk_ml"] / max_ml * 100:.0f}%"></div>{d["milk_ml"]:.0f}ml · {d["feed_count"]}회</td>'
+        f'<td><div class="h sl" style="width:{d["total_sleep"].total_seconds() / max_sl * 100:.0f}%"></div>'
+        f'{d["total_sleep"].total_seconds() / 3600:.1f}h</td></tr>'
+        for d in p["days"]
+    )
+    events = "".join(f"<li><b>{h.start:%m/%d} 병원</b><span>{esc(h.memo)}</span></li>" for h in p["hospital"])
+    events += "".join(f"<li><b>{x.start:%m/%d}</b><span>{esc(x.memo)}</span></li>" for x in p["notes"])
+    etc = " · ".join(f"{esc(k)} {v}회" for k, v in sorted(p["etc_counts"].items(), key=lambda kv: -kv[1]))
+    if p["med_counts"]:
+        etc += "<br><small>투약: " + esc(", ".join(f"{k} {v}회" for k, v in p["med_counts"][:4])) + "</small>"
+
+    def trend_li(label, ev, lv, unit, fmt="{:.0f}"):
+        return f"<li><b>{label}</b><span>{_trend(ev, lv, unit, fmt)}</span></li>"
+
+    return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>아기 월간 리포트</title>
+{_CSS}<style>
+.row{{display:flex;align-items:center;gap:8px;margin:3px 0}} .row span{{font-size:11px;color:var(--mute);width:34px}}
+.tl.small{{flex:1;height:14px;border-radius:4px}} .nap{{opacity:.55}}
+.tick{{position:absolute;top:0;bottom:0;width:2px;background:var(--feed)}}
+.grid{{grid-template-columns:repeat(3,1fr)}}
+</style></head><body><main>
+<h1>{p['first']:%Y.%m.%d} ~ {p['last']:%m.%d} 종합 분석</h1>
+<p style="color:var(--mute);margin:0 0 4px">생후 {months}개월 기준 · {len(p['days'])}일 기록</p>
+<section class="grid">
+<div><b>{a['milk']:.0f}ml</b><small>하루 수유량</small></div>
+<div><b>{a['feeds']:.1f}회</b><small>하루 수유</small></div>
+<div><b>{p['per_feed_ml']:.0f}ml</b><small>1회 평균</small></div>
+<div><b>{a['sleep']:.1f}h</b><small>하루 수면</small></div>
+<div><b>{a['night']:.1f}h</b><small>밤잠</small></div>
+<div><b>{a['nap']:.1f}h</b><small>낮잠 {a['naps']:.1f}회</small></div>
+<div><b>{p['bedtime'] or '-'}</b><small>평균 취침</small></div>
+<div><b>{p['wake'] or '-'}</b><small>평균 기상</small></div>
+<div><b>{a['longest']:.1f}h</b><small>최장 연속 수면</small></div>
+</section>
+<section><h2>종합 코멘트</h2><ul>{comments}</ul></section>
+<section><h2>첫 {n}일 → 마지막 {n}일</h2><ul>
+{trend_li("하루 수유량", e['milk'], l['milk'], "ml")}
+{trend_li("하루 수면", e['sleep'], l['sleep'], "h", "{:.1f}")}
+{trend_li("밤잠", e['night'], l['night'], "h", "{:.1f}")}
+{trend_li("최장 연속 수면", e['longest'], l['longest'], "h", "{:.1f}")}
+</ul></section>
+<section><h2>날짜별 수면 패턴 (0시 → 24시)</h2>{rows}
+<div class="ticks" style="margin-left:42px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
+<div class="legend"><i style="background:var(--sleep)"></i>밤잠<i style="background:var(--sleep);opacity:.55"></i>낮잠<i style="background:var(--feed);border-radius:0;width:3px"></i>수유</div></section>
+<section><h2>날짜별 먹기·잠</h2><table><tr><th></th><th>수유</th><th>수면</th></tr>{table}</table></section>
+<section><h2>그 밖의 기록</h2><p style="margin:0 0 8px">{etc}</p><ul>{events}</ul>
+<p style="font-size:13px;color:var(--mute)">기저귀 하루 {a['diapers']:.1f}회 · 대변 본 날 {p['poo_days']}/{len(p['days'])}일</p></section>
+<footer>일반 권장 범위와 비교한 참고용 분석입니다. 의학적 판단은 소아과와 상담하세요.</footer>
+</main></body></html>"""
+
+
 def main():
-    p = argparse.ArgumentParser(description="베이비타임 기록 CSV 분석기")
-    p.add_argument("csv", help="베이비타임에서 내보낸 CSV 파일")
+    p = argparse.ArgumentParser(description="베이비타임 기록 분석기")
+    p.add_argument("csv", help="베이비타임 내보내기 파일 (.zip / .txt) 또는 CSV")
     p.add_argument("--months", type=int, required=True, help="아기 월령 (개월)")
     p.add_argument("--weight", type=float, help="아기 체중 kg (수유량 권장치 계산에 사용)")
-    p.add_argument("--date", help="분석할 날짜 YYYY-MM-DD (기본: 기록의 마지막 날)")
+    p.add_argument("--date", help="하루만 분석할 날짜 YYYY-MM-DD (없으면 기간 전체 종합 분석)")
     p.add_argument("--html", help="HTML 리포트 저장 경로")
     args = p.parse_args()
 
-    records = load_records(args.csv)
+    records = load_any(args.csv)
     if not records:
         raise SystemExit("읽을 수 있는 기록이 없습니다.")
+
+    span = (records[-1].start.date() - records[0].start.date()).days + 1
+    if not args.date and span >= 3:
+        period = analyze_period(records, args.months, args.weight)
+        print(period_text(period, args.months, args.weight))
+        if args.html:
+            with open(args.html, "w", encoding="utf-8") as f:
+                f.write(html_period(period, args.months, args.weight))
+            print(f"\nHTML 리포트 저장: {args.html}")
+        return
+
     day = date.fromisoformat(args.date) if args.date else max(
         r.start.date() for r in records if r.kind != "sleep" or r.start.hour >= NIGHT_END_HOUR
     )
