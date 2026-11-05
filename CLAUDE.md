@@ -7,6 +7,7 @@
 - 새 달이면 → 같은 양식으로 새 HTML 아티팩트를 만들고 링크를 준다. 이전 달과 비교하는 "○월 → ○월 달라진 것" 섹션 포함.
 
 ## 기존 리포트 (모두 v2 양식)
+- 모음(목차) 페이지: https://claude.ai/artifact/XKWAZtcyiXkgfRnfwdDxp6 — 새 달 리포트를 만들면 여기에도 카드 추가
 - 2026-06 (5/31 포함): https://claude.ai/artifact/3o3v2DaShr7R8dhYwhbZu3
 - 2026-07: https://claude.ai/artifact/X4wmo3E2Hz3yjtq73RyEMe
 - 2026-08: https://claude.ai/artifact/Ug4ypivnSVo5roH26B5Sch
