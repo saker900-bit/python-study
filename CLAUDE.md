@@ -7,7 +7,9 @@
 - 새 달이면 → 같은 양식으로 새 HTML 아티팩트를 만들고 링크를 준다. 이전 달과 비교하는 "○월 → ○월 달라진 것" 섹션 포함.
 
 ## 기존 리포트 (모두 v2 양식)
-- 모음(목차) 페이지: https://claude.ai/artifact/XKWAZtcyiXkgfRnfwdDxp6 — 새 달 리포트를 만들면 여기에도 카드 추가
+- **기본은 모음 사이트**: https://claude.ai/artifact/XKWAZtcyiXkgfRnfwdDxp6 (링크 공개됨). 월별 리포트는 이 사이트 안의 하위 파일(june.html … november.html)로 들어 있어서 모음 사이트 권한만 있으면 다 열린다.
+  업데이트·새 달은 이 사이트에 파일을 추가/교체해서 republish(publish_files, slug f587856d-4207-4ca6-b710-446ecd99cb47)하고 index.html 카드도 고친다. 각 하위 페이지 맨 위엔 "← 리포트 모음으로" 링크.
+- 아래 개별 링크는 예전에 따로 만든 것(6~9월은 비공개). 새로 공유할 땐 모음 사이트 링크를 준다.
 - 2026-06 (5/31 포함): https://claude.ai/artifact/3o3v2DaShr7R8dhYwhbZu3
 - 2026-07: https://claude.ai/artifact/X4wmo3E2Hz3yjtq73RyEMe
 - 2026-08: https://claude.ai/artifact/Ug4ypivnSVo5roH26B5Sch
