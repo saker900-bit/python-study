@@ -6,3 +6,4 @@ __pycache__/
 data*.json
 !report/_css.html
 !report/month_template.html
+!report/month_v2.html

@@ -6,18 +6,24 @@
 - zip의 달이 이미 리포트가 있는 달이면 → 그 달 아티팩트를 같은 URL로 최신화(republish).
 - 새 달이면 → 같은 양식으로 새 HTML 아티팩트를 만들고 링크를 준다. 이전 달과 비교하는 "○월 → ○월 달라진 것" 섹션 포함.
 
-## 기존 리포트
-- 2026-10: https://claude.ai/artifact/515bRNxj7P66kf7zafYjna (10월 전용 양식, 이전 달 비교 없음)
-- 2026-11: https://claude.ai/artifact/MARNZskM8uoTL1JJu24z6b (이후 달은 이 양식을 따른다)
+## 기존 리포트 (모두 v2 양식)
+- 2026-06 (5/31 포함): https://claude.ai/artifact/3o3v2DaShr7R8dhYwhbZu3
+- 2026-07: https://claude.ai/artifact/X4wmo3E2Hz3yjtq73RyEMe
+- 2026-08: https://claude.ai/artifact/Ug4ypivnSVo5roH26B5Sch
+- 2026-09: https://claude.ai/artifact/5x8mvxvszACqeMWoXeTz2J
+- 2026-10: https://claude.ai/artifact/515bRNxj7P66kf7zafYjna (링크 공개됨)
+- 2026-11: https://claude.ai/artifact/MARNZskM8uoTL1JJu24z6b (링크 공개됨, "수유 성장 기록" 섹션 포함)
+- 가장 최신 달 페이지에 "수유 성장 기록"(5/31~오늘 수유 변화, 월별 표, 지금 상태 판단, 복사용 요약)을 넣는다. 사용자가 포트폴리오에 가져다 쓴다.
 
-## 만드는 법
-1. 이전 달 zip과 이번 달 zip을 같이 읽는다(월 경계에 걸친 밤잠 때문). 이전 달 zip이 없으면 사용자에게 한 번만 요청.
-2. `babytime/report/build_month.py`의 `build()`로 이전 달·이번 달 데이터를 만든다. 진행 중인 마지막 날의 수면은 평균에서 뺀다.
-3. `babytime/report/month_template.html`을 복사해 제목·문구·변화 항목·또래 비교 설명·개선 제안을 그 달 기록에 맞게 다시 쓴다(숫자만 바꾸지 말고 해석도 새로).
-4. `python babytime/report/assemble.py 본문.html data.json 출력.html` 로 조립 → 스크린샷 한 번 확인 → Artifact로 게시.
+## 만드는 법 (v2)
+1. 지금까지 받은 모든 달 기록을 합쳐서 읽는다(월 경계 밤잠, 수유 성장 기록 때문). 이전 달 파일이 없으면 사용자에게 한 번만 요청.
+2. `babytime/report/texts_2026.py`에 그 달 문구(제목, 변화 항목, 또래 비교 설명, 제안)를 추가하고 `render.py`의 달 목록·기간을 늘린다. 숫자만 바꾸지 말고 해석도 새로 쓴다.
+3. `python babytime/report/render.py <모든 txt/zip> --out <폴더>` → 스크린샷 한 번 확인 → `<!DOCTYPE html>` 문서로 감싸서 게시(기존 달은 같은 URL로 republish).
+4. 기록 해석 규칙: '유축'은 엄마가 짠 양이라 먹은 양에서 뺀다. 유축수유·모유(메모 ml)는 먹은 양. 아침 6시 이후 수유 뒤 다시 잔 '밤잠'은 밤에서 뺀다. 진행 중인 마지막 날의 수면은 평균에서 뺀다.
+5. 수면 기록은 2026-09-19부터, 그 전 달은 수유 간격으로 대신 본다.
 
 ## 아기 정보·가족 규칙
-- 남아, 2026-11-04 기준 생후 5.5개월(생일 약 2026-05-19), 체중 9kg(새 값 받으면 갱신).
+- 남아, 2026-05-20생으로 계산(11-04에 생후 5.5개월), 체중 9kg(새 값 받으면 갱신). 첫 뒤집기 9/21.
 - 보습제는 너무 자주 발라서 11월부터 기록 안 함 → 보습 관련 지적·제안 하지 말 것.
 - 감기 동안 목욕은 하루 목욕, 하루 물수건으로 번갈아 함 → "목욕 줄었다"로 지적하지 말 것.
 - 페이지에 아기 이름을 넣지 않는다. zip·HTML·데이터는 저장소에 커밋하지 않는다.

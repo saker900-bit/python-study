@@ -16,6 +16,7 @@ CSV 열 이름은 한글/영어 모두 인식한다 (종류/type, 시작/start, 
 import argparse
 import csv
 import html
+import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
@@ -140,11 +141,19 @@ def parse_babytime_text(text):
             fields[key.strip()] = value.strip()
         label = fields.get("기록 종류", "")
         kind = _normalize_type(label) or "etc"
+        if label == "유축":
+            kind = "pump"  # 엄마가 유축한 양: 아기가 먹은 양이 아니다
         amount = None
         for key, value in fields.items():
             if "(ml)" in key or key in ("양", "용량"):
                 amount = _parse_amount(value.replace("(ml)", ""))
-        if label == "병원":
+        if label == "모유" and amount is None:
+            # 직접 수유는 양 칸이 없어서 메모에 "45ml"처럼 적는 경우가 많다
+            m = re.search(r"(\d+)\s*m", fields.get("메모", ""))
+            amount = float(m.group(1)) if m else None
+        if label == "열":
+            memo = fields.get("체온", "").replace("(°C)", "").strip()
+        elif label == "병원":
             memo = fields.get("방문사유") or fields.get("방문유형", "")
         elif kind == "diaper":
             # "둘다"는 소변+대변이라 대변으로도 센다

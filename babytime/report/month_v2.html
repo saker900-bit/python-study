@@ -1,0 +1,676 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 한 장짜리 월간 기록지. 요약 → (이전 달 대비) → (수유 성장 기록) → 또래 비교 → 잠 → 먹기 → 그 밖 → 제안 */
+:root {
+  --bg: #f4f6fa; --paper: #ffffff; --ink: #18202e; --ink-2: #4b5468; --ink-3: #7c8496;
+  --line: #e2e6ee; --band: #e8edf5; --accent: #2a4fb8;
+  --night: #2a78d6; --nap: #86b6ef; --feed: #eb6834; --diaper: #1baf7a; --prev: #a3abbb;
+  --good: #1f8a4c; --warn: #b26a00; --good-bg: #e6f4ec; --warn-bg: #fbf0dc; --info-bg: #e9eefb;
+  --display: "Gowun Batang", "Nanum Myeongjo", serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10131a; --paper: #181c25; --ink: #eef1f6; --ink-2: #b9c0cf; --ink-3: #8a92a5;
+    --line: #2a303d; --band: #222938; --accent: #8fa9ff;
+    --night: #3987e5; --nap: #2c5a93; --feed: #d95926; --diaper: #199e70; --prev: #5f687b;
+    --good: #5fd08e; --warn: #f0b04a; --good-bg: #17301f; --warn-bg: #33270f; --info-bg: #1b2440;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10131a; --paper: #181c25; --ink: #eef1f6; --ink-2: #b9c0cf; --ink-3: #8a92a5;
+  --line: #2a303d; --band: #222938; --accent: #8fa9ff;
+  --night: #3987e5; --nap: #2c5a93; --feed: #d95926; --diaper: #199e70; --prev: #5f687b;
+  --good: #5fd08e; --warn: #f0b04a; --good-bg: #17301f; --warn-bg: #33270f; --info-bg: #1b2440;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; }
+.wrap { max-width: 880px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; font-weight: 700; }
+h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.15; letter-spacing: -0.01em; }
+h2 { font-size: clamp(22px, 4vw, 28px); line-height: 1.25; }
+h3 { font-size: 18px; }
+p { margin: 0; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 600; }
+.lede { color: var(--ink-2); max-width: 62ch; font-size: 16px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+header.hero { display: grid; gap: 14px; padding-block: 8px 24px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.stat { background: var(--paper); padding: 16px 16px 14px; display: grid; gap: 2px; min-width: 0; align-content: start; }
+.stat .label { font-size: 13px; color: var(--ink-2); }
+.stat .value { font-family: var(--mono); font-size: clamp(22px, 4.4vw, 30px); font-weight: 500; letter-spacing: -0.02em; }
+.stat .value small { font-size: 0.5em; color: var(--ink-3); margin-left: 2px; }
+.stat .sub { font-size: 12px; color: var(--ink-3); }
+@media (max-width: 640px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.notice { background: var(--info-bg); color: var(--ink-2); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+.notice b { color: var(--ink); }
+section.block { margin-top: 44px; display: grid; gap: 16px; }
+.sec-head { display: grid; gap: 6px; }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.card h3 { margin-bottom: 4px; }
+.card .cap { font-size: 13px; color: var(--ink-2); margin-bottom: 10px; }
+.card .src { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--ink-3); font-family: var(--body); font-size: 11px; }
+.chart .t2 { fill: var(--ink-2); }
+.chart .t1 { fill: var(--ink); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legend i.dash { height: 0; width: 18px; border-radius: 0; border-top: 2px dashed var(--ink-2); }
+.cmp-row, .chg { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 4px 18px; align-items: center; padding: 13px 0; border-top: 1px solid var(--line); }
+.cmp-row:first-child, .chg:first-child { border-top: 0; }
+.cmp-row .what, .chg .what { display: grid; gap: 3px; }
+.cmp-row .what b, .chg .what b { font-size: 14.5px; }
+.cmp-row .ours { font-family: var(--mono); font-size: 20px; }
+.chg .vals { font-family: var(--mono); font-size: 14px; color: var(--ink-2); }
+.chg .vals strong { color: var(--ink); font-weight: 500; font-size: 18px; }
+.cmp-row .note, .chg .note { grid-column: 2; font-size: 13px; color: var(--ink-2); }
+@media (max-width: 600px) { .cmp-row, .chg { grid-template-columns: 1fr; } .cmp-row .note, .chg .note { grid-column: 1; } }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.02em; white-space: nowrap; vertical-align: 1px; }
+.pill.strong { background: var(--good-bg); color: var(--good); }
+.pill.mid, .pill.big { background: var(--info-bg); color: var(--accent); }
+.pill.tip, .pill.watch { background: var(--warn-bg); color: var(--warn); }
+.pill.same { background: var(--band); color: var(--ink-2); }
+.recs { display: grid; gap: 14px; }
+.rec { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; display: grid; gap: 10px; min-width: 0; }
+.rec-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.rec-top .rank { font-family: var(--mono); color: var(--ink-3); font-size: 13px; }
+.rec h3 { font-size: 19px; flex: 1 1 240px; }
+.rec dl { margin: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.rec dt { color: var(--ink-3); font-size: 12.5px; font-weight: 600; padding-top: 1px; }
+.rec dd { margin: 0; color: var(--ink-2); }
+.rec dd b { color: var(--ink); font-weight: 600; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; }
+.tbl th { font-weight: 500; color: var(--ink-3); font-size: 12px; }
+.tbl td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tbl td:first-child { font-family: var(--body); color: var(--ink-2); }
+.tbl tr.now td { color: var(--ink); font-weight: 500; }
+.scroll { overflow-x: auto; }
+.up { color: var(--good); } .down { color: var(--warn); }
+.events { display: grid; margin: 0; padding: 0; list-style: none; }
+.events li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.events li:first-child { border-top: 0; }
+.events .d { font-family: var(--mono); color: var(--ink-3); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: var(--band); border-radius: 10px; padding: 8px 12px; font-size: 13px; color: var(--ink-2); }
+.chip b { font-family: var(--mono); color: var(--ink); font-weight: 500; margin-left: 4px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.sw { width: 20px; height: 20px; border-radius: 6px; border: 1px solid var(--line); }
+.sw-row { display: grid; gap: 8px; font-size: 13px; color: var(--ink-2); }
+/* 수유 성장 기록 */
+.hist-band { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; display: grid; gap: 18px; }
+.hero-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hn { display: grid; gap: 4px; padding: 14px; border-radius: 12px; background: var(--bg); min-width: 0; }
+.hn .k { font-size: 13px; color: var(--ink-2); }
+.hn .v { font-family: var(--mono); font-size: clamp(20px, 4.2vw, 28px); letter-spacing: -0.02em; line-height: 1.2; }
+.hn .v .from { color: var(--ink-3); font-size: 0.62em; }
+.hn .v .arrow { color: var(--ink-3); font-size: 0.6em; margin: 0 4px; }
+.hn .x { font-size: 12.5px; color: var(--accent); font-weight: 600; }
+@media (max-width: 640px) { .hero-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.verdict { display: grid; gap: 10px; }
+.vhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.vbadge { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--good-bg); color: var(--good); }
+.checks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; font-size: 14px; color: var(--ink-2); }
+.checks li b { color: var(--ink); }
+.mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.mark.ok { background: var(--good-bg); color: var(--good); }
+.mark.mid { background: var(--warn-bg); color: var(--warn); }
+.steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.steps li:first-child { border-top: 0; }
+.steps .m { font-family: var(--mono); color: var(--ink); font-size: 13px; }
+.steps .m small { display: block; color: var(--ink-3); font-family: var(--body); font-size: 11.5px; }
+.steps b { color: var(--ink); }
+.copybox { background: var(--bg); border-radius: 12px; padding: 14px; font-size: 14px; color: var(--ink-2); white-space: pre-wrap; line-height: 1.7; }
+.btn { font: inherit; font-size: 13px; font-weight: 600; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sources { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; padding-left: 18px; margin: 0; }
+.sources a { color: var(--accent); text-underline-offset: 2px; word-break: break-word; }
+footer { margin-top: 36px; font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+#tip { position: fixed; pointer-events: none; z-index: 20; background: var(--ink); color: var(--paper); font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; max-width: 240px; opacity: 0; transition: opacity .12s; }
+@media (prefers-reduced-motion: reduce) { #tip { transition: none; } }
+.hit { fill: transparent; }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow" id="eyebrow"></span>
+    <h1 id="h1"></h1>
+    <p class="lede" id="lede"></p>
+    <div class="stats" id="stats"></div>
+    <p class="notice" id="notice" hidden></p>
+  </header>
+
+  <section class="block" id="change" hidden>
+    <div class="sec-head">
+      <span class="eyebrow" id="chg-eyebrow"></span>
+      <h2 id="chg-h2"></h2>
+      <p class="lede"><span id="chg-prev"></span> 평균은 회색 점, <span id="chg-cur"></span>은 파란 점이에요. 변화가 큰 것부터 놓았어요.</p>
+    </div>
+    <div class="card"><div id="chg"></div></div>
+    <div class="card" id="night-card" hidden>
+      <h3>밤마다 언제 자고 언제 일어났나</h3>
+      <p class="cap">막대 하나가 하룻밤이에요. 위쪽 끝이 잠든 시각, 아래쪽 끝이 아침에 일어난 시각. 주황 점은 밤사이 분유를 먹은 횟수예요.</p>
+      <div class="chart" id="c-night"></div>
+      <div class="legend" id="night-legend"></div>
+    </div>
+  </section>
+
+  <section class="block" id="history" hidden>
+    <div class="sec-head">
+      <span class="eyebrow">수유 성장 기록 · 기록 첫날부터 오늘까지</span>
+      <h2 id="hist-h2"></h2>
+      <p class="lede" id="hist-lede"></p>
+    </div>
+    <div class="hist-band">
+      <div class="hero-nums" id="hist-nums"></div>
+      <div>
+        <h3>날마다 어떻게 변했나</h3>
+        <p class="cap">점 하나가 하루, 선은 7일 평균이에요. 네 그래프 모두 가로축(날짜)이 같아요. 그래프 위를 누르면 그날 값이 나와요.</p>
+        <div class="chart" id="c-h-n"></div>
+        <div class="chart" id="c-h-per"></div>
+        <div class="chart" id="c-h-total"></div>
+        <div class="chart" id="c-h-gap"></div>
+        <div class="legend"><span><i style="background:var(--feed);border-radius:50%;width:8px;height:8px"></i>하루 값</span><span><i style="background:var(--feed);height:3px;border-radius:2px"></i>7일 평균</span><span><i style="background:var(--band)"></i>월령별 보통 범위</span><span><i class="dash"></i>기준선</span></div>
+      </div>
+    </div>
+    <div class="card scroll">
+      <h3>월별 요약</h3>
+      <p class="cap">각 달의 하루 평균이에요. 5월은 기록 첫날(5/31) 하루뿐이라 표에서 뺐어요.</p>
+      <table class="tbl" id="hist-tbl"></table>
+    </div>
+    <div class="card">
+      <h3>달마다 무엇이 바뀌었나</h3>
+      <ul class="steps" id="hist-steps"></ul>
+    </div>
+    <div class="card verdict">
+      <div class="vhead"><h3>지금 상태는 괜찮은가</h3><span class="vbadge" id="hist-badge"></span></div>
+      <p id="hist-verdict" style="color:var(--ink-2)"></p>
+      <ul class="checks" id="hist-checks"></ul>
+    </div>
+    <div class="card">
+      <div class="vhead" style="justify-content:space-between"><h3>복사해서 쓰기 좋은 요약</h3><button class="btn" id="copy-btn" type="button">텍스트 복사</button></div>
+      <p class="copybox" id="copy-text" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <section class="block" id="peer">
+    <div class="sec-head">
+      <span class="eyebrow">또래 비교</span>
+      <h2>같은 월령 아기들과 비교하면</h2>
+      <p class="lede" id="peer-lede"></p>
+    </div>
+    <div class="card"><div id="cmp"></div></div>
+  </section>
+
+  <section class="block" id="sleep" hidden>
+    <div class="sec-head">
+      <span class="eyebrow">잠</span>
+      <h2 id="sleep-h2"></h2>
+    </div>
+    <div class="card">
+      <h3 id="acto-h3">수면 지도</h3>
+      <p class="cap" id="acto-cap"></p>
+      <div class="chart" id="c-acto"></div>
+      <div class="legend"><span><i style="background:var(--night)"></i>밤잠</span><span><i style="background:var(--nap)"></i>낮잠</span><span><i style="background:var(--feed);border-radius:50%"></i>분유</span></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>낮잠 한 번의 길이</h3>
+        <p class="cap" id="nap-cap"></p>
+        <div class="chart" id="c-nap"></div>
+        <div class="legend" id="nap-legend"></div>
+      </div>
+      <div class="card">
+        <h3>깨어 있는 시간</h3>
+        <p class="cap" id="ww-cap"></p>
+        <div class="chart" id="c-ww"></div>
+        <div class="legend" id="ww-legend"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="feed">
+    <div class="sec-head">
+      <span class="eyebrow">먹기</span>
+      <h2 id="feed-h2"></h2>
+    </div>
+    <div class="card">
+      <h3 id="milk-h3">하루 수유량</h3>
+      <p class="cap" id="milk-cap"></p>
+      <div class="chart" id="c-milk"></div>
+      <div class="legend" id="milk-legend"></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>언제 먹었나</h3>
+        <p class="cap" id="hour-cap"></p>
+        <div class="chart" id="c-hour"></div>
+        <div class="legend" id="hour-legend"></div>
+      </div>
+      <div class="card">
+        <h3>한 번에 먹는 양</h3>
+        <p class="cap" id="amt-cap"></p>
+        <div class="chart" id="c-amt"></div>
+        <div class="legend" id="amt-legend"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="etc">
+    <div class="sec-head">
+      <span class="eyebrow">그 밖의 기록</span>
+      <h2 id="etc-h2"></h2>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3 id="life-h3">생활</h3>
+        <p class="cap" id="life-cap"></p>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="card">
+        <h3 id="events-h3">이달의 일들</h3>
+        <ul class="events" id="events"></ul>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>기저귀</h3>
+        <p class="cap" id="diaper-cap"></p>
+        <div class="chart" id="c-diaper"></div>
+        <div class="legend"><span><i style="background:var(--diaper)"></i>기저귀 교체</span><span><i style="background:var(--ink-2);border-radius:50%"></i>대변 본 날</span></div>
+      </div>
+      <div class="card">
+        <h3>변 색깔<span id="temp-h3"></span></h3>
+        <p class="cap" id="color-cap"></p>
+        <div class="sw-row" id="swatches"></div>
+        <div class="chart" id="c-temp" style="margin-top:12px"></div>
+        <p class="src">아기 변이 노랑·갈색·초록이면 정상이에요. 흰색·회색·연한 크림색이거나 빨강·검정이면 바로 소아과에 가야 해요(대변 색깔 카드 선별검사 기준).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="trend">
+    <div class="sec-head">
+      <span class="eyebrow">숫자로 한 번에</span>
+      <h2 id="tbl-h2"></h2>
+    </div>
+    <div class="card scroll"><table class="tbl" id="trend-tbl"></table></div>
+  </section>
+
+  <section class="block" id="recs">
+    <div class="sec-head">
+      <span class="eyebrow" id="rec-eyebrow"></span>
+      <h2>개선하면 좋을 점</h2>
+      <p class="lede" id="rec-lede"></p>
+    </div>
+    <div class="recs" id="rec-list"></div>
+  </section>
+
+  <section class="block" id="refs">
+    <div class="sec-head"><span class="eyebrow">출처</span><h2>참고한 자료</h2></div>
+    <div class="card">
+      <ol class="sources">
+        <li>WHO (2019). 5세 미만 아동의 신체활동·좌식행동·수면 가이드라인. 0~3개월 수면 14~17시간, 4~11개월 12~16시간, 하루 여러 번 바닥 놀이. <a href="https://www.paho.org/en/news/24-4-2019-grow-healthy-children-need-sit-less-and-play-more" target="_blank" rel="noopener">요약 기사</a> · <a href="https://rise.mmu.ac.uk/wp-content/uploads/WHO-guidelines.pdf" target="_blank" rel="noopener">원문 PDF</a></li>
+        <li>미국소아과학회 HealthyChildren.org. 첫 달 말 1회 3~4온스(90~120ml), 매달 약 1온스씩 늘다가 7~8온스(210~240ml)에서 멈춤, 하루 32온스(약 950ml) 이내. <a href="https://healthychildren.org/English/ages-stages/baby/formula-feeding/Pages/Amount-and-Schedule-of-Formula-Feedings.aspx" target="_blank" rel="noopener">수유량과 간격</a> · <a href="https://www.healthychildren.org/english/tips-tools/ask-the-pediatrician/pages/how-much-formula-does-my-baby-need.aspx" target="_blank" rel="noopener">하루 상한</a></li>
+        <li>캐나다 앨버타 보건청. 월령별 분유량 표: 3~8주 1회 90~150ml × 5~8회(하루 510~1,050ml), 2~5개월 120~180ml × 5~7회(600~1,170ml). <a href="https://albertahealthservices.ca/assets/info/nutrition/if-nfs-how-much-infant-formula-to-prepare-for-baby.pdf" target="_blank" rel="noopener">PDF</a></li>
+        <li>미국 CDC. 분유 수유량과 횟수 안내. <a href="https://www.cdc.gov/nutrition/infantandtoddlernutrition/formula-feeding/how-much-how-often.html" target="_blank" rel="noopener">CDC</a></li>
+        <li>미국소아과학회 비타민D 권고(2008). 모유를 먹거나 분유를 하루 1L보다 적게 먹는 아기는 하루 400IU 보충. <a href="https://www.aafp.org/pubs/afp/issues/2009/0715/p196.html" target="_blank" rel="noopener">AAFP 요약</a></li>
+        <li>Galland et al. (2012). 영유아 정상 수면 패턴 체계적 문헌고찰. 영아 총수면 평균 12.8시간. <a href="https://pubmed.ncbi.nlm.nih.gov/21784676/" target="_blank" rel="noopener">PubMed</a></li>
+        <li>Mindell et al. (2010). 17개국 영유아 수면 비교. 국가별 평균 취침 19:27~22:17. <a href="https://pubmed.ncbi.nlm.nih.gov/20138578/" target="_blank" rel="noopener">PubMed</a></li>
+        <li>Ahn et al. (2016). 한국 영유아 1,036명 수면 패턴. 평균 취침 22:08, 깼을 때 수유로 다시 재우면 밤중 깸이 많음. <a href="https://jkms.org/DOIx.php?id=10.3346%2Fjkms.2016.31.2.261" target="_blank" rel="noopener">JKMS</a></li>
+        <li>Mindell et al. (2009). 3단계 잠자리 루틴 3주 실험. 최장 연속 수면 6.9 → 8.5시간. <a href="https://aasm.org/study-shows-that-children-sleep-better-when-they-have-a-nightly-bedtime-routine/" target="_blank" rel="noopener">AASM 보도자료</a></li>
+        <li>WHO 성장 기준 (남아 몸무게). 5개월 중앙값 7.5kg, 6개월 7.9kg. <a href="https://www.who.int/tools/child-growth-standards/standards/weight-for-age" target="_blank" rel="noopener">WHO</a></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = __DATA__;
+const T = D.T, C = D.cur, P = D.prev, CS = C.summary, PS = P ? P.summary : null;
+const $ = (s) => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmtH = (h) => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}시간 ${String(m % 60).padStart(2, "0")}분`; };
+const clock = (h) => { h = ((h % 24) + 24) % 24; const m = Math.round(h * 60); return `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+const md = (iso) => `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
+const avg = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+const FMT = { f0: v => Math.round(v).toLocaleString(), f1: v => (+v).toFixed(1), clock, hm: v => fmtH(v).replace("시간 ", ":").replace("분", ""), min: v => Math.round(v) + "" };
+const fm = (k) => FMT[k] || FMT.f1;
+const isCur = (iso) => iso >= C.range[0];
+const dayLabel = (iso) => (iso.endsWith("-01") || iso === (D.firstShown || "")) ? md(iso) : String(+iso.slice(8, 10));
+
+const tip = $("#tip");
+function showTip(e, html) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const x = e.touches ? e.touches[0].clientX : e.clientX, y = e.touches ? e.touches[0].clientY : e.clientY;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(Math.max(8, x - w / 2), innerWidth - w - 8) + "px";
+  tip.style.top = (y - h - 14 < 8 ? y + 18 : y - h - 14) + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+addEventListener("scroll", hideTip, { passive: true });
+function el(tag, attrs = {}, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; }
+function svgFor(box, h) { box.innerHTML = ""; const w = Math.max(280, box.clientWidth); const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, width: w, height: h, role: "img" }, box); return { svg, w, h }; }
+function hover(node, html) {
+  const f = typeof html === "function" ? html : () => html;
+  node.addEventListener("pointerenter", e => showTip(e, f(e)));
+  node.addEventListener("pointermove", e => showTip(e, f(e)));
+  node.addEventListener("pointerleave", hideTip);
+  node.addEventListener("touchstart", e => showTip(e, f(e)), { passive: true });
+}
+function colPath(x, y, w, h, r = 4) { if (h <= 0) return ""; r = Math.min(r, w / 2, h); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
+function grid(svg, x0, x1, ys, fmt, yScale) { ys.forEach(v => { const y = yScale(v); el("line", { x1: x0, x2: x1, y1: y, y2: y, stroke: css("--line"), "stroke-width": 1 }, svg); txt(svg, x0 - 6, y + 4, fmt(v), { "text-anchor": "end" }); }); }
+const legend = (sel, items) => { $(sel).innerHTML = items.map(([c, l, k]) => `<span><i class="${k || ""}" style="${k === "dash" ? "" : `background:${c}`};${k === "dot" ? "border-radius:50%" : ""}"></i>${l}</span>`).join(""); };
+const setText = (sel, s) => { const n = $(sel); if (n && s != null) n.innerHTML = s; };
+
+// ---------- 텍스트 채우기 ----------
+setText("#eyebrow", T.eyebrow); setText("#h1", T.h1); setText("#lede", T.lede);
+if (T.notice) { $("#notice").hidden = false; setText("#notice", T.notice); }
+$("#stats").innerHTML = T.stats.map(([l, v, u, s]) => `<div class="stat"><span class="label">${l}</span><span class="value">${v}<small>${u}</small></span><span class="sub">${s}</span></div>`).join("");
+setText("#peer-lede", T.peerLede); setText("#feed-h2", T.feedH2); setText("#etc-h2", T.etcH2);
+setText("#milk-cap", T.milkCap); setText("#hour-cap", T.hourCap); setText("#amt-cap", T.amtCap);
+setText("#life-h3", T.lifeH3); setText("#life-cap", T.lifeCap); setText("#events-h3", T.eventsH3);
+setText("#diaper-cap", T.diaperCap); setText("#color-cap", T.colorCap);
+setText("#tbl-h2", T.tblH2); setText("#rec-eyebrow", T.recEyebrow); setText("#rec-lede", T.recLede);
+$("#footer").innerHTML = T.footer.map(p => `<p>${p}</p>`).join("");
+if (T.sleepH2) { $("#sleep").hidden = false; setText("#sleep-h2", T.sleepH2); setText("#acto-h3", T.actoH3); setText("#acto-cap", T.actoCap); setText("#nap-cap", T.napCap); setText("#ww-cap", T.wwCap); }
+if (T.chg) { $("#change").hidden = false; setText("#chg-eyebrow", `${T.prevName} → ${T.curName}`); setText("#chg-h2", `${T.prevName}과 비교해 달라진 것`); setText("#chg-prev", T.prevName); setText("#chg-cur", T.curName); }
+
+// ---------- 눈금자 (이전 달 회색 점 → 이번 달 파란 점) ----------
+function ruler(box, c) {
+  const { svg, w } = svgFor(box, 58);
+  const f = fm(c.fmt), pad = 10, cl = v => Math.min(Math.max(v, c.min), c.max), x = v => pad + (cl(v) - c.min) / (c.max - c.min) * (w - pad * 2);
+  el("line", { x1: pad, x2: w - pad, y1: 26, y2: 26, stroke: css("--line"), "stroke-width": 2, "stroke-linecap": "round" }, svg);
+  if (c.band) { el("rect", { x: x(c.band[0]), y: 19, width: x(c.band[1]) - x(c.band[0]), height: 14, rx: 7, fill: css("--band") }, svg); txt(svg, (x(c.band[0]) + x(c.band[1])) / 2, 12, c.bandLabel || "", { "text-anchor": "middle" }); }
+  (c.ticks || []).forEach(([v, label], i) => {
+    el("line", { x1: x(v), x2: x(v), y1: 16, y2: 36, stroke: css("--ink-2"), "stroke-width": 1.5 }, svg);
+    const a = x(v) > w - 70 ? "end" : x(v) < 70 ? "start" : "middle";
+    txt(svg, x(v), (i % 2 || c.band) ? (c.band && i % 2 === 0 ? 52 : 12) : 52, label, { "text-anchor": a, class: "t2" });
+  });
+  const near = px => (c.ticks || []).some(([v]) => Math.abs(x(v) - px) < 80);
+  if (!near(pad)) txt(svg, pad, 52, f(c.min), { "text-anchor": "start" });
+  if (!near(w - pad)) txt(svg, w - pad, 52, f(c.max), { "text-anchor": "end" });
+  if (c.prev != null) {
+    const x0 = x(c.prev), x1 = x(c.ours);
+    if (Math.abs(x1 - x0) > 14) el("line", { x1: x0, x2: x1 + (x1 > x0 ? -9 : 9), y1: 26, y2: 26, stroke: css("--ink-3"), "stroke-width": 2 }, svg);
+    hover(el("circle", { cx: x0, cy: 26, r: 6, fill: css("--prev"), stroke: css("--paper"), "stroke-width": 2 }, svg), `<b>${T.prevName || "이전 달"}</b> ${f(c.prev)}${c.unit}`);
+  }
+  hover(el("circle", { cx: x(c.ours), cy: 26, r: 7, fill: css("--night"), stroke: css("--paper"), "stroke-width": 2 }, svg), `<b>${T.curName}</b> ${f(c.ours)}${c.unit}`);
+}
+if (T.chg) $("#chg").innerHTML = T.chg.map((c, i) => `<div class="chg"><div class="what"><b>${c.what} <span class="pill ${c.tag[0]}">${c.tag[1]}</span></b><span class="vals">${fm(c.fmt)(c.prev)}${c.unit} → <strong>${fm(c.fmt)(c.ours)}${c.unit}</strong></span></div><div class="chart" data-i="${i}"></div><p class="note">${c.note}</p></div>`).join("");
+$("#cmp").innerHTML = T.peer.map((c, i) => `<div class="cmp-row"><div class="what"><b>${c.what} <span class="pill ${c.tag[0]}">${c.tag[1]}</span></b><span class="ours">${fm(c.fmt)(c.ours)}<small style="font-size:12px;color:var(--ink-3);margin-left:2px">${c.unit}</small></span></div><div class="chart" data-i="${i}"></div><p class="note">${c.note}</p></div>`).join("");
+function drawRulers() {
+  if (T.chg) document.querySelectorAll("#chg .chart").forEach(b => ruler(b, T.chg[+b.dataset.i]));
+  document.querySelectorAll("#cmp .chart").forEach(b => ruler(b, T.peer[+b.dataset.i]));
+}
+
+// ---------- 밤마다 ----------
+function drawNights() {
+  const nights = [...(P && P.has_sleep ? P.nights.filter(n => !n.open).slice(-7) : []), ...C.nights];
+  if (!nights.length) return;
+  $("#night-card").hidden = false;
+  legend("#night-legend", [...(P && P.has_sleep ? [[css("--prev"), `${T.prevName} 밤`]] : []), [css("--night"), `${T.curName} 밤`], [css("--feed"), "밤사이 수유 1번", "dot"]]);
+  const box = $("#c-night"), H = 250, left = 42, top = 10, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const y0 = 19.5, y1 = 35, y = h => top + (Math.min(Math.max(h, y0), y1) - y0) / (y1 - y0) * (H - top - bottom);
+  [20, 22, 24, 26, 28, 30, 32, 34].forEach(h => { el("line", { x1: left, x2: w, y1: y(h), y2: y(h), stroke: css("--line") }, svg); txt(svg, left - 6, y(h) + 4, clock(h), { "text-anchor": "end" }); });
+  const band = (w - left) / nights.length, bw = Math.max(4, Math.min(18, band - 4));
+  const showEvery = band < 22 ? 3 : 1;
+  nights.forEach((n, i) => {
+    const cx = left + band * i + band / 2, cur = isCur(n.date), bed = n.bedh < 12 ? n.bedh + 24 : n.bedh;
+    if (n.open) {
+      hover(el("rect", { x: cx - bw / 2, y: y(bed), width: bw, height: y(26) - y(bed), rx: 4, fill: css("--night"), opacity: .35 }, svg), `<b>${md(n.date)} 밤</b><br>${clock(bed)} 취침, 아직 자는 중`);
+      txt(svg, cx + bw / 2, y(26) + 14, "자는 중", { "text-anchor": "end", class: "t2" });
+    } else {
+      const wake = n.wakeh + 24;
+      hover(el("rect", { x: cx - bw / 2, y: y(bed), width: bw, height: Math.max(2, y(wake) - y(bed)), rx: 4, fill: cur ? css("--night") : css("--prev") }, svg), `<b>${md(n.date)} 밤</b><br>${clock(bed)} 취침 → ${n.wake} 기상<br>중간에 ${n.wakings}번 깸 · 밤사이 수유 ${n.feeds}번`);
+      for (let k = 0; k < n.feeds; k++) el("circle", { cx, cy: y(wake) + 10 + k * 10, r: 3.5, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 1.5 }, svg);
+    }
+    if (i % showEvery === 0) txt(svg, cx, H - 6, dayLabel(n.date), { "text-anchor": "middle", class: cur ? "t1" : "" });
+  });
+  const nPrev = nights.filter(n => !isCur(n.date)).length;
+  if (nPrev) el("line", { x1: left + band * nPrev, x2: left + band * nPrev, y1: top, y2: H - bottom, stroke: css("--ink-3"), "stroke-dasharray": "2 3" }, svg);
+}
+
+// ---------- 수면 지도 ----------
+function drawActo() {
+  const days = [...(P && P.has_sleep ? P.days.filter(d => d.segs).slice(-7) : []), ...C.days.filter(d => d.segs)];
+  const rowH = days.length > 20 ? 13 : 16, gap = days.length > 20 ? 3 : 4, left = 40, top = 6;
+  const box = $("#c-acto");
+  const hasPrev = days.some(d => !isCur(d.date));
+  const rowY = i => top + i * (rowH + gap) + (hasPrev && isCur(days[i].date) ? 6 : 0);
+  const end = rowY(days.length - 1) + rowH;
+  const { svg, w } = svgFor(box, end + 24);
+  const x = h => left + h / 24 * (w - left - 4);
+  [0, 6, 12, 18, 24].forEach(h => { el("line", { x1: x(h), x2: x(h), y1: top, y2: end, stroke: css("--line") }, svg); txt(svg, x(h), end + 14, h + "시", { "text-anchor": h === 0 ? "start" : h === 24 ? "end" : "middle" }); });
+  days.forEach((d, i) => {
+    const y = rowY(i), cur = isCur(d.date);
+    txt(svg, left - 6, y + rowH - 3, md(d.date), { "text-anchor": "end", class: cur && hasPrev ? "t1" : "" });
+    el("rect", { x: x(0), y, width: x(24) - x(0), height: rowH, rx: 3, fill: css("--band"), opacity: .55 }, svg);
+    d.segs.forEach(([a, b, k]) => { if (b - a <= 0) return; hover(el("rect", { x: x(a), y, width: Math.max(1.5, x(b) - x(a) - 1), height: rowH, rx: 3, fill: k === "n" ? css("--night") : css("--nap"), opacity: cur || !hasPrev ? 1 : .55 }, svg), `<b>${md(d.date)} ${k === "n" ? "밤잠" : "낮잠"}</b><br>${clock(a)} ~ ${clock(b)} (${fmtH(b - a)})`); });
+    d.feedpts.forEach(([t, ml]) => hover(el("circle", { cx: x(t), cy: y + rowH / 2, r: rowH > 14 ? 4.5 : 3.8, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 1.5 }, svg), `<b>${md(d.date)} 분유</b><br>${clock(t)} · ${ml}ml`));
+  });
+  const open = C.nights.find(n => n.open);
+  if (open) { const i = days.findIndex(d => d.date === open.date); if (i >= 0) el("rect", { x: x(open.bedh), y: rowY(i), width: x(24) - x(open.bedh) - 1, height: rowH, rx: 3, fill: css("--night"), opacity: .35 }, svg); }
+}
+
+// ---------- 비율 히스토그램 (이전 달이 있으면 나란히) ----------
+function pairHist(sel, a, b, bins, labelFmt, colorB, bandRange) {
+  const box = $(sel), H = 200, left = 34, top = 16, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const pct = vals => bins.slice(0, -1).map((v, i) => vals.filter(x => x >= v && (i === bins.length - 2 ? x <= bins[i + 1] : x < bins[i + 1])).length / (vals.length || 1) * 100);
+  const pa = a ? pct(a) : null, pb = pct(b), max = Math.max(...pb, ...(pa || [0])) || 1;
+  const y = v => top + (1 - v / max) * (H - top - bottom);
+  const band = (w - left) / pb.length, bw = pa ? Math.max(3, Math.min(14, (band - 6) / 2)) : Math.max(4, Math.min(22, band - 4));
+  if (bandRange) { const xb = v => left + (v - bins[0]) / (bins.at(-1) - bins[0]) * (w - left); el("rect", { x: xb(bandRange[0]), y: top - 8, width: xb(bandRange[1]) - xb(bandRange[0]), height: H - top - bottom + 8, fill: css("--band") }, svg); }
+  el("line", { x1: left, x2: w, y1: y(0), y2: y(0), stroke: css("--line") }, svg);
+  pb.forEach((v, i) => {
+    const cx = left + band * i + band / 2;
+    if (pa) el("path", { d: colPath(cx - bw - 1, y(pa[i]), bw, y(0) - y(pa[i]), 3), fill: css("--prev") }, svg);
+    el("path", { d: colPath(pa ? cx + 1 : cx - bw / 2, y(v), bw, y(0) - y(v), 3), fill: colorB }, svg);
+    hover(el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg), `<b>${labelFmt(bins[i])} ~ ${labelFmt(bins[i + 1])}</b><br>${pa ? `${T.prevName} ${Math.round(pa[i])}% · ` : ""}${T.curName} ${Math.round(v)}%`);
+  });
+  const mid = Math.round(max / 2 / 5) * 5; if (mid) txt(svg, left - 4, y(mid) + 4, mid + "%", { "text-anchor": "end" });
+  const step = Math.ceil(pb.length / 6);
+  bins.forEach((v, i) => { if (i % step === 0 && i < bins.length - 1) txt(svg, left + band * i, H - 8, labelFmt(v), { "text-anchor": i === 0 ? "start" : "middle" }); });
+}
+const histLegend = (sel, curColor, extra = []) => legend(sel, [...(P && (sel !== "#nap-legend" && sel !== "#ww-legend" || P.has_sleep) ? [[css("--prev"), T.prevName]] : []), [curColor, T.curName], ...extra]);
+
+// ---------- 하루 수유량 ----------
+function drawMilk() {
+  const days = [...(P ? P.days.slice(-7) : []), ...C.days];
+  const box = $("#c-milk"), H = 230, left = 44, top = 18, bottom = 24;
+  const { svg, w } = svgFor(box, H);
+  const max = Math.max(1100, ...days.map(d => d.milk)) * 1.05, y = v => top + (1 - v / max) * (H - top - bottom);
+  grid(svg, left, w, [0, 300, 600, 900], v => v.toLocaleString(), y);
+  const band = (w - left) / days.length, bw = Math.max(3, Math.min(22, band - 3));
+  const showEvery = band < 16 ? 5 : band < 24 ? 2 : 1;
+  days.forEach((d, i) => {
+    const x = left + band * i + (band - bw) / 2, cur = isCur(d.date);
+    el("path", { d: colPath(x, y(d.milk), bw, y(0) - y(d.milk)), fill: cur ? css("--feed") : css("--prev") }, svg);
+    if (cur && (C.days.length <= 8 || d.milk > 950)) txt(svg, x + bw / 2, y(d.milk) - 6, Math.round(d.milk), { "text-anchor": "middle", class: "t2" });
+    hover(el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg), `<b>${md(d.date)}</b> ${Math.round(d.milk)}ml · ${d.feeds}번 · 한 번에 평균 ${Math.round(d.per)}ml`);
+    if (i % showEvery === 0) txt(svg, x + bw / 2, H - 6, dayLabel(d.date), { "text-anchor": "middle", class: cur && P ? "t1" : "" });
+  });
+  const ref = T.milkRef; // [값, 라벨]
+  el("line", { x1: left, x2: w, y1: y(ref[0]), y2: y(ref[0]), stroke: css("--ink-2"), "stroke-width": 1.5, "stroke-dasharray": "4 4" }, svg);
+  legend("#milk-legend", [...(P ? [[css("--prev"), `${T.prevName} 마지막 7일`]] : []), [css("--feed"), T.curName], ["", ref[1], "dash"]]);
+}
+
+// ---------- 시간대별 (3시간 묶음) ----------
+function drawHours() {
+  const box = $("#c-hour"), H = 200, left = 34, top = 16, bottom = 26;
+  const { svg, w } = svgFor(box, H);
+  const grp = arr => { const t = arr.reduce((s, x) => s + x, 0) || 1; return [0, 1, 2, 3, 4, 5, 6, 7].map(k => arr.slice(k * 3, k * 3 + 3).reduce((s, x) => s + x, 0) / t * 100); };
+  const pa = P ? grp(P.feed_hours) : null, pb = grp(C.feed_hours), max = Math.max(...pb, ...(pa || [0]));
+  const y = v => top + (1 - v / max) * (H - top - bottom);
+  const band = (w - left) / 8, bw = pa ? Math.min(16, (band - 8) / 2) : Math.min(24, band - 8);
+  el("line", { x1: left, x2: w, y1: y(0), y2: y(0), stroke: css("--line") }, svg);
+  pb.forEach((v, i) => {
+    const cx = left + band * i + band / 2;
+    if (pa) el("path", { d: colPath(cx - bw - 1, y(pa[i]), bw, y(0) - y(pa[i]), 3), fill: css("--prev") }, svg);
+    el("path", { d: colPath(pa ? cx + 1 : cx - bw / 2, y(v), bw, y(0) - y(v), 3), fill: css("--feed") }, svg);
+    hover(el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg), `<b>${i * 3}~${i * 3 + 3}시</b><br>${pa ? `${T.prevName} ${Math.round(pa[i])}% · ` : ""}${T.curName} ${Math.round(v)}%`);
+    txt(svg, cx, H - 8, `${i * 3}시`, { "text-anchor": "middle" });
+  });
+  const mid = Math.round(max / 2 / 5) * 5; if (mid) txt(svg, left - 4, y(mid) + 4, mid + "%", { "text-anchor": "end" });
+  histLegend("#hour-legend", css("--feed"));
+}
+
+// ---------- 기저귀 ----------
+function drawDiaper() {
+  const box = $("#c-diaper"), H = 180, left = 26, top = 12, bottom = 24;
+  const { svg, w } = svgFor(box, H);
+  const max = Math.max(15, ...C.days.map(d => d.diapers)), y = v => top + (1 - v / max) * (H - top - bottom - 10);
+  grid(svg, left, w, [0, 5, 10, 15].filter(v => v <= max), v => v, y);
+  const band = (w - left) / C.days.length, bw = Math.max(3, Math.min(12, band - 2));
+  C.days.forEach((d, i) => {
+    const x = left + band * i + (band - bw) / 2;
+    el("path", { d: colPath(x, y(d.diapers), bw, y(0) - y(d.diapers), 3), fill: css("--diaper") }, svg);
+    if (d.poo) el("circle", { cx: x + bw / 2, cy: H - bottom + 4, r: 2.5, fill: css("--ink-2") }, svg);
+    hover(el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg), `<b>${md(d.date)}</b> 기저귀 ${d.diapers}번${d.poo ? ` · 대변 ${d.poo}번` : ""}`);
+    if (i % (C.days.length > 10 ? 10 : 1) === 0) txt(svg, x + bw / 2, H - 4, md(d.date), { "text-anchor": "middle" });
+  });
+}
+
+// ---------- 체온 ----------
+function drawTemp() {
+  if (!C.temps.length) return;
+  $("#temp-h3").textContent = "과 체온";
+  const box = $("#c-temp"), H = 120, left = 34, top = 10, bottom = 22;
+  const { svg, w } = svgFor(box, H);
+  const lo = 36, hi = 38.2, y = v => top + (1 - (v - lo) / (hi - lo)) * (H - top - bottom);
+  const t0 = new Date(C.range[0]).getTime(), t1 = new Date(C.range[1]).getTime() + 864e5, x = s => left + (new Date(s.replace(" ", "T")).getTime() - t0) / (t1 - t0) * (w - left - 4);
+  el("rect", { x: left, y: y(37.5), width: w - left, height: y(36.5) - y(37.5), fill: css("--band") }, svg);
+  [36.5, 37.5, 38].forEach(v => { el("line", { x1: left, x2: w, y1: y(v), y2: y(v), stroke: css("--line") }, svg); txt(svg, left - 4, y(v) + 4, v.toFixed(1), { "text-anchor": "end" }); });
+  C.temps.forEach(([t, v]) => hover(el("circle", { cx: x(t), cy: y(v), r: 4, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 1.5 }, svg), `<b>${t.slice(5).replace("-", "/")}</b> ${v}℃`));
+  txt(svg, left, H - 4, md(C.range[0])); txt(svg, w - 2, H - 4, md(C.range[1]), { "text-anchor": "end" });
+  txt(svg, w - 2, y(38) - 4, "38.0℃ 이상이면 열", { "text-anchor": "end", class: "t2" });
+}
+
+// ---------- 칩, 이벤트, 변 색, 표, 제안 ----------
+$("#chips").innerHTML = T.chips.map(([k, v]) => `<span class="chip">${k}<b>${v}</b></span>`).join("");
+$("#events").innerHTML = T.events.map(([d, t]) => `<li><span class="d">${md(d)}</span><span>${t}</span></li>`).join("");
+const swRow = (label, list) => list.length ? `<div>${label} <span class="num">${list.length}</span>번<div class="swatches">${list.map(([d, c]) => `<span class="sw" style="background:${c}" title="${md(d)} ${c}"></span>`).join("")}</div></div>` : "";
+$("#swatches").innerHTML = (P && P.colors.length ? swRow(T.prevName, P.colors) : "") + swRow(T.curName, C.colors) || `<div>이달엔 변 색깔 기록이 없어요.</div>`;
+(function () {
+  const rows = T.table.filter(r => r[1] != null && r[2] != null);
+  const head = P ? `<tr><th></th><th>${T.prevName}</th><th>${T.curName}</th><th>변화</th></tr>` : `<tr><th></th><th>${T.curName}</th></tr>`;
+  $("#trend-tbl").innerHTML = head + rows.map(([k, a, b, f, good]) => {
+    const F = fm(f);
+    if (!P) return `<tr><td>${k}</td><td>${F(b)}${T.units[k] || ""}</td></tr>`;
+    let d = b - a; if (Math.abs(d) < 0.05) d = 0;
+    const cls = !good || !d ? "" : (d * good > 0 ? "up" : "down");
+    const ch = !d ? "그대로" : f === "clock" ? `${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 60)}분` : `${d > 0 ? "+" : "−"}${F(Math.abs(d))}${T.units[k] || ""}`;
+    return `<tr><td>${k}</td><td>${F(a)}${T.units[k] || ""}</td><td>${F(b)}${T.units[k] || ""}</td><td class="${cls}">${ch}</td></tr>`;
+  }).join("");
+})();
+$("#rec-list").innerHTML = T.recs.map((r, i) => `
+  <article class="rec">
+    <div class="rec-top"><span class="rank">${r.keep ? "✓" : i + 1}</span><h3>${r.title}</h3><span class="pill ${r.tag[0]}">${r.tag[1]}</span></div>
+    <dl>${r.status ? `<dt>지난 제안</dt><dd>${r.status}</dd>` : ""}<dt>기록에서</dt><dd>${r.saw}</dd><dt>근거</dt><dd>${r.why}</dd><dt>해볼 것</dt><dd>${r.todo}</dd></dl>
+  </article>`).join("");
+
+// ---------- 수유 성장 기록 ----------
+function rolling(arr, key, k = 7) { return arr.map((d, i) => { const s = arr.slice(Math.max(0, i - k + 1), i + 1).map(x => x[key]).filter(v => v != null); return s.length ? avg(s) : null; }); }
+function histChart(sel, key, o) {
+  const days = D.hist.days.filter(d => d.date >= "2026-06-01"), box = $(sel), H = o.h || 170, left = 46, top = 26, bottom = o.last ? 34 : 10;
+  const { svg, w } = svgFor(box, H);
+  const t0 = new Date(days[0].date).getTime(), t1 = new Date(days.at(-1).date).getTime();
+  const x = iso => left + (new Date(iso).getTime() - t0) / (t1 - t0) * (w - left - 10);
+  const y = v => top + (1 - (v - o.min) / (o.max - o.min)) * (H - top - bottom);
+  txt(svg, 0, 14, o.title, { class: "t1" });
+  (o.bands || []).forEach(([a, b, lo, hi]) => el("rect", { x: x(a), y: y(hi), width: x(b) - x(a), height: y(lo) - y(hi), fill: css("--band") }, svg));
+  o.ticks.forEach(v => { el("line", { x1: left, x2: w - 10, y1: y(v), y2: y(v), stroke: css("--line") }, svg); txt(svg, left - 6, y(v) + 4, o.fmt(v), { "text-anchor": "end" }); });
+  (o.refs || []).forEach(([v, label]) => { el("line", { x1: left, x2: w - 10, y1: y(v), y2: y(v), stroke: css("--ink-2"), "stroke-width": 1.5, "stroke-dasharray": "4 4" }, svg); txt(svg, w - 10, y(v) - 5, label, { "text-anchor": "end", class: "t2" }); });
+  ["2026-07-01", "2026-08-01", "2026-09-01", "2026-10-01", "2026-11-01"].forEach(m => el("line", { x1: x(m), x2: x(m), y1: top, y2: H - bottom, stroke: css("--line"), "stroke-dasharray": "2 3" }, svg));
+  if (o.last) [["2026-06-01", "6월"], ["2026-07-01", "7월"], ["2026-08-01", "8월"], ["2026-09-01", "9월"], ["2026-10-01", "10월"], ["2026-11-01", "11월"]].forEach(([m, l]) => {
+    const age = Math.round((new Date(m) - new Date("2026-05-20")) / 864e5 / 30.44 * 10) / 10;
+    txt(svg, x(m) + 3, H - 18, l, { class: "t2" }); txt(svg, x(m) + 3, H - 5, `${age}개월`);
+  });
+  days.forEach(d => { if (d[key] != null) el("circle", { cx: x(d.date), cy: y(Math.min(d[key], o.max)), r: 2.2, fill: css("--feed"), opacity: .35 }, svg); });
+  const r = rolling(days, key);
+  el("path", { d: r.map((v, i) => v == null ? "" : `${i ? "L" : "M"}${x(days[i].date).toFixed(1)},${y(v).toFixed(1)}`).join(""), fill: "none", stroke: css("--feed"), "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  const lastV = r.at(-1);
+  el("circle", { cx: x(days.at(-1).date), cy: y(lastV), r: 5, fill: css("--feed"), stroke: css("--paper"), "stroke-width": 2 }, svg);
+  txt(svg, x(days[0].date), y(r[6]) - 9, o.fmt(r[6]) + o.unit, { class: "t1" });
+  txt(svg, x(days.at(-1).date) - 8, y(lastV) - 10, o.fmt(lastV) + o.unit, { class: "t1", "text-anchor": "end" });
+  const cross = el("line", { x1: 0, x2: 0, y1: top, y2: H - bottom, stroke: css("--ink-3"), opacity: 0 }, svg);
+  const hit = el("rect", { x: left, y: top, width: w - left - 10, height: H - top - bottom, class: "hit" }, svg);
+  hover(hit, e => {
+    const rect = svg.getBoundingClientRect(), px = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    let bi = 0, bd = 1e9; days.forEach((d, i) => { const dd = Math.abs(x(d.date) - px); if (dd < bd) { bd = dd; bi = i; } });
+    const d = days[bi]; cross.setAttribute("x1", x(d.date)); cross.setAttribute("x2", x(d.date)); cross.setAttribute("opacity", 1);
+    return `<b>${md(d.date)}</b> (생후 ${d.age.toFixed(1)}개월)<br>${o.title.split(" (")[0]}: ${o.fmt(d[key])}${o.unit}<br>7일 평균 ${o.fmt(r[bi])}${o.unit}`;
+  });
+  hit.addEventListener("pointerleave", () => cross.setAttribute("opacity", 0));
+}
+function drawHistory() {
+  if (!D.hist) return;
+  const B = [["2026-06-01", "2026-07-15"], ["2026-07-15", "2026-11-05"]];
+  histChart("#c-h-n", "n", { title: "하루 수유 횟수 (번)", min: 0, max: 16, ticks: [0, 4, 8, 12, 16], fmt: v => (+v).toFixed(1), unit: "번", bands: [["2026-06-01", "2026-06-15", 8, 12], ["2026-06-15", "2026-07-20", 5, 8], ["2026-07-20", "2026-11-05", 5, 7]] });
+  histChart("#c-h-per", "per", { title: "한 번에 먹는 양 (ml)", min: 0, max: 280, ticks: [0, 100, 200], fmt: v => Math.round(v), unit: "ml", bands: [["2026-06-01", "2026-06-20", 60, 120], ["2026-06-20", "2026-07-20", 90, 150], ["2026-07-20", "2026-10-20", 120, 180], ["2026-10-20", "2026-11-05", 210, 240]] });
+  histChart("#c-h-total", "total", { title: "하루 총량 (ml)", min: 400, max: 1300, ticks: [400, 700, 1000, 1300], fmt: v => Math.round(v).toLocaleString(), unit: "ml", refs: [[950, "하루 상한 약 950ml"]], bands: [["2026-06-01", "2026-07-20", 510, 1050], ["2026-07-20", "2026-11-05", 600, 1170]] });
+  histChart("#c-h-gap", "gap", { title: "가장 긴 수유 간격 (시간)", min: 0, max: 14, ticks: [0, 4, 8, 12], fmt: v => (+v).toFixed(1), unit: "시간", last: true, h: 200 });
+}
+if (D.hist) {
+  $("#history").hidden = false;
+  const H = T.hist;
+  setText("#hist-h2", H.h2); setText("#hist-lede", H.lede);
+  $("#hist-nums").innerHTML = H.nums.map(([k, a, b, x]) => `<div class="hn"><span class="k">${k}</span><span class="v"><span class="from">${a}</span><span class="arrow">→</span>${b}</span><span class="x">${x}</span></div>`).join("");
+  const ms = D.hist.months.filter(m => m.month !== "2026-05");
+  $("#hist-tbl").innerHTML = `<tr><th>달</th><th>생후</th><th>하루 횟수</th><th>한 번에</th><th>하루 총량</th><th>최대 1회</th><th>모유 비율</th><th>새벽 수유</th><th>최장 간격</th></tr>` +
+    ms.map((m, i) => `<tr class="${i === ms.length - 1 ? "now" : ""}"><td>${+m.month.slice(5)}월${i === ms.length - 1 ? ` (1~${C.days.length}일)` : ""}</td><td>${m.age}개월</td><td>${m.n}번</td><td>${m.per}ml</td><td>${m.total.toLocaleString()}ml</td><td>${m.max}ml</td><td>${m.breast_share}%</td><td>${m.night.toFixed(1)}번</td><td>${m.gap.toFixed(1)}h</td></tr>`).join("");
+  $("#hist-steps").innerHTML = H.steps.map(([m, a, t]) => `<li><span class="m">${m}<small>${a}</small></span><span>${t}</span></li>`).join("");
+  setText("#hist-badge", H.badge); setText("#hist-verdict", H.verdict);
+  $("#hist-checks").innerHTML = H.checks.map(([k, t]) => `<li><span class="mark ${k}">${k === "ok" ? "✓" : "!"}</span><span>${t}</span></li>`).join("");
+  $("#copy-text").textContent = H.copy;
+  $("#copy-btn").addEventListener("click", async () => {
+    const b = $("#copy-btn");
+    try { await navigator.clipboard.writeText(H.copy); b.textContent = "복사됨"; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($("#copy-text")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "선택됨, 복사하세요"; }
+    setTimeout(() => (b.textContent = "텍스트 복사"), 2000);
+  });
+}
+
+// ---------- 렌더 ----------
+function drawAll() {
+  drawRulers(); drawMilk(); drawHours(); drawDiaper(); drawTemp(); drawHistory();
+  if (T.chg) drawNights();
+  if (C.has_sleep) {
+    drawActo();
+    const pn = P && P.has_sleep;
+    pairHist("#c-nap", pn ? P.nap_len : null, C.nap_len, [0, 20, 40, 60, 80, 100, 120, 140, 160, 180], m => m + "분", css("--night"));
+    pairHist("#c-ww", pn ? P.wake_windows.map(m => m / 60) : null, C.wake_windows.map(m => m / 60), [0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6], h => h + "h", css("--night"), [2, 2.5]);
+    histLegend("#nap-legend", css("--night")); histLegend("#ww-legend", css("--night"), [[css("--band"), "흔한 기준 2~2.5시간"]]);
+  }
+  const ab = T.amtBins;
+  pairHist("#c-amt", P ? P.amounts : null, C.amounts, ab, v => v + "", css("--feed"), T.amtBand);
+  histLegend("#amt-legend", css("--feed"), T.amtBand ? [[css("--band"), T.amtBandLabel]] : []);
+}
+drawAll();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
