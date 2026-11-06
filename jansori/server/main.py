@@ -27,6 +27,13 @@ PERSONAS = {
     "kid": ("어린아이", ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!"]),
 }
 
+# 눈썰미 (web/index.html 의 MODES 와 같은 내용)
+MODES = {
+    "obsess": "아주 작은 차이까지 전부 찾아라. 물건이 몇 cm 옮겨진 것, 쿠션·이불 주름이나 각도, 리모컨·슬리퍼 방향, 먼지, 얼룩, 머리카락, 살짝 열린 서랍이나 문, 비뚤어진 액자까지. 사진 각도 차이만 빼고 사소한 것도 빠짐없이. 최대 12개.",
+    "mom": "보통 한국 엄마·아내 눈썰미로 찾아라. 잔소리할 만한 것 위주로, 아주 사소한 차이(몇 cm 이동, 미세한 각도)는 무시. 최대 6개.",
+    "dad": "눈에 확 띄는 변화 위주로 찾아라. 최대 6개.",
+}
+
 # 응답 모양을 강제하는 JSON 스키마 (web/index.html 의 cleanResult 와 맞춤)
 RESULT_SCHEMA = {
     "type": "object",
@@ -40,12 +47,13 @@ RESULT_SCHEMA = {
                     "label": {"type": "string"},
                     "line": {"type": "string"},
                     "kind": {"type": "string", "enum": ["new", "moved", "missing", "messy"]},
+                    "size": {"type": "string", "enum": ["big", "small"]},
                     "x": {"type": "number"},
                     "y": {"type": "number"},
                     "w": {"type": "number"},
                     "h": {"type": "number"},
                 },
-                "required": ["label", "line", "kind", "x", "y", "w", "h"],
+                "required": ["label", "line", "kind", "size", "x", "y", "w", "h"],
                 "additionalProperties": False,
             },
         },
@@ -55,22 +63,25 @@ RESULT_SCHEMA = {
 }
 
 
-def build_prompt(voice: str, spice: int) -> str:
+def build_prompt(voice: str, spice: int, mode: str = "mom") -> str:
     """web/index.html 의 buildPrompt 와 같은 내용."""
     name, examples = PERSONAS.get(voice, PERSONAS["ajumma"])
+    ask = MODES.get(mode, MODES["mom"])
     ex = ", ".join(f'"{s}"' for s in examples)
     return f"""너는 "잔소리 탐지기" 앱의 눈이다. 사진 두 장이 주어진다.
 첫 번째 사진: 이 방의 평소(깨끗한) 모습. 두 번째 사진: 오늘 모습.
 두 사진을 비교해서 평소와 달라진 것, 특히 엄마나 아내가 잔소리할 만한 것을 찾아라.
 예: 새로 생긴 물건, 바닥/소파/식탁에 널린 것, 쌓인 빨래나 설거지, 쓰레기, 열린 문이나 서랍, 사라지거나 자리가 바뀐 물건.
-조명 차이, 사진 각도 차이, 사소한 그림자 차이는 무시해라.
-중요도 높은 순서로 최대 6개.
+조명 차이, 사진 각도 차이, 그림자 차이는 무시해라.
+{ask}
+중요도 높은 순서로.
 
 각 항목마다:
 - label: 무엇인지 짧게 (예: "소파 위 빨래")
 - line: {name} 말투로 그 물건을 손가락으로 찝으며 하는 잔소리 한두 마디. 맵기 {spice}단계(1 순한맛, 2 보통, 3 매운맛). 욕설·비하 금지, 웃기게.
   {name} 말투 예시: {ex}
 - kind: "new"(새로 생김) | "moved"(자리 바뀜) | "missing"(없어짐) | "messy"(어질러짐)
+- size: "big"(방에 들어서자마자 눈에 띄는 큰 변화) | "small"(자세히 봐야 보이는 변화)
 - x, y, w, h: 두 번째(오늘) 사진 기준 위치. 0~1 비율 (왼쪽 위가 0,0). 없어진 물건은 원래 있던 자리.
 
 summary: 전체 총평 한 줄 ({name} 말투). 달라진 게 없으면 items는 빈 배열, summary는 칭찬."""
@@ -87,7 +98,7 @@ def image_block(data: bytes, media_type: str) -> dict:
     }
 
 
-def inspect(baseline: bytes, base_type: str, today: bytes, today_type: str, voice: str, spice: int) -> dict:
+def inspect(baseline: bytes, base_type: str, today: bytes, today_type: str, voice: str, spice: int, mode: str) -> dict:
     client = anthropic.Anthropic()
     response = client.beta.messages.create(
         model=MODEL,
@@ -107,7 +118,7 @@ def inspect(baseline: bytes, base_type: str, today: bytes, today_type: str, voic
                     image_block(baseline, base_type),
                     {"type": "text", "text": "오늘 사진:"},
                     image_block(today, today_type),
-                    {"type": "text", "text": build_prompt(voice, spice)},
+                    {"type": "text", "text": build_prompt(voice, spice, mode)},
                 ],
             }
         ],
@@ -131,7 +142,10 @@ async def api_inspect(
     today: UploadFile = File(...),
     voice: str = Form("ajumma"),
     spice: int = Form(2),
+    mode: str = Form("mom"),
 ):
+    """mode: obsess(강박) / mom(아줌마) / dad(아빠).
+    아빠모드에서 작은 변화 절반을 놓치는 건 앱(web/index.html applyMode)에서 처리."""
     files = []
     for f in (baseline, today):
         data = await f.read()
@@ -143,7 +157,7 @@ async def api_inspect(
         files.append((data, media_type))
 
     try:
-        return inspect(files[0][0], files[0][1], files[1][0], files[1][1], voice, max(1, min(3, spice)))
+        return inspect(files[0][0], files[0][1], files[1][0], files[1][1], voice, max(1, min(3, spice)), mode if mode in MODES else "mom")
     except anthropic.RateLimitError:
         raise HTTPException(429, "잠시 뒤에 다시 시도해주세요.")
     except anthropic.APIStatusError as e:

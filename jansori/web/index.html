@@ -93,6 +93,8 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 .list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .list li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: #fff; border: 2px solid var(--line); cursor: pointer; }
 .list li.on { border-color: var(--angry); }
+.list li.missed { border-style: dashed; cursor: default; background: transparent; }
+.list li.missed .n { background: var(--muted); }
 .list .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
 .list .what { font-weight: 700; }
 .list .say { color: var(--muted); font-size: 14px; }
@@ -148,6 +150,11 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       </div>
     </div>
     <p class="note">평소 사진과 같은 위치, 같은 방향에서 찍을수록 정확해요.</p>
+    <div class="row">
+      <label>눈썰미</label>
+      <div class="chips" id="modes" role="group" aria-label="눈썰미"></div>
+    </div>
+    <p class="note" id="modeDesc"></p>
   </section>
 
   <button class="go" id="go" disabled>빠직 검사하기</button>
@@ -225,6 +232,15 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
                 lines: ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!", "나보다 더 어지르네!"] },
   };
   const SPICE = ["순한맛", "보통맛", "매운맛"];
+  // 눈썰미: 얼마나 꼼꼼하게 찾는지 (맵기는 말투, 이건 찾는 강도)
+  const MODES = {
+    obsess: { name: "강박모드", desc: "리모컨 각도, 쿠션 주름, 먼지 한 톨까지 전부 찾아내요.", max: 12,
+              ask: `아주 작은 차이까지 전부 찾아라. 물건이 몇 cm 옮겨진 것, 쿠션·이불 주름이나 각도, 리모컨·슬리퍼 방향, 먼지, 얼룩, 머리카락, 살짝 열린 서랍이나 문, 비뚤어진 액자까지. 사진 각도 차이만 빼고 사소한 것도 빠짐없이. 최대 12개.` },
+    mom:    { name: "아줌마모드", desc: "평범한 한국 아줌마 눈썰미. 웬만한 건 다 걸려요.", max: 6,
+              ask: `보통 한국 엄마·아내 눈썰미로 찾아라. 잔소리할 만한 것 위주로, 아주 사소한 차이(몇 cm 이동, 미세한 각도)는 무시. 최대 6개.` },
+    dad:    { name: "아빠모드", desc: "큰 건 보는데, 자잘한 건 둘 중 하나는 못 알아채요.", max: 6,
+              ask: `눈에 확 띄는 변화 위주로 찾아라. 최대 6개.` },
+  };
   const DEFAULT_ROOMS = ["거실", "안방", "작은방", "주방", "현관"];
 
   /* ---------- 저장 (IndexedDB, 실패하면 메모리) ---------- */
@@ -270,6 +286,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     look: "ajumma",
     voice: "ajumma",
     spice: 2,
+    mode: "mom",
     face: null,        // 잘라낸 얼굴 dataURL
     faceSrc: null,     // 원본 (다시 맞추기용)
     faceView: null,    // {zoom, ox, oy}
@@ -486,34 +503,37 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
   }
 
   /* ---------- AI 프롬프트 (server/main.py 와 같은 내용) ---------- */
-  function buildPrompt(voice, spice) {
-    const p = PERSONAS[voice];
+  function buildPrompt(voice, spice, mode) {
+    const p = PERSONAS[voice], m = MODES[mode] || MODES.mom;
     return `너는 "잔소리 탐지기" 앱의 눈이다. 사진 두 장이 주어진다.
 첫 번째 사진: 이 방의 평소(깨끗한) 모습. 두 번째 사진: 오늘 모습.
 두 사진을 비교해서 평소와 달라진 것, 특히 엄마나 아내가 잔소리할 만한 것을 찾아라.
 예: 새로 생긴 물건, 바닥/소파/식탁에 널린 것, 쌓인 빨래나 설거지, 쓰레기, 열린 문이나 서랍, 사라지거나 자리가 바뀐 물건.
-조명 차이, 사진 각도 차이, 사소한 그림자 차이는 무시해라.
-중요도 높은 순서로 최대 6개.
+조명 차이, 사진 각도 차이, 그림자 차이는 무시해라.
+${m.ask}
+중요도 높은 순서로.
 
 각 항목마다:
 - label: 무엇인지 짧게 (예: "소파 위 빨래")
 - line: ${p.name} 말투로 그 물건을 손가락으로 찝으며 하는 잔소리 한두 마디. 맵기 ${spice}단계(1 순한맛, 2 보통, 3 매운맛). 욕설·비하 금지, 웃기게.
   ${p.name} 말투 예시: ${p.lines.slice(0, 3).map((s) => `"${s}"`).join(", ")}
 - kind: "new"(새로 생김) | "moved"(자리 바뀜) | "missing"(없어짐) | "messy"(어질러짐)
+- size: "big"(방에 들어서자마자 눈에 띄는 큰 변화) | "small"(자세히 봐야 보이는 변화)
 - x, y, w, h: 두 번째(오늘) 사진 기준 위치. 0~1 비율 (왼쪽 위가 0,0). 없어진 물건은 원래 있던 자리.
 
 summary: 전체 총평 한 줄 (${p.name} 말투). 달라진 게 없으면 items는 빈 배열, summary는 칭찬.
 
-JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, "kind": string, "x": number, "y": number, "w": number, "h": number}]}`;
+JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, "kind": string, "size": string, "x": number, "y": number, "w": number, "h": number}]}`;
   }
 
   function cleanResult(r) {
     const n = (v) => Math.min(1, Math.max(0, Number(v) || 0));
-    const items = (Array.isArray(r && r.items) ? r.items : []).slice(0, 6).map((it) => {
+    const max = (MODES[S.mode] || MODES.mom).max;
+    const items = (Array.isArray(r && r.items) ? r.items : []).slice(0, max).map((it) => {
       let x = n(it.x), y = n(it.y), w = n(it.w), h = n(it.h);
       if (w < 0.04) w = 0.08; if (h < 0.04) h = 0.08;
       if (x + w > 1) w = 1 - x; if (y + h > 1) h = 1 - y;
-      return { label: String(it.label || "이거"), line: String(it.line || "이거 뭐야!"), kind: String(it.kind || "new"), x, y, w, h };
+      return { label: String(it.label || "이거"), line: String(it.line || "이거 뭐야!"), kind: String(it.kind || "new"), size: it.size === "small" ? "small" : "big", x, y, w, h };
     });
     return { summary: String((r && r.summary) || ""), items };
   }
@@ -535,8 +555,17 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     return samplePromise;
   }
 
+  // 아빠모드: 큰 건 다 보고, 작은 건 반반 확률로 못 봄
+  function applyMode(r) {
+    if (S.mode !== "dad") return { ...r, missed: 0 };
+    const kept = r.items.filter((it) => it.size === "big" || Math.random() < 0.5);
+    return { ...r, items: kept, missed: r.items.length - kept.length };
+  }
   async function analyze(baseBlob, todayBlob) {
-    const prompt = buildPrompt(S.voice, S.spice);
+    return applyMode(await analyzeRaw(baseBlob, todayBlob));
+  }
+  async function analyzeRaw(baseBlob, todayBlob) {
+    const prompt = buildPrompt(S.voice, S.spice, S.mode);
     const sample = await getSample();
     if (sample) {
       try {
@@ -554,6 +583,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
         fd.append("today", todayBlob, "today.jpg");
         fd.append("voice", S.voice);
         fd.append("spice", String(S.spice));
+        fd.append("mode", S.mode);
         const res = await fetch(api.replace(/\/$/, "") + "/api/inspect", { method: "POST", body: fd });
         if (res.ok) return { mode: "AI", ...cleanResult(await res.json()) };
       } catch (e) { console.warn("server failed", e); }
@@ -562,7 +592,8 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   }
 
   async function pixelDiff(aBlob, bBlob) {
-    const GW = 48, GH = 36;
+    const fine = S.mode === "obsess";
+    const GW = fine ? 96 : 48, GH = fine ? 72 : 36;
     async function grid(blob) {
       const bmp = await loadImage(blob);
       const c = document.createElement("canvas");
@@ -587,7 +618,8 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       diff[i] = v; sum += v; sq += v * v;
     }
     const mean = sum / diff.length, sd = Math.sqrt(Math.max(0, sq / diff.length - mean * mean));
-    const th = Math.max(28, mean + 1.6 * sd);
+    const T = { obsess: [14, 0.8, 2, 10], mom: [28, 1.6, 6, 5], dad: [40, 2.2, 12, 4] }[S.mode] || [28, 1.6, 6, 5];
+    const th = Math.max(T[0], mean + T[1] * sd);
     const seen = new Uint8Array(diff.length), blobs = [];
     for (let i = 0; i < diff.length; i++) {
       if (seen[i] || diff[i] < th) continue;
@@ -601,12 +633,12 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
           if (nx >= 0 && ny >= 0 && nx < GW && ny < GH && !seen[nk] && diff[nk] >= th * 0.8) { seen[nk] = 1; q.push(nk); }
         }
       }
-      if (cnt >= 6) blobs.push({ x0, y0, x1, y1, cnt });
+      if (cnt >= T[2]) blobs.push({ x0, y0, x1, y1, cnt });
     }
     blobs.sort((a, b) => b.cnt - a.cnt);
     const lines = PERSONAS[S.voice].lines;
-    const items = blobs.slice(0, 4).map((b, i) => ({
-      label: `달라진 곳 ${i + 1}`, line: lines[i % lines.length], kind: "new",
+    const items = blobs.slice(0, T[3]).map((b, i) => ({
+      label: `달라진 곳 ${i + 1}`, line: lines[i % lines.length], kind: "new", size: (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1) / (GW * GH) >= 0.015 ? "big" : "small",
       x: b.x0 / GW, y: b.y0 / GH, w: (b.x1 - b.x0 + 1) / GW, h: (b.y1 - b.y0 + 1) / GH,
     }));
     return {
@@ -691,6 +723,17 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       };
       $("looks").appendChild(b);
     }
+  }
+  function renderModes() {
+    const box = $("modes"); box.innerHTML = "";
+    for (const k of Object.keys(MODES)) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = MODES[k].name;
+      b.setAttribute("aria-pressed", String(S.mode === k));
+      b.onclick = () => { S.mode = k; save(); renderModes(); };
+      box.appendChild(b);
+    }
+    $("modeDesc").textContent = MODES[S.mode].desc;
   }
   function renderVoices() {
     $("voices").innerHTML = "";
@@ -808,6 +851,12 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       li.onclick = () => { stopPlay(); unlockAudio(); show(i, false); };
       list.appendChild(li);
     });
+    if (S.missed) {
+      const li = document.createElement("li");
+      li.className = "missed";
+      li.innerHTML = `<span class="n">?</span><div><div class="what">아빠가 못 본 게 ${S.missed}개 더 있어요</div><div class="say">엄마한테 걸리기 전에 아줌마모드로 다시 검사해보세요.</div></div>`;
+      list.appendChild(li);
+    }
     $("prev").disabled = S.idx <= 0;
     $("next").disabled = S.idx >= S.items.length - 1;
     $("replay").disabled = !S.items.length;
@@ -859,7 +908,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   });
   onPick($("inToday"), "thumbToday", async (f) => {
     S.today = await toJpeg(f);
-    S.items = []; S.idx = -1; renderBoxes();
+    S.items = []; S.idx = -1; S.missed = 0; renderBoxes();
     const img = $("stagePhoto");
     img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
     renderThumbs();
@@ -976,11 +1025,11 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     pointAt(null);
     try {
       const r = await analyze(base, S.today);
-      S.items = r.items; S.idx = -1;
+      S.items = r.items; S.idx = -1; S.missed = r.missed || 0;
       $("mode").hidden = false; $("mode").textContent = r.mode === "AI" ? "AI 검사" : "간단 비교 모드";
       renderBoxes();
       if (!S.items.length) {
-        say(r.summary || "오~ 웬일로 깨끗하네?", true);
+        say(S.missed ? "음? 뭐 바뀐 거 있나? 괜찮은데?" : (r.summary || "오~ 웬일로 깨끗하네?"), true);
       } else {
         const intro = r.summary || `${S.items.length}개나 걸렸어!`;
         say(intro);
@@ -1001,16 +1050,16 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   $("next").onclick = () => { unlockAudio(); stopPlay(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); };
 
   function save() {
-    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
   }
 
   /* ---------- 시작 ---------- */
   async function init() {
-    renderChar(); renderLooks(); renderVoices(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
     const st = await kvGet("settings");
     if (st) Object.assign(S, st);
     for (const r of S.rooms) { const b = await kvGet("base:" + r); if (b) S.base[r] = b; }
-    renderChar(); renderLooks(); renderVoices(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
     getSample();
   }
   init();
