@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">원터치 클리너</string>
+    <string name="accessibility_label">원터치 클리너 - 앱 종료/캐시 정리</string>
+    <string name="accessibility_description">원터치 클리너는 사용자가 \'정리 시작\'을 누를 때에만, 선택한 앱의 \'앱 정보\' 화면에서 \'강제 종료\'와 \'캐시 지우기\' 버튼을 대신 눌러주기 위해 접근성 서비스를 사용합니다. 화면 내용을 수집하거나 외부로 전송하지 않습니다.</string>
+</resources>
