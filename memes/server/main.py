@@ -50,18 +50,22 @@ def check_limit(ip: str) -> None:
 class SearchIn(BaseModel):
     query: str = Field(min_length=1, max_length=300)
     rejected: list[str] = []
+    wrong: list[str] = Field(default_factory=list, max_length=30)
 
 
 SYSTEM = (
     "너는 한국 인터넷 밈 전문가야. 사용자가 흐릿하게 기억하는 밈 설명을 듣고, 주어진 밈 도감에서 그 밈일 가능성이 있는 항목을 고른다. "
     "관련 있는 항목만 가능성 높은 순으로 최대 5개 id를 고르고, 억지로 채우지 않는다. "
-    "도감에 없더라도 확실히 아는 실제 밈이면 guess에 적고, 모르면 guess는 null로 둔다. 지어내지 않는다."
+    "도감에 없더라도 확실히 아는 실제 밈이면 guess에 적고, 모르면 guess는 null로 둔다. 지어내지 않는다. "
+    "사용자가 이미 아니라고 한 게 있으면 그것과 비슷하지만 다른 걸 찾는다. "
+    "alt_queries에는 GIF 사이트에서 그 밈 짤이 나올 만한 짧은 검색어 4~6개를 한국어와 영어로 섞어 적는다."
 )
 
 SCHEMA = {
     "type": "object",
     "properties": {
         "ids": {"type": "array", "items": {"type": "string"}},
+        "alt_queries": {"type": "array", "items": {"type": "string"}},
         "guess": {
             "anyOf": [
                 {"type": "null"},
@@ -79,7 +83,7 @@ SCHEMA = {
             ]
         },
     },
-    "required": ["ids", "guess"],
+    "required": ["ids", "guess", "alt_queries"],
     "additionalProperties": False,
 }
 
@@ -111,7 +115,8 @@ def search(body: SearchIn, request: Request):
                 {"type": "text", "text": SYSTEM},
                 {"type": "text", "text": f"밈 도감 (id | 이름 | 대사 | 출처 | 설명):\n{lines}", "cache_control": {"type": "ephemeral"}},
             ],
-            messages=[{"role": "user", "content": f"사용자 설명: {body.query}"}],
+            messages=[{"role": "user", "content": f"사용자 설명: {body.query}" + (
+                f"\n이미 아니라고 한 것: {', '.join(body.wrong[:15])}" if body.wrong else "")}],
         )
     except anthropic.RateLimitError:
         raise HTTPException(503, "잠시 후 다시 해 주세요.")
@@ -121,9 +126,10 @@ def search(body: SearchIn, request: Request):
         raise HTTPException(502, "AI 서버에 연결하지 못했어요.")
 
     if resp.stop_reason == "refusal":
-        return {"ids": [], "guess": None}
+        return {"ids": [], "guess": None, "alt_queries": []}
     text = next((b.text for b in resp.content if b.type == "text"), "{}")
     data = json.loads(text)
     known = {m["id"] for m in memes}
-    data["ids"] = [i for i in data.get("ids", []) if i in known and i not in rejected][:5]
+    data["ids"] = [i for i in data.get("ids", []) if i in known and i not in rejected][:6]
+    data["alt_queries"] = [q for q in data.get("alt_queries", []) if isinstance(q, str) and q.strip()][:6]
     return data

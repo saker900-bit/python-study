@@ -159,7 +159,7 @@ let LIB = LIB0;
 let byId = Object.fromEntries(LIB.map(m => [m.id, m]));
 const $ = (s) => document.querySelector(s);
 const out = $("#out");
-const st = { query: "", cards: [], pos: 0, busy: false, guess: null };
+const st = { query: "", cards: [], pos: 0, busy: false, guess: null, seenMemes: new Set(), seenSlugs: new Set(), queued: new Set(), asked: new Set(), pools: [], aiRounds: 0 };
 let sample = null, downloads = null;
 
 const Cap = window.Capacitor;
@@ -300,13 +300,13 @@ function pickMedia(item) {
   return { src: best.url, video, w: best.w, h: best.h };
 }
 
-async function klipySearch(kind, q, perPage) {
-  const params = new URLSearchParams({ q, page: "1", per_page: String(perPage), customer_id: customerId, locale: CONFIG.locale });
+async function klipySearch(kind, q, perPage, page = 1) {
+  const params = new URLSearchParams({ q, page: String(page), per_page: String(perPage), customer_id: customerId, locale: CONFIG.locale });
   const r = await fetch(`${KLIPY_BASE}/${encodeURIComponent(klipyKey())}/${kind}/search?${params}`);
   if (!r.ok) throw new Error(`klipy ${r.status}`);
   const j = await r.json();
   const list = (j && j.data && (j.data.data || j.data)) || [];
-  return Array.isArray(list) ? list : [];
+  return { items: Array.isArray(list) ? list : [], hasNext: !!(j && j.data && j.data.has_next) };
 }
 
 // KLIPY 결과를 받은 순서 그대로 카드로 (광고 항목도 그 자리에 그대로 보여줌)
@@ -317,7 +317,8 @@ function toCards(items, kind, meme, max) {
     if (content >= max) break;
     if (it.type === "ad") { cards.push({ ad: it, kind, meme }); continue; }
     const media = pickMedia(it);
-    if (!media) continue;
+    if (!media || (it.slug && st.seenSlugs.has(it.slug))) continue;
+    if (it.slug) st.seenSlugs.add(it.slug);
     cards.push({ meme, kind, media, klipy: { slug: it.slug, title: it.title || "" } });
     content += 1;
   }
@@ -402,10 +403,10 @@ function stageHtml(card, badge) {
 
 function show() {
   const card = st.cards[st.pos];
-  if (!card) { showNotFound(); return; }
+  if (!card) { more(); return; }
   if (card.ad) { showAdCard(card); return; }
-  const left = st.cards.slice(st.pos + 1).filter(c => !c.ad).length;
-  out.innerHTML = `${stageHtml(card, left ? `후보 · 다음 ${left}개 대기` : "후보")}
+  if (card.meme) st.seenMemes.add(card.meme.id);
+  out.innerHTML = `${stageHtml(card, `후보 ${st.cards.slice(0, st.pos + 1).filter(c => !c.ad).length}번째`)}
     <p class="ask">이거 맞음?</p>
     <div class="verdict">
       <button class="btn yes" id="yes" type="button">맞음!</button>
@@ -413,6 +414,17 @@ function show() {
     </div>`;
   $("#yes").addEventListener("click", () => showWin(card));
   $("#no").addEventListener("click", () => { st.pos += 1; show(); });
+}
+
+// 후보가 떨어지면 포기하지 않고 비슷한 걸 더 찾아온다
+async function more() {
+  if (st.busy) return;
+  st.busy = true;
+  status(`비슷한 거 더 찾는 중<span class="dots"></span>`);
+  let added = false;
+  try { added = await refill(); } catch { added = false; }
+  st.busy = false;
+  if (added && st.cards[st.pos]) show(); else showNotFound();
 }
 
 // KLIPY 결과 사이에 끼어 있는 광고 (KLIPY 수익 배분)
@@ -460,14 +472,16 @@ function showNotFound() {
   const g = st.guess;
   const name = g?.name || st.query;
   out.innerHTML = `<div class="info">
-      <p class="ask" style="color:var(--ink)">더 이상 후보가 없어요</p>
+      <p class="ask" style="color:var(--ink)">다 찾아봤는데 없어요</p>
       ${g ? `<p><span class="k">아마 이 밈 같아요</span><br><b>${esc(g.name)}</b>${g.quote ? ` · “${esc(g.quote)}”` : ""}</p>
       ${g.source ? `<p><span class="k">출처</span><br>${esc(g.source)}</p>` : ""}
       ${g.description ? `<p>${esc(g.description)}</p>` : ""}` : `<p>설명을 조금 바꿔서 다시 찾아보세요. 누가 나왔는지, 무슨 대사였는지 적으면 잘 찾아요.</p>`}
       <p class="k">밈 도감은 매일 새벽 업데이트돼요.</p>
     </div>
-    ${g && KLIPY ? `<button class="btn primary" id="tryguess" type="button">‘${esc(g.name)}’ 짤 찾아보기</button>` : ""}`;
+    ${g && KLIPY ? `<button class="btn primary" id="tryguess" type="button">‘${esc(g.name)}’ 짤 찾아보기</button>` : ""}
+    <button class="btn ghost" id="retry" type="button">다른 말로 다시 찾기</button>`;
   $("#tryguess")?.addEventListener("click", () => { $("#q").value = g.name; start(g.name, { raw: true }); });
+  $("#retry")?.addEventListener("click", () => { $("#q").focus(); });
 }
 
 function status(html) { out.innerHTML = `<div class="status">${html}</div>`; }
@@ -486,71 +500,146 @@ function localRank(q) {
   }).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 6).map(x => x[0]);
 }
 
-function buildPrompt(q) {
-  const list = LIB.map(m => `${m.id} | ${m.name} | ${m.quote} | ${m.source} | ${m.desc}`).join("\n");
+function buildPrompt(q, exclude, wrongNames) {
+  const list = LIB.filter(m => !exclude.has(m.id)).map(m => `${m.id} | ${m.name} | ${m.quote} | ${m.source} | ${m.desc}`).join("\n");
   return `너는 한국 인터넷 밈 전문가야. 사용자가 흐릿하게 기억하는 밈을 설명했어. 아래 '밈 도감'에서 그 밈일 가능성이 있는 항목을 골라 줘.
 
 사용자 설명: """${q}"""
+${wrongNames.length ? `사용자가 이미 아니라고 한 것: ${wrongNames.join(", ")}\n그것과 비슷하지만 다른 걸 찾아.` : ""}
 
 밈 도감 (id | 이름 | 대사 | 출처 | 설명):
 ${list}
 
 규칙:
-- 사용자 설명과 실제로 관련 있는 항목만 가능성 높은 순으로 최대 5개 id를 골라. 억지로 채우지 마.
-- 도감에 맞는 게 없으면 ids는 빈 배열로 둬.
-- 도감에 없더라도 네가 확실히 아는 실제 밈이면 guess에 적어. 모르면 guess는 null. 지어내지 마.
+- 관련 있을 만한 항목을 가능성 높은 순으로 최대 6개 id. 조금이라도 관련 있으면 넣어.
+- 도감에 없더라도 네가 확실히 아는 실제 밈이면 guess에 적어. 모르면 null. 지어내지 마.
+- alt_queries: GIF 사이트에서 이 밈 짤이 나올 만한 짧은 검색어 4~6개 (한국어와 영어 섞어서, 인물·작품·대사·장면 묘사).
 
 이 JSON만 출력해:
-{"ids": ["id1", "id2"], "guess": {"name": "밈 이름", "quote": "대사", "source": "출처", "description": "한두 문장"} 또는 null}`;
+{"ids": ["id1"], "guess": {"name": "", "quote": "", "source": "", "description": ""} 또는 null, "alt_queries": ["검색어1", "검색어2"]}`;
 }
 
-async function rank(q) {
+function wrongNames() {
+  return [...st.seenMemes].map(id => byId[id]?.name).filter(Boolean)
+    .concat(st.cards.slice(0, st.pos).filter(c => !c.meme && c.klipy?.title).map(c => c.klipy.title)).slice(-15);
+}
+
+async function rank(q, exclude = new Set()) {
+  const wrong = wrongNames();
   if (sample) {
-    const r = await sample.json(buildPrompt(q), { modelTier: "complex", cache: false });
-    return { ids: r?.ids || [], guess: r?.guess || null };
+    const r = await sample.json(buildPrompt(q, exclude, wrong), { modelTier: "complex", cache: false });
+    return { ids: r?.ids || [], guess: r?.guess || null, alt_queries: r?.alt_queries || [] };
   }
   if (CONFIG.api) {
     const res = await fetch(`${CONFIG.api}/api/search`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: q, rejected: [] }),
+      body: JSON.stringify({ query: q, rejected: [...exclude], wrong }),
     });
     if (!res.ok) throw new Error(`server ${res.status}`);
     return await res.json();
   }
-  return { ids: localRank(q), guess: null };
+  return { ids: localRank(q).filter(id => !exclude.has(id)), guess: null, alt_queries: [] };
 }
 
-// 후보 밈마다 KLIPY에서 짤을 받아 순서대로 카드로 만든다.
-// 도감에 없는 밈이면 사용자가 쓴 말(또는 AI 추측 이름)로 바로 KLIPY 검색.
-async function buildKlipyCards(ids, q, guess) {
-  const memes = ids.map(id => byId[id]).filter(Boolean).slice(0, 3);
-  const jobs = memes.map(m => {
-    // KLIPY에 짤이 없는 밈: 이름·대사를 크게 보여주는 글자 카드
-    if (!m.keyword) return Promise.resolve([{ meme: m, info: true }]);
-    const kind = m.kind || "gifs";
-    return klipySearch(kind, m.keyword || m.name, 6).then(items => toCards(items, kind, m, 3)).catch(() => []);
-  });
-  const fallbackQ = guess?.name || q;
-  jobs.push(klipySearch("gifs", fallbackQ, 10).then(items => toCards(items, "gifs", null, 6)).catch(() => []));
-  const groups = await Promise.all(jobs);
-  return groups.flat();
+// 검색 줄(pool): KLIPY 검색어 하나 = 페이지를 넘겨 가며 계속 받을 수 있는 줄
+function addPool(kind, q, meme) {
+  const key = `${kind}:${q}`;
+  if (!q || st.asked.has(key)) return;
+  st.asked.add(key);
+  st.pools.push({ kind, q, meme, page: 0, hasNext: true });
+}
+
+async function pullPool(pool, per) {
+  pool.page += 1;
+  try {
+    const { items, hasNext } = await klipySearch(pool.kind, pool.q, per, pool.page);
+    pool.hasNext = hasNext && items.length > 0;
+    return toCards(items, pool.kind, pool.meme, per);
+  } catch { pool.hasNext = false; return []; }
+}
+
+function addMemes(ids) {
+  let n = 0;
+  for (const id of ids) {
+    const m = byId[id];
+    if (!m || st.queued.has(id)) continue;
+    st.queued.add(id); n += 1;
+    if (!KLIPY) { if (m.media) st.cards.push(localCard(m)); continue; }
+    if (!m.keyword) st.cards.push({ meme: m, info: true });
+    else addPool(m.kind || "gifs", m.keyword, m);
+  }
+  return n;
+}
+
+// 다음 후보 묶음을 채운다. 하나라도 더 생기면 true
+async function refill() {
+  const before = st.cards.length;
+  for (let round = 0; round < 4 && st.cards.length === before; round++) {
+    if (KLIPY) {
+      // 1) 아직 안 본 검색 줄부터 (처음 받는 줄 우선, 그다음 다음 페이지)
+      const fresh = st.pools.filter(p => p.page === 0).slice(0, 3);
+      const next = fresh.length ? fresh : st.pools.filter(p => p.hasNext).slice(0, 2);
+      if (next.length) {
+        const got = await Promise.all(next.map(p => pullPool(p, p.meme ? 4 : 8)));
+        st.cards.push(...got.flat());
+        if (st.cards.length > before) break;
+        continue;
+      }
+    }
+    // 2) 다 떨어지면 AI에게 '아니라고 한 것과 비슷하지만 다른 것'을 다시 물어봄
+    if (st.aiRounds < 4) {
+      st.aiRounds += 1;
+      let r = null;
+      try { r = await rank(st.query, st.queued); } catch {}
+      if (r) {
+        if (r.guess && !st.guess) st.guess = r.guess;
+        addMemes((r.ids || []).filter(id => byId[id]));
+        if (KLIPY) {
+          if (r.guess?.name) addPool("gifs", r.guess.name, null);
+          for (const q of (r.alt_queries || []).slice(0, 6)) { addPool("gifs", q, null); }
+          for (const q of (r.alt_queries || []).slice(0, 2)) { addPool("clips", q, null); }
+        }
+      }
+      if (st.cards.length > before || st.pools.some(p => p.page === 0)) continue;
+    }
+    // 3) 그래도 없으면 단어 비교 + 사용자 말 조각으로 검색
+    addMemes(localRank(st.query).filter(id => !st.queued.has(id)));
+    if (KLIPY) {
+      addPool("gifs", st.query, null);
+      addPool("clips", st.query, null);
+      for (const w of st.query.split(/\s+/).filter(w => w.length >= 2)) addPool("gifs", w, null);
+    }
+    if (st.cards.length === before && !st.pools.some(p => p.page === 0 || p.hasNext)) break;
+  }
+  return st.cards.length > before;
 }
 
 async function start(q, opts = {}) {
-  Object.assign(st, { query: q, cards: [], pos: 0, guess: null, busy: true });
+  Object.assign(st, {
+    query: q, cards: [], pos: 0, guess: null, busy: true,
+    seenMemes: new Set(), seenSlugs: new Set(), queued: new Set(), asked: new Set(), pools: [], aiRounds: 0,
+  });
   $("#go").disabled = true;
   status(`밈 뒤지는 중<span class="dots"></span>`);
-  let ids = [];
-  if (!opts.raw) {
-    try {
-      const r = await rank(q);
-      ids = (r.ids || []).filter(id => byId[id]);
+  if (opts.raw) {
+    addPool("gifs", q, null); addPool("clips", q, null);
+  } else {
+    let r = null;
+    try { r = await rank(q); } catch {}
+    st.aiRounds = 1;
+    if (r) {
       st.guess = r.guess || null;
-    } catch {
-      ids = localRank(q);
+      addMemes((r.ids || []).filter(id => byId[id]));
+      if (KLIPY) {
+        if (r.guess?.name) addPool("gifs", r.guess.name, null);
+        for (const a of (r.alt_queries || []).slice(0, 4)) addPool("gifs", a, null);
+      }
+    } else {
+      addMemes(localRank(q));
     }
+    if (KLIPY) addPool("gifs", q, null);
   }
-  st.cards = KLIPY ? await buildKlipyCards(ids, q, opts.raw ? null : st.guess) : ids.map(id => localCard(byId[id]));
+  try { await refill(); } catch {}
   await showAd();
   st.busy = false; $("#go").disabled = false;
   show();
