@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
 <title>빠직 잔소리 탐지기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +21,7 @@
   --muted: #6d6480;
   --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  color-scheme: light;
+  color-scheme: only light;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -58,7 +59,7 @@ header p { margin: 0; color: var(--muted); font-size: 14px; }
 button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); outline-offset: 2px; }
 
 /* 무대: 오늘 사진 위에 박스와 잔소리꾼 */
-.stage { position: relative; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: #f3ead2; min-height: 260px; }
+.stage { position: relative; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: #f3ead2; min-height: 340px; }
 .stage img.photo { display: block; width: 100%; height: auto; }
 .stage .empty { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, #f3ead2 0 14px, #efe3c4 14px 28px); }
 .box { position: absolute; border: 3px dashed rgba(255,255,255,.9); border-radius: 8px; box-shadow: 0 0 0 2px rgba(0,0,0,.25); transition: all .2s; }
@@ -66,13 +67,13 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 .box.on { border: 4px solid var(--angry); box-shadow: 0 0 0 4px rgba(229,57,53,.35), 0 0 24px rgba(229,57,53,.6); animation: pulse .7s ease-in-out infinite alternate; }
 .box.on .tag { background: var(--angry); }
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
-.char { position: absolute; bottom: -2%; height: 58%; aspect-ratio: 220 / 300; pointer-events: none; transition: left .35s, right .35s; }
+.char { position: absolute; bottom: -1%; height: 72%; max-height: 520px; aspect-ratio: 240 / 340; pointer-events: none; transition: left .35s, right .35s; }
 .char.left { left: -3%; }
 .char.right { right: -3%; }
 .char .flip { width: 100%; height: 100%; }
 .char.right .flip { transform: scaleX(-1); }
 .char svg { width: 100%; height: 100%; overflow: visible; display: block; }
-.char #arm { transform-box: view-box; transform-origin: 128px 112px; transition: transform .45s cubic-bezier(.3,1.6,.5,1); }
+.char #arm { transform-box: view-box; transform-origin: 154px 178px; transition: transform .45s cubic-bezier(.3,1.6,.5,1); }
 .char #anger { transform-box: fill-box; transform-origin: center; }
 .char.mad #anger { animation: pop .45s ease-out; }
 .char.mad { animation: stomp .35s ease-in-out 2; }
@@ -100,7 +101,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 .personas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .persona { font: inherit; font-size: 13px; border: 2px solid var(--ink); background: #fff; border-radius: 10px; padding: 4px 2px 6px; cursor: pointer; display: grid; justify-items: center; gap: 2px; }
 .persona[aria-pressed="true"] { background: var(--sun); box-shadow: inset 0 0 0 2px var(--ink); }
-.persona svg { width: 100%; height: 74px; overflow: visible; }
+.persona svg { width: 100%; height: 120px; overflow: visible; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .row label { font-size: 14px; }
 .spice { display: flex; gap: 6px; }
@@ -108,6 +109,15 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 .facebox .face { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); background: #fff center / cover no-repeat; flex: none; }
 .small { font: inherit; font-size: 14px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 6px 10px; cursor: pointer; }
 .err { color: var(--angry); font-size: 14px; margin: 0; }
+.modal { position: fixed; inset: 0; background: rgba(20, 14, 30, .6); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.sheet { background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; padding: 14px; width: min(380px, 100%); display: grid; gap: 10px; box-shadow: 4px 4px 0 var(--ink); }
+.sheet h3 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; }
+.fe-wrap { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: end; }
+#feCanvas { width: 100%; aspect-ratio: 1; touch-action: none; border-radius: 12px; background: #2b2140; cursor: grab; display: block; }
+#fePreview svg { width: 96px; height: 136px; overflow: visible; }
+.zoomrow { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.zoomrow input { flex: 1; accent-color: var(--magenta); }
+.sheet .controls button.primary { background: var(--angry); color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -166,9 +176,10 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     <div class="facebox">
       <div class="face" id="faceThumb"></div>
       <label class="filebtn" style="flex:1">얼굴 사진으로 바꾸기<input id="inFace" type="file" accept="image/*"></label>
+      <button class="small" id="faceEdit" hidden>위치 맞추기</button>
       <button class="small" id="faceClear" hidden>원래대로</button>
     </div>
-    <p class="note">사진 속 얼굴이 가운데 오게 올려주세요. 뽀글머리는 그대로 씌워드립니다.</p>
+    <p class="note">얼굴 사진을 올리면 위치랑 크기를 직접 맞출 수 있어요. 뽀글머리는 그대로 씌워드립니다.</p>
     <div class="row">
       <label>목소리</label>
       <div class="chips" id="voices" role="group" aria-label="목소리"></div>
@@ -179,6 +190,23 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       <button class="small" id="testVoice">목소리 들어보기</button>
     </div>
   </section>
+</div>
+
+<div class="modal" id="faceEditor" hidden role="dialog" aria-modal="true" aria-labelledby="feTitle">
+  <div class="sheet">
+    <h3 id="feTitle">얼굴 위치 맞추기</h3>
+    <p class="note">사진을 손가락으로 끌어서 옮기고, 두 손가락으로 벌리거나 아래 막대로 크기를 맞춰요. 눈·코·입이 점선 안에 들어오게 하세요.</p>
+    <div class="fe-wrap">
+      <canvas id="feCanvas" width="600" height="600"></canvas>
+      <div id="fePreview" aria-label="미리보기"></div>
+    </div>
+    <div class="zoomrow"><label for="feZoom">크기</label><input id="feZoom" type="range" min="1" max="5" step="0.01" value="1"></div>
+    <div class="controls">
+      <button id="feCancel" type="button">취소</button>
+      <button id="feReset" type="button">처음대로</button>
+      <button id="feDone" type="button" class="primary">완료</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -242,7 +270,9 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     look: "ajumma",
     voice: "ajumma",
     spice: 2,
-    face: null,        // dataURL
+    face: null,        // 잘라낸 얼굴 dataURL
+    faceSrc: null,     // 원본 (다시 맞추기용)
+    faceView: null,    // {zoom, ox, oy}
     items: [],
     idx: -1,
     playing: false,
@@ -250,95 +280,183 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
   const $ = (id) => document.getElementById(id);
 
   /* ---------- 캐릭터 SVG ---------- */
+  // 머리 큰 2.5등신. viewBox 240x340, 얼굴 타원 (120,108) rx46 ry50
+  // 팔 회전축(어깨) = (154,178). pointAt() 과 CSS #arm 이 이 숫자를 씀
+  const FACE = { cx: 120, cy: 108, rx: 46, ry: 50 };
+  const LOOKS = {
+    ajumma:   { hair: ["#5a3346", "#2e1622"], skin: ["#fbd7bb", "#eeb48f"], top: "#ff6f9f", topDot: "#fff1a8", topLeaf: "#3fae6b",
+                pants: "#6b3fa8", pantsDot: "#ffb3d1", pantsLeaf: "#9be37a", toshi: "#3aa0d8", shoe: "#ffffff", lip: "#d6334f" },
+    halmeoni: { hair: ["#ecebf0", "#a9a6b3"], skin: ["#f6cfb0", "#e2a885"], top: "#7cc9a0", topDot: "#ffffff", topLeaf: "#2f7d55",
+                pants: "#b23a62", pantsDot: "#ffe38a", pantsLeaf: "#7fd39b", toshi: "#f2a03d", shoe: "#ffffff", lip: "#b8576a", vest: "#7a4b8f" },
+    ajeossi:  { hair: ["#3a3a3a", "#151515"], skin: ["#f3c7a0", "#d99a6f"], top: "#fbfbf7", topDot: "#fbfbf7", topLeaf: "#fbfbf7",
+                pants: "#8b6a46", pantsDot: "#8b6a46", pantsLeaf: "#8b6a46", toshi: "#fbfbf7", shoe: "#3b3b46", lip: "#a8505a" },
+    kid:      { hair: ["#6a3d25", "#3a1f10"], skin: ["#ffe0c8", "#f4b994"], top: "#ffd447", topDot: "#ff8a3d", topLeaf: "#ff8a3d",
+                pants: "#3d8fd6", pantsDot: "#ffffff", pantsLeaf: "#ffffff", toshi: "#ffd447", shoe: "#ff5a5a", lip: "#d9506a" },
+  };
+  const INK = "#2b2140";
+
+  function curl(cx, cy, r, u) {
+    // 뽀글이 한 개: 입체감 그라데이션 + 안쪽 말린 선
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>` +
+      `<path d="M${(cx - r * 0.45).toFixed(1)} ${(cy + r * 0.1).toFixed(1)} a${(r * 0.42).toFixed(1)} ${(r * 0.42).toFixed(1)} 0 1 1 ${(r * 0.55).toFixed(1)} ${(r * 0.45).toFixed(1)}" fill="none" stroke="${INK}" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round"/>`;
+  }
+
   function charSVG(look, face, uid) {
-    const C = {
-      ajumma:   { hair: "#3b2530", blouse: "#ff7aa8", bdot: "#fff3a6", pants: "#6a3fa0", pdot: "#ffd1e3", skin: "#f3c39d" },
-      halmeoni: { hair: "#c9c4cf", blouse: "#8fd3a6", bdot: "#ffffff", pants: "#a33a5b", pdot: "#ffe08a", skin: "#eab892" },
-      ajeossi:  { hair: "#2a2a2a", blouse: "#ffffff", bdot: "#ffffff", pants: "#8a6a45", pdot: "#8a6a45", skin: "#e8b48a" },
-      kid:      { hair: "#4a2c1d", blouse: "#ffd84d", bdot: "#ff8a3d", pants: "#3fa0d8", pdot: "#ffffff", skin: "#f7cfae" },
-    }[look];
-    const u = uid;
-    // 머리카락
+    const C = LOOKS[look], u = uid;
+    const isPerm = look === "ajumma" || look === "halmeoni";
+    const F = FACE;
+
+    /* 머리카락 (뒤) */
     let hairBack = "", hairFront = "";
-    if (look === "ajumma" || look === "halmeoni") {
-      for (let i = 0; i < 15; i++) {
-        const a = Math.PI * (0.92 + (i / 14) * 1.16);
-        const x = 100 + Math.cos(a) * 33, y = 80 + Math.sin(a) * 33;
-        hairBack += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11"/>`;
+    if (isPerm) {
+      for (let i = 0; i <= 16; i++) {           // 바깥 테두리
+        const a = Math.PI * (0.86 + (i / 16) * 1.28);
+        hairBack += curl(120 + Math.cos(a) * 54, 104 + Math.sin(a) * 54, 15, u);
       }
-      for (let i = 0; i < 7; i++) {
-        const x = 76 + i * 8, y = 54 + Math.abs(3 - i) * 1.6;
-        hairFront += `<circle cx="${x}" cy="${y.toFixed(1)}" r="7.5"/>`;
+      for (let i = 0; i <= 9; i++) {            // 안쪽 볼륨
+        const a = Math.PI * (1.08 + (i / 9) * 0.84);
+        hairBack += curl(120 + Math.cos(a) * 36, 98 + Math.sin(a) * 36, 15, u);
       }
-      hairBack += `<circle cx="100" cy="50" r="22"/>`;
+      hairBack += curl(120, 52, 17, u);
+      for (let i = 0; i < 7; i++) {             // 앞머리 (이마 위만 살짝)
+        const x = 84 + i * 12, y = 63 + Math.pow(i - 3, 2) * 1.3;
+        hairFront += curl(x, y, 9.5, u);
+      }
     } else if (look === "ajeossi") {
-      hairBack = `<path d="M70 86 Q68 60 78 58 L80 84 Z M130 86 Q132 60 122 58 L120 84 Z"/>`;
-      hairFront = `<ellipse cx="100" cy="56" rx="14" ry="3" fill="#fff" opacity=".55"/>`;
+      hairBack = `<path d="M72 120 Q66 78 84 66 L92 70 Q80 90 82 122 Z M168 120 Q174 78 156 66 L148 70 Q160 90 158 122 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>`;
+      hairFront = `<path d="M96 66 Q120 58 144 66" fill="none" stroke="${C.hair[1]}" stroke-width="2" stroke-dasharray="2 3"/>
+        <ellipse cx="106" cy="66" rx="12" ry="5" fill="#fff" opacity=".5" transform="rotate(-18 106 66)"/>`;
     } else {
-      hairBack = `<circle cx="66" cy="58" r="13"/><circle cx="134" cy="58" r="13"/><path d="M70 82 Q70 46 100 46 Q130 46 130 82 Q118 62 100 62 Q82 62 70 82 Z"/>`;
-      hairFront = `<path d="M74 70 Q86 52 100 56 Q114 52 126 70 Q112 60 100 64 Q88 60 74 70 Z"/>`;
+      hairBack = `<path d="M70 118 Q62 56 120 52 Q178 56 170 118 Q160 80 120 78 Q80 80 70 118 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>
+        ${curl(64, 72, 16, u)}${curl(176, 72, 16, u)}
+        <path d="M52 62 l-10 -8 l2 14 Z M76 62 l10 -8 l-2 14 Z" fill="#ff5a8a" stroke="${INK}" stroke-width="1.8" transform="translate(0 0)"/>
+        <path d="M164 62 l-10 -8 l2 14 Z M188 62 l10 -8 l-2 14 Z" fill="#ff5a8a" stroke="${INK}" stroke-width="1.8"/>`;
+      hairFront = `<path d="M76 92 Q80 60 120 58 Q160 60 164 92 Q150 76 136 80 Q128 70 118 80 Q104 72 96 82 Q86 78 76 92 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>`;
     }
-    const faceArt = face
-      ? `<image href="${face}" x="70" y="52" width="60" height="60" clip-path="url(#fc${u})" preserveAspectRatio="xMidYMid slice"/>
-         <circle cx="100" cy="82" r="29" fill="none" stroke="#2b2140" stroke-width="2.5"/>`
-      : `<circle cx="100" cy="82" r="29" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
-         <path d="M82 71 L96 77 M118 71 L104 77" stroke="#2b2140" stroke-width="4" stroke-linecap="round"/>
-         <circle cx="90" cy="84" r="3.2" fill="#2b2140"/><circle cx="110" cy="84" r="3.2" fill="#2b2140"/>
-         <ellipse cx="100" cy="99" rx="8" ry="6.5" fill="#7a1f2b" stroke="#2b2140" stroke-width="2"/>
-         <ellipse cx="100" cy="102" rx="4" ry="2" fill="#ff8a9a"/>
-         <circle cx="82" cy="94" r="5" fill="#ff7a7a" opacity=".45"/><circle cx="118" cy="94" r="5" fill="#ff7a7a" opacity=".45"/>
-         ${look === "halmeoni" ? `<path d="M86 64 Q100 60 114 64 M80 104 Q83 108 86 106 M120 104 Q117 108 114 106" stroke="#a5765a" stroke-width="1.6" fill="none"/>` : ""}
-         ${look === "ajeossi" ? `<path d="M88 93 Q100 88 112 93 Q100 96 88 93 Z" fill="#2a2a2a"/>` : ""}`;
-    const top = look === "ajeossi"
-      ? `<path d="M70 106 Q100 100 130 106 L136 150 L64 150 Z" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
-         <path d="M84 104 Q100 122 116 104" fill="none" stroke="#2b2140" stroke-width="2"/>`
-      : `<path d="M68 106 Q100 98 132 106 L138 150 L62 150 Z" fill="url(#bl${u})" stroke="#2b2140" stroke-width="2.5"/>
-         <path d="M90 104 L100 118 L110 104" fill="#fff" stroke="#2b2140" stroke-width="2"/>`;
+
+    /* 얼굴 */
+    const faceShape = `<ellipse cx="${F.cx}" cy="${F.cy}" rx="${F.rx}" ry="${F.ry}"`;
+    let faceArt;
+    if (face) {
+      faceArt = `<image href="${face}" x="${F.cx - F.rx}" y="${F.cy - F.ry}" width="${F.rx * 2}" height="${F.ry * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#fc${u})"/>
+        ${faceShape} fill="none" stroke="${INK}" stroke-width="3"/>`;
+    } else {
+      const eyeY = 104, browTilt = look === "kid" ? 4 : 7;
+      faceArt = `${faceShape} fill="url(#sk${u})" stroke="${INK}" stroke-width="3"/>
+        <ellipse cx="94" cy="124" rx="8" ry="5" fill="#ff7b8a" opacity=".38"/><ellipse cx="146" cy="124" rx="8" ry="5" fill="#ff7b8a" opacity=".38"/>
+        <!-- 눈 (화나서 눈꼬리 올라감) -->
+        <g>
+          <ellipse cx="102" cy="${eyeY}" rx="8" ry="${look === "kid" ? 8 : 6.5}" fill="#fff" stroke="${INK}" stroke-width="2"/>
+          <ellipse cx="138" cy="${eyeY}" rx="8" ry="${look === "kid" ? 8 : 6.5}" fill="#fff" stroke="${INK}" stroke-width="2"/>
+          <circle cx="104" cy="${eyeY + 1}" r="${look === "kid" ? 4.8 : 3.8}" fill="${INK}"/><circle cx="136" cy="${eyeY + 1}" r="${look === "kid" ? 4.8 : 3.8}" fill="${INK}"/>
+          <circle cx="105.5" cy="${eyeY - 0.6}" r="1.4" fill="#fff"/><circle cx="137.5" cy="${eyeY - 0.6}" r="1.4" fill="#fff"/>
+          <path d="M92 ${eyeY - 4} L112 ${eyeY - 1}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M148 ${eyeY - 4} L128 ${eyeY - 1}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <!-- 눈썹 -->
+        <path d="M88 ${88 - browTilt / 2} Q100 ${86 - browTilt / 2} 113 ${93 + browTilt / 2} L111 ${97 + browTilt / 2} Q99 ${92 - browTilt / 3} 89 ${93 - browTilt / 2} Z" fill="${look === "halmeoni" ? "#9a96a3" : INK}"/>
+        <path d="M152 ${88 - browTilt / 2} Q140 ${86 - browTilt / 2} 127 ${93 + browTilt / 2} L129 ${97 + browTilt / 2} Q141 ${92 - browTilt / 3} 151 ${93 - browTilt / 2} Z" fill="${look === "halmeoni" ? "#9a96a3" : INK}"/>
+        <path d="M116 96 L118 92 M124 96 L122 92" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+        <!-- 코 -->
+        <path d="M118 110 Q114 118 118 120 Q121 121 124 119" fill="none" stroke="#c98463" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- 소리치는 입 -->
+        <path d="M104 128 Q120 122 136 128 Q134 146 120 147 Q106 146 104 128 Z" fill="#7a1f2b" stroke="${look === "ajumma" ? C.lip : INK}" stroke-width="${look === "ajumma" ? 3 : 2.2}"/>
+        <path d="M107 129 Q120 125 133 129 L132 133 Q120 130 108 133 Z" fill="#fff"/>
+        <ellipse cx="120" cy="141" rx="7" ry="3.6" fill="#ff8a9a"/>
+        ${look === "halmeoni" ? `<path d="M92 84 Q100 80 108 83 M132 83 Q140 80 148 84 M88 116 q3 4 6 3 M152 116 q-3 4 -6 3 M100 150 q20 6 40 0" stroke="#b07a5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <g fill="none" stroke="#8a6a2a" stroke-width="2"><circle cx="102" cy="104" r="12"/><circle cx="138" cy="104" r="12"/><path d="M114 103 Q120 99 126 103"/></g>` : ""}
+        ${look === "ajeossi" ? `<path d="M102 124 Q111 117 120 122 Q129 117 138 124 Q129 128 120 125 Q111 128 102 124 Z" fill="${C.hair[1]}"/>
+          <g fill="${C.hair[1]}" opacity=".35"><circle cx="104" cy="140" r=".9"/><circle cx="110" cy="145" r=".9"/><circle cx="130" cy="145" r=".9"/><circle cx="136" cy="140" r=".9"/><circle cx="120" cy="150" r=".9"/></g>` : ""}`;
+    }
+
+    /* 옷 */
+    const isTank = look === "ajeossi";
+    const torso = isTank
+      ? `<path d="M88 168 Q120 160 152 168 Q166 198 160 222 L80 222 Q74 198 88 168 Z" fill="${C.top}" stroke="${INK}" stroke-width="2.6"/>
+         <path d="M96 166 Q100 186 92 196 M144 166 Q140 186 148 196" fill="none" stroke="${INK}" stroke-width="2"/>
+         <path d="M104 164 Q120 182 136 164" fill="${C.skin[0]}" stroke="${INK}" stroke-width="2"/>
+         <ellipse cx="120" cy="206" rx="30" ry="16" fill="#000" opacity=".05"/>`
+      : `<path d="M86 170 Q120 158 154 170 Q166 196 162 222 L78 222 Q74 196 86 170 Z" fill="url(#fl${u})" stroke="${INK}" stroke-width="2.6"/>
+         ${look === "halmeoni" ? `<path d="M86 170 Q96 166 104 166 L112 222 L78 222 Q74 196 86 170 Z M154 170 Q144 166 136 166 L128 222 L162 222 Q166 196 154 170 Z" fill="${C.vest}" stroke="${INK}" stroke-width="2.4"/>` : ""}
+         <path d="M106 162 L120 180 L106 184 Z M134 162 L120 180 L134 184 Z" fill="#fff" stroke="${INK}" stroke-width="2"/>
+         <circle cx="120" cy="192" r="2.4" fill="#fff" stroke="${INK}" stroke-width="1.4"/><circle cx="120" cy="206" r="2.4" fill="#fff" stroke="${INK}" stroke-width="1.4"/>
+         <path d="M86 190 Q92 204 88 220" fill="none" stroke="${INK}" stroke-opacity=".2" stroke-width="3"/>`;
+    const waistY = isTank ? 204 : 214;
+    const pants = `<path d="M78 ${waistY} C72 256 70 292 80 318 Q96 326 112 318 L116 262 L124 262 L128 318 Q144 326 160 318 C170 292 168 256 162 ${waistY} Z" fill="${look === "ajeossi" || look === "kid" ? C.pants : `url(#pt${u})`}" stroke="${INK}" stroke-width="2.6"/>
+      <path d="M96 240 Q92 280 98 312 M144 240 Q148 280 142 312" fill="none" stroke="${INK}" stroke-opacity=".18" stroke-width="3"/>
+      ${isPerm ? `<path d="M80 312 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 M128 312 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0" fill="none" stroke="${INK}" stroke-width="1.6"/>` : ""}
+      <rect x="74" y="${waistY - 6}" width="92" height="14" rx="6" fill="${isTank ? "#3a2a1a" : C.pants}" stroke="${INK}" stroke-width="2.4"/>
+      ${isTank ? `<rect x="112" y="${waistY - 5}" width="16" height="12" rx="2.5" fill="#e6c35c" stroke="${INK}" stroke-width="1.8"/>`
+               : `<path d="M78 ${waistY + 1} ${Array.from({ length: 21 }, (_, i) => `l4 ${i % 2 ? 3 : -3}`).join(" ")}" fill="none" stroke="${INK}" stroke-opacity=".6" stroke-width="1.2"/>`}
+      ${look === "kid" ? `<rect x="98" y="${waistY + 8}" width="44" height="26" rx="5" fill="${C.pants}" stroke="${INK}" stroke-width="2"/><path d="M98 ${waistY + 8} L92 168 M142 ${waistY + 8} L148 168" stroke="${C.pants}" stroke-width="7"/>` : ""}`;
+    const shoes = `<g stroke="${INK}" stroke-width="2.4">
+        <path d="M80 322 Q78 334 96 336 L112 336 Q118 334 114 324 Q106 316 80 322 Z" fill="${C.shoe}"/>
+        <path d="M160 322 Q162 334 144 336 L128 336 Q122 334 126 324 Q134 316 160 322 Z" fill="${C.shoe}"/>
+      </g>
+      <path d="M86 326 Q98 322 108 326 M154 326 Q142 322 132 326" stroke="${INK}" stroke-opacity=".3" stroke-width="2" fill="none"/>`;
+
+    const sleeve = isTank ? `url(#sk${u})` : `url(#fl${u})`;
+    const akimbo = `
+      <path d="M90 178 L62 204 L84 220" stroke="${INK}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M90 178 L62 204 L84 220" stroke="${isTank ? C.skin[0] : C.top}" stroke-width="16.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      ${isPerm ? `<path d="M66 198 L60 206 L74 216 L80 208 Z" fill="${C.toshi}" stroke="${INK}" stroke-width="2"/>` : ""}
+      <ellipse cx="86" cy="220" rx="10" ry="9" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.4"/>`;
+
+    const arm = `
+    <g id="arm">
+      <path d="M152 178 L204 178" stroke="${INK}" stroke-width="22" stroke-linecap="round"/>
+      <path d="M152 178 L204 178" stroke="${isTank ? C.skin[0] : C.top}" stroke-width="16.5" stroke-linecap="round"/>
+      ${isTank ? "" : `<path d="M152 172 Q160 168 166 172 L166 184 Q160 188 152 184 Z" fill="${sleeve}" opacity=".9"/>`}
+      ${isPerm ? `<rect x="176" y="167" width="26" height="22" rx="6" fill="${C.toshi}" stroke="${INK}" stroke-width="2"/>
+                  <path d="M180 168 v20 M198 168 v20" stroke="${INK}" stroke-opacity=".4" stroke-width="1.4"/>` : ""}
+      <!-- 손: 주먹 쥐고 검지만 쭉 -->
+      <ellipse cx="214" cy="180" rx="12" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.4"/>
+      <path d="M206 189 q4 4 8 0 q4 4 8 0" fill="none" stroke="${INK}" stroke-width="1.6"/>
+      <ellipse cx="212" cy="170" rx="7" ry="4.5" fill="url(#sk${u})" stroke="${INK}" stroke-width="2" transform="rotate(-12 212 170)"/>
+      <rect x="220" y="173.5" width="24" height="9.5" rx="4.75" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+      <rect x="236" y="175" width="5.5" height="6" rx="2" fill="#fff" opacity=".7"/>
+    </g>`;
+
+    const earrings = look === "ajumma" ? `<circle cx="73" cy="124" r="4" fill="#fff" stroke="${INK}" stroke-width="1.5"/><circle cx="167" cy="124" r="4" fill="#fff" stroke="${INK}" stroke-width="1.5"/>` : "";
+
     return `
-<svg viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <pattern id="bl${u}" width="14" height="14" patternUnits="userSpaceOnUse">
-      <rect width="14" height="14" fill="${C.blouse}"/>
-      <circle cx="4" cy="4" r="2.2" fill="${C.bdot}"/><circle cx="11" cy="10" r="1.6" fill="${C.bdot}"/>
+    <radialGradient id="hg${u}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${C.hair[0]}"/><stop offset="1" stop-color="${C.hair[1]}"/></radialGradient>
+    <radialGradient id="sk${u}" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="${C.skin[0]}"/><stop offset="1" stop-color="${C.skin[1]}"/></radialGradient>
+    <pattern id="fl${u}" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="${C.top}"/>
+      <ellipse cx="15" cy="9" rx="3" ry="1.5" fill="${C.topLeaf}" transform="rotate(-30 15 9)"/>
+      <g fill="${C.topDot}"><circle cx="7" cy="4.4" r="2.3"/><circle cx="9.5" cy="6.3" r="2.3"/><circle cx="8.6" cy="9.2" r="2.3"/><circle cx="5.4" cy="9.2" r="2.3"/><circle cx="4.5" cy="6.3" r="2.3"/></g>
+      <circle cx="7" cy="7" r="1.5" fill="#ffcf33"/>
+      <circle cx="17" cy="17" r="1.8" fill="${C.topDot}"/><circle cx="17" cy="17" r=".8" fill="#ffcf33"/>
     </pattern>
-    <pattern id="pt${u}" width="22" height="22" patternUnits="userSpaceOnUse">
-      <rect width="22" height="22" fill="${C.pants}"/>
-      <g fill="${C.pdot}"><circle cx="6" cy="6" r="2.4"/><circle cx="3.4" cy="6" r="1.6"/><circle cx="8.6" cy="6" r="1.6"/><circle cx="6" cy="3.4" r="1.6"/><circle cx="6" cy="8.6" r="1.6"/></g>
-      <circle cx="16" cy="16" r="2" fill="#ffd84d"/>
+    <pattern id="pt${u}" width="30" height="30" patternUnits="userSpaceOnUse">
+      <rect width="30" height="30" fill="${C.pants}"/>
+      <path d="M16 12 q6 -6 10 -2 q-4 6 -10 2 Z" fill="${C.pantsLeaf}"/>
+      <g fill="${C.pantsDot}"><circle cx="9" cy="5.6" r="3.2"/><circle cx="12.4" cy="8.2" r="3.2"/><circle cx="11.1" cy="12.2" r="3.2"/><circle cx="6.9" cy="12.2" r="3.2"/><circle cx="5.6" cy="8.2" r="3.2"/></g>
+      <circle cx="9" cy="9.2" r="2.2" fill="#ffd84d"/>
+      <circle cx="24" cy="24" r="2.4" fill="#ffd84d"/>
     </pattern>
-    <clipPath id="fc${u}"><circle cx="100" cy="82" r="28"/></clipPath>
+    <clipPath id="fc${u}"><ellipse cx="${F.cx}" cy="${F.cy}" rx="${F.rx - 1}" ry="${F.ry - 1}"/></clipPath>
   </defs>
-  <!-- 고무신 -->
-  <ellipse cx="80" cy="288" rx="16" ry="7" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
-  <ellipse cx="120" cy="288" rx="16" ry="7" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
-  <!-- 배바지 (몸빼) -->
-  <path d="M62 140 L138 140 L142 272 Q132 284 116 280 L104 196 L96 196 L84 280 Q68 284 58 272 Z" fill="url(#pt${u})" stroke="#2b2140" stroke-width="2.5"/>
-  <path d="M60 270 Q70 278 84 276 M116 276 Q130 278 140 270" stroke="#2b2140" stroke-width="2" fill="none"/>
-  ${top}
-  <rect x="60" y="138" width="80" height="12" rx="5" fill="${look === "ajeossi" ? "#3a2a1a" : C.pants}" stroke="#2b2140" stroke-width="2.5"/>
-  ${look === "ajeossi" ? `<rect x="94" y="139" width="12" height="10" rx="2" fill="#e0c060" stroke="#2b2140" stroke-width="1.5"/>` : `<path d="M64 144 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3" stroke="#2b2140" stroke-width="1.2" fill="none"/>`}
-  <!-- 허리에 손 -->
-  <path d="M72 112 L50 134 L64 150" stroke="#2b2140" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M72 112 L50 134 L64 150" stroke="${look === "ajeossi" ? C.skin : C.blouse}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <circle cx="65" cy="150" r="7" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
-  <!-- 머리 -->
-  <g fill="${C.hair}" stroke="#2b2140" stroke-width="2">${hairBack}</g>
-  <circle cx="70" cy="86" r="5" fill="${C.skin}" stroke="#2b2140" stroke-width="2"/>
-  <circle cx="130" cy="86" r="5" fill="${C.skin}" stroke="#2b2140" stroke-width="2"/>
+  <ellipse cx="120" cy="336" rx="56" ry="6" fill="#000" opacity=".15"/>
+  ${shoes}
+  ${pants}
+  ${torso}
+  ${akimbo}
+  <rect x="110" y="146" width="20" height="20" rx="6" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  <g>${hairBack}</g>
+  <ellipse cx="74" cy="112" rx="8" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  <ellipse cx="166" cy="112" rx="8" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  ${earrings}
   ${faceArt}
-  <g fill="${C.hair}" stroke="#2b2140" stroke-width="2">${hairFront}</g>
-  <!-- 가리키는 팔 -->
-  <g id="arm">
-    <path d="M128 112 L176 112" stroke="#2b2140" stroke-width="17" stroke-linecap="round"/>
-    <path d="M128 112 L176 112" stroke="${look === "ajeossi" ? C.skin : C.blouse}" stroke-width="12" stroke-linecap="round"/>
-    ${look === "ajeossi" ? "" : `<rect x="150" y="105" width="22" height="14" rx="4" fill="#fff" stroke="#2b2140" stroke-width="2"/>`}
-    <circle cx="182" cy="112" r="8.5" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
-    <rect x="186" y="108.5" width="18" height="7" rx="3.5" fill="${C.skin}" stroke="#2b2140" stroke-width="2.2"/>
-  </g>
-  <!-- 빠직 -->
-  <g id="anger" transform="translate(128 54)">
-    <g stroke="#e53935" stroke-width="4" stroke-linecap="round" fill="none">
-      <path d="M-9 -3 Q-3 -3 -3 -9"/><path d="M3 -9 Q3 -3 9 -3"/><path d="M9 3 Q3 3 3 9"/><path d="M-3 9 Q-3 3 -9 3"/>
+  <g>${hairFront}</g>
+  ${arm}
+  <g id="anger" transform="translate(160 66)">
+    <circle r="15" fill="#fff" opacity=".85"/>
+    <g stroke="#e53935" stroke-width="4.5" stroke-linecap="round" fill="none">
+      <path d="M-11 -3 Q-3 -3 -3 -11"/><path d="M3 -11 Q3 -3 11 -3"/><path d="M11 3 Q3 3 3 11"/><path d="M-3 11 Q-3 3 -11 3"/>
     </g>
   </g>
 </svg>`;
@@ -365,17 +483,6 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
     const out = await new Promise((res) => { try { c.toBlob(res, "image/jpeg", 0.85); } catch { res(null); } });
     return out || file;
-  }
-  async function toFaceDataUrl(file) {
-    const img = await loadImage(file);
-    const bmp = { width: img.naturalWidth || img.width, height: img.naturalHeight || img.height };
-    const side = Math.min(bmp.width, bmp.height);
-    const c = document.createElement("canvas");
-    c.width = c.height = 256;
-    // 얼굴이 보통 사진 위쪽에 있어서 살짝 위를 잘라옴
-    const sx = (bmp.width - side) / 2, sy = Math.max(0, (bmp.height - side) / 2 - side * 0.1);
-    c.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, 256, 256);
-    return c.toDataURL("image/jpeg", 0.85);
   }
 
   /* ---------- AI 프롬프트 (server/main.py 와 같은 내용) ---------- */
@@ -672,9 +779,9 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       const st = $("stage").getBoundingClientRect();
       const svg = document.querySelector("#charFlip svg").getBoundingClientRect();
       const flipped = $("char").classList.contains("right");
-      const k = svg.height / 300;
-      const sx = flipped ? svg.right - 128 * k : svg.left + 128 * k;
-      const sy = svg.top + 112 * k;
+      const k = svg.height / 340;
+      const sx = flipped ? svg.right - 154 * k : svg.left + 154 * k;
+      const sy = svg.top + 178 * k;
       const tx = st.left + cx * st.width, ty = st.top + (item.y + item.h / 2) * st.height;
       let dx = tx - sx; const dy = ty - sy;
       if (flipped) dx = -dx;
@@ -758,13 +865,101 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     renderThumbs();
   });
   onPick($("inFace"), null, async (f) => {
-    S.face = await toFaceDataUrl(f); save();
-    renderFace(); renderLooks(); renderChar();
+    const img = await loadImage(f);
+    // 원본은 900px로 줄여서 보관 (다시 맞추기용)
+    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, k = Math.min(1, 900 / Math.max(W, H));
+    const c = document.createElement("canvas"); c.width = Math.round(W * k); c.height = Math.round(H * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    openFaceEditor(c.toDataURL("image/jpeg", 0.88), null);
   });
-  $("faceClear").onclick = () => { S.face = null; save(); renderFace(); renderLooks(); renderChar(); };
+  $("faceEdit").onclick = () => { if (S.faceSrc) openFaceEditor(S.faceSrc, S.faceView); };
+  $("faceClear").onclick = () => { S.face = null; S.faceSrc = null; S.faceView = null; save(); renderFace(); renderLooks(); renderChar(); };
+
+  /* ---------- 얼굴 위치 맞추기 ---------- */
+  const FE = { img: null, src: null, zoom: 1, ox: 0, oy: 0, base: 1, ptrs: new Map(), last: null };
+  const EL = { cx: 300, cy: 300, rx: 200, ry: 200 * FACE.ry / FACE.rx }; // 캐릭터 얼굴과 같은 비율
+  function feDraw() {
+    const cv = $("feCanvas"), g = cv.getContext("2d");
+    g.clearRect(0, 0, 600, 600);
+    if (!FE.img) return;
+    const dw = FE.img.width * FE.base * FE.zoom, dh = FE.img.height * FE.base * FE.zoom;
+    g.drawImage(FE.img, EL.cx + FE.ox - dw / 2, EL.cy + FE.oy - dh / 2, dw, dh);
+    g.save();
+    g.fillStyle = "rgba(43,33,64,.62)";
+    g.beginPath(); g.rect(0, 0, 600, 600);
+    g.ellipse(EL.cx, EL.cy, EL.rx, EL.ry, 0, 0, Math.PI * 2);
+    g.fill("evenodd");
+    g.setLineDash([14, 10]); g.lineWidth = 5; g.strokeStyle = "#fff";
+    g.beginPath(); g.ellipse(EL.cx, EL.cy, EL.rx, EL.ry, 0, 0, Math.PI * 2); g.stroke();
+    // 눈·입 자리 안내
+    g.setLineDash([]); g.lineWidth = 3; g.strokeStyle = "rgba(255,255,255,.45)";
+    g.beginPath(); g.moveTo(EL.cx - 120, EL.cy - 20); g.lineTo(EL.cx + 120, EL.cy - 20); g.stroke();
+    g.beginPath(); g.moveTo(EL.cx - 50, EL.cy + 110); g.lineTo(EL.cx + 50, EL.cy + 110); g.stroke();
+    g.restore();
+  }
+  function feCrop() {
+    const ow = 368, oh = Math.round(368 * EL.ry / EL.rx);
+    const c = document.createElement("canvas"); c.width = ow; c.height = oh;
+    const k = ow / (EL.rx * 2);
+    const dw = FE.img.width * FE.base * FE.zoom, dh = FE.img.height * FE.base * FE.zoom;
+    const x = EL.cx + FE.ox - dw / 2 - (EL.cx - EL.rx), y = EL.cy + FE.oy - dh / 2 - (EL.cy - EL.ry);
+    const g = c.getContext("2d");
+    g.fillStyle = "#f3c39d"; g.fillRect(0, 0, ow, oh);
+    g.drawImage(FE.img, x * k, y * k, dw * k, dh * k);
+    return c.toDataURL("image/jpeg", 0.9);
+  }
+  let fePrevT = 0;
+  function fePreview() {
+    clearTimeout(fePrevT);
+    fePrevT = setTimeout(() => { if (FE.img) $("fePreview").innerHTML = charSVG(S.look, feCrop(), "fe"); }, 120);
+  }
+  function openFaceEditor(src, view) {
+    const img = new Image();
+    img.onload = () => {
+      FE.img = img; FE.src = src;
+      FE.base = Math.max((EL.rx * 2) / img.width, (EL.ry * 2) / img.height);
+      FE.zoom = view ? view.zoom : 1; FE.ox = view ? view.ox : 0; FE.oy = view ? view.oy : 0;
+      $("feZoom").value = FE.zoom;
+      $("faceEditor").hidden = false;
+      feDraw(); fePreview();
+    };
+    img.onerror = () => showErr("얼굴 사진을 못 열었어요. 다른 사진으로 해주세요.");
+    img.src = src;
+  }
+  function closeFaceEditor() { $("faceEditor").hidden = true; FE.ptrs.clear(); }
+  function feScale() { return 600 / $("feCanvas").getBoundingClientRect().width; }
+  function feSetZoom(z) { FE.zoom = Math.max(1, Math.min(5, z)); $("feZoom").value = FE.zoom; feDraw(); fePreview(); }
+  const cvs = $("feCanvas");
+  cvs.addEventListener("pointerdown", (e) => { cvs.setPointerCapture(e.pointerId); FE.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); FE.last = null; });
+  cvs.addEventListener("pointermove", (e) => {
+    if (!FE.ptrs.has(e.pointerId)) return;
+    const prev = FE.ptrs.get(e.pointerId);
+    FE.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const k = feScale();
+    if (FE.ptrs.size === 1) {
+      FE.ox += (e.clientX - prev.x) * k; FE.oy += (e.clientY - prev.y) * k; feDraw();
+    } else if (FE.ptrs.size === 2) {
+      const [a, b] = [...FE.ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (FE.last) feSetZoom(FE.zoom * d / FE.last);
+      FE.last = d;
+    }
+  });
+  const feUp = (e) => { FE.ptrs.delete(e.pointerId); FE.last = null; fePreview(); };
+  cvs.addEventListener("pointerup", feUp); cvs.addEventListener("pointercancel", feUp);
+  cvs.addEventListener("wheel", (e) => { e.preventDefault(); feSetZoom(FE.zoom * (e.deltaY < 0 ? 1.06 : 0.94)); }, { passive: false });
+  $("feZoom").addEventListener("input", (e) => feSetZoom(Number(e.target.value)));
+  $("feReset").onclick = () => { FE.ox = 0; FE.oy = 0; feSetZoom(1); };
+  $("feCancel").onclick = closeFaceEditor;
+  $("feDone").onclick = () => {
+    S.face = feCrop(); S.faceSrc = FE.src; S.faceView = { zoom: FE.zoom, ox: FE.ox, oy: FE.oy };
+    save(); closeFaceEditor(); renderFace(); renderLooks(); renderChar(); pointAt(S.items[S.idx] || null);
+  };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("faceEditor").hidden) closeFaceEditor(); });
   function renderFace() {
     $("faceThumb").style.backgroundImage = S.face ? `url(${S.face})` : "";
     $("faceClear").hidden = !S.face;
+    $("faceEdit").hidden = !S.faceSrc;
   }
   $("testVoice").onclick = () => {
     unlockAudio(); zap();
@@ -806,7 +1001,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   $("next").onclick = () => { unlockAudio(); stopPlay(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); };
 
   function save() {
-    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, face: S.face });
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
   }
 
   /* ---------- 시작 ---------- */
