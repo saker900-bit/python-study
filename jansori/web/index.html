@@ -120,7 +120,25 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 .zoomrow { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .zoomrow input { flex: 1; accent-color: var(--magenta); }
 .sheet .controls button.primary { background: var(--angry); color: #fff; }
+.score { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; align-content: center; gap: 6px; text-align: center; cursor: pointer;
+  background: radial-gradient(circle at 50% 45%, rgba(43,33,64,.35), rgba(43,33,64,.82)); }
+.score .cap { color: #fff; font-size: 14px; }
+.stage:has(.score:not([hidden])) .bubble { opacity: 0; }
+.score .num { font-family: var(--display); font-size: clamp(76px, 26vw, 170px); line-height: 1; color: var(--sun); font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 6px 6px 0 var(--ink); }
+.score .num small { font-size: .38em; }
+.score .grade { font-family: var(--display); font-size: clamp(20px, 6vw, 32px); color: #fff; background: var(--angry); border: 3px solid var(--ink); border-radius: 12px; padding: 2px 14px; opacity: 0; }
+.score.rolling .num { animation: jitter .09s steps(2) infinite; }
+.score.land .num { animation: slam .65s cubic-bezier(.2,1.8,.4,1); }
+.score.land .grade { animation: rise .4s .5s forwards; }
+@keyframes jitter { 50% { translate: 3px -3px; } }
+@keyframes slam { 0% { transform: scale(3.2) rotate(-10deg); opacity: 0; } 55% { opacity: 1; } 100% { transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.voicebox { display: grid; gap: 8px; padding: 10px; border: 2px dashed var(--line); border-radius: 12px; }
+.voicebox .filebtn:has(input:disabled) { background: #e4dfd2; color: var(--muted); cursor: not-allowed; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) {
+  .score .grade { opacity: 1; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
@@ -168,6 +186,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       <div id="boxes"></div>
       <div class="char left" id="char"><div class="flip" id="charFlip"></div></div>
       <div class="bubble right" id="bubble">평소 사진부터 올려봐라!</div>
+      <div class="score" id="score" hidden><div class="cap">오늘의 정리 점수</div><div class="num" id="scoreNum">0<small>점</small></div><div class="grade" id="scoreGrade"></div><div class="cap">화면을 누르면 닫혀요</div></div>
     </div>
     <div class="controls">
       <button id="prev" disabled>◀ 이전</button>
@@ -196,6 +215,13 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       <div class="spice" id="spice" role="group" aria-label="잔소리 맵기"></div>
       <button class="small" id="testVoice">목소리 들어보기</button>
     </div>
+    <div class="voicebox">
+      <div class="row"><label>내 목소리로 잔소리</label><span class="mode" id="cloneState">꺼짐</span></div>
+      <p class="note" id="cloneNote"></p>
+      <label class="check"><input type="checkbox" id="consent"> 제 목소리이거나, 목소리 주인에게 허락받았어요.</label>
+      <label class="filebtn">목소리 샘플 올리기 (조용한 곳에서 30초~1분)<input id="inVoice" type="file" accept="audio/*"></label>
+      <button class="small" id="cloneClear" hidden>기본 목소리로 돌아가기</button>
+    </div>
   </section>
 </div>
 
@@ -223,20 +249,24 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
   /* ---------- 데이터 ---------- */
   const PERSONAS = {
     ajumma:   { name: "아줌마", pitch: 1.15, rate: 1.15, female: true,
-                lines: ["이거 뭐야!", "이거 치워!", "내가 몇 번을 말했니!", "이게 왜 여기 있어?!", "당장 치워라 진짜!"] },
+                lines: ["이거 뭐야!", "이거 치워!", "내가 몇 번을 말했니!", "이게 왜 여기 있어?!", "당장 치워라 진짜!"],
+                closers: ["으휴~ 이래서 내가 집을 비울 수가 없어~", "하여간 이 집구석은 내가 없으면 돌아가질 않아~", "어지르는 사람 따로 있고 치우는 사람 따로 있니?", "내가 너 때문에 못 산다 진짜~"] },
     halmeoni: { name: "할머니", pitch: 0.7, rate: 0.82, female: true,
-                lines: ["아이고 이게 다 뭐꼬!", "이거 얼른 치아라!", "니 이래 살면 못 쓴다!", "할미 속 터진다 속 터져!"] },
+                lines: ["아이고 이게 다 뭐꼬!", "이거 얼른 치아라!", "니 이래 살면 못 쓴다!", "할미 속 터진다 속 터져!"],
+                closers: ["아이고~ 할미가 없으면 이 집이 우째 돌아가노~", "어지르는 사람 따로 있고 치우는 사람 따로 있나!", "할미가 오래 살아야 되겠다, 아이고 내 팔자야~"] },
     ajeossi:  { name: "아저씨", pitch: 0.35, rate: 0.95, female: false,
-                lines: ["어허! 이게 뭐야!", "당장 치워라!", "정리 좀 하고 살자!", "이거 누가 이랬어!"] },
+                lines: ["어허! 이게 뭐야!", "당장 치워라!", "정리 좀 하고 살자!", "이거 누가 이랬어!"],
+                closers: ["어휴, 내가 집을 비울 수가 없다니까!", "어지르는 사람 따로 있고 치우는 사람 따로 있냐?", "이 집은 내가 없으면 안 돌아가요, 안 돌아가!"] },
     kid:      { name: "어린아이", pitch: 1.9, rate: 1.1, female: true,
-                lines: ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!", "나보다 더 어지르네!"] },
+                lines: ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!", "나보다 더 어지르네!"],
+                closers: ["어지른 사람이 치우는 거야! 유치원에서 배웠어!", "으휴~ 내가 없으면 이 집 어떡해~", "나도 이렇게는 안 어질러!"] },
   };
   const SPICE = ["순한맛", "보통맛", "매운맛"];
   // 눈썰미: 얼마나 꼼꼼하게 찾는지 (맵기는 말투, 이건 찾는 강도)
   const MODES = {
     obsess: { name: "강박모드", desc: "리모컨 각도, 쿠션 주름, 먼지 한 톨까지 전부 찾아내요.", max: 12,
               ask: `아주 작은 차이까지 전부 찾아라. 물건이 몇 cm 옮겨진 것, 쿠션·이불 주름이나 각도, 리모컨·슬리퍼 방향, 먼지, 얼룩, 머리카락, 살짝 열린 서랍이나 문, 비뚤어진 액자까지. 사진 각도 차이만 빼고 사소한 것도 빠짐없이. 최대 12개.` },
-    mom:    { name: "아줌마모드", desc: "평범한 한국 아줌마 눈썰미. 웬만한 건 다 걸려요.", max: 6,
+    mom:    { name: "엄마모드", desc: "평범한 한국 엄마 눈썰미. 웬만한 건 다 걸려요.", max: 6,
               ask: `보통 한국 엄마·아내 눈썰미로 찾아라. 잔소리할 만한 것 위주로, 아주 사소한 차이(몇 cm 이동, 미세한 각도)는 무시. 최대 6개.` },
     dad:    { name: "아빠모드", desc: "큰 건 보는데, 자잘한 건 둘 중 하나는 못 알아채요.", max: 6,
               ask: `눈에 확 띄는 변화 위주로 찾아라. 최대 6개.` },
@@ -287,6 +317,8 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     voice: "ajumma",
     spice: 2,
     mode: "mom",
+    cloneVoice: null,  // ElevenLabs voice_id
+    server: { tts: false, clone: false },
     face: null,        // 잘라낸 얼굴 dataURL
     faceSrc: null,     // 원본 (다시 맞추기용)
     faceView: null,    // {zoom, ox, oy}
@@ -522,8 +554,10 @@ ${m.ask}
 - x, y, w, h: 두 번째(오늘) 사진 기준 위치. 0~1 비율 (왼쪽 위가 0,0). 없어진 물건은 원래 있던 자리.
 
 summary: 전체 총평 한 줄 (${p.name} 말투). 달라진 게 없으면 items는 빈 배열, summary는 칭찬.
+closing: 다 찝고 나서 마지막에 한숨 쉬며 하는 마무리 잔소리 한 줄 (${p.name} 말투, 맵기 ${spice}단계). 이런 느낌: ${p.closers.map((s) => `"${s}"`).join(", ")}. 깨끗하면 칭찬 한 줄.
+score: 정리 상태 점수 0~100 정수. 평소 사진 상태가 100점. 많이 어질러질수록 낮게.
 
-JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, "kind": string, "size": string, "x": number, "y": number, "w": number, "h": number}]}`;
+JSON만 출력: {"summary": string, "closing": string, "score": number, "items": [{"label": string, "line": string, "kind": string, "size": string, "x": number, "y": number, "w": number, "h": number}]}`;
   }
 
   function cleanResult(r) {
@@ -535,7 +569,8 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       if (x + w > 1) w = 1 - x; if (y + h > 1) h = 1 - y;
       return { label: String(it.label || "이거"), line: String(it.line || "이거 뭐야!"), kind: String(it.kind || "new"), size: it.size === "small" ? "small" : "big", x, y, w, h };
     });
-    return { summary: String((r && r.summary) || ""), items };
+    const sc = Number(r && r.score);
+    return { summary: String((r && r.summary) || ""), closing: String((r && r.closing) || ""), score: Number.isFinite(sc) ? Math.round(Math.min(100, Math.max(0, sc))) : null, items };
   }
 
   /* ---------- 분석: 1) Claude 2) 내 서버 3) 간단 픽셀 비교 ---------- */
@@ -679,6 +714,35 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       o.connect(g2).connect(actx.destination); o.start(t); o.stop(t + 0.26);
     } catch {}
   }
+  function drumroll(sec) {
+    if (!actx) return;
+    try {
+      const t0 = actx.currentTime, hit = actx.createBuffer(1, actx.sampleRate * 0.05, actx.sampleRate), d = hit.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+      for (let t = 0; t < sec; t += 0.045) {
+        const s = actx.createBufferSource(); s.buffer = hit;
+        const f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 900;
+        const g = actx.createGain(); g.gain.value = 0.12 + 0.5 * (t / sec);
+        s.connect(f).connect(g).connect(actx.destination); s.start(t0 + t);
+      }
+    } catch {}
+  }
+  function boom() {
+    if (!actx) return;
+    try {
+      const t = actx.currentTime;
+      const o = actx.createOscillator(); o.type = "sine";
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.5);
+      const g = actx.createGain(); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.9);
+      const len = 1.2, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+      const s = actx.createBufferSource(); s.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 5000;
+      const g2 = actx.createGain(); g2.gain.value = 0.25;
+      s.connect(f).connect(g2).connect(actx.destination); s.start(t);
+    } catch {}
+  }
   function pickVoice(female) {
     try {
       const vs = speechSynthesis.getVoices().filter((v) => /^ko/i.test(v.lang));
@@ -687,7 +751,35 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       return vs.find((v) => (female ? fem : mal).test(v.name)) || vs[0];
     } catch { return null; }
   }
+  function useServerVoice() { return S.server.tts || (S.server.clone && !!S.cloneVoice); }
+  // 서버(ElevenLabs) 음성. 안 되면 null
+  async function serverVoice(text) {
+    const api = window.JANSORI_API;
+    if (!api || !useServerVoice() || !actx) return null;
+    try {
+      const fd = new FormData();
+      fd.append("text", text); fd.append("persona", S.voice);
+      if (S.cloneVoice) fd.append("voice_id", S.cloneVoice);
+      const res = await fetch(api.replace(/\/$/, "") + "/api/tts", { method: "POST", body: fd });
+      if (!res.ok) return null;
+      return await actx.decodeAudioData(await res.arrayBuffer());
+    } catch (e) { console.warn("tts failed", e); return null; }
+  }
+  let curSrc = null;
   function speak(text, done) {
+    if (window.JANSORI_API && useServerVoice()) {
+      serverVoice(text).then((buf) => {
+        if (!buf) return speakLocal(text, done);
+        try { if (curSrc) curSrc.stop(); } catch {}
+        const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination);
+        src.onended = () => { if (curSrc === src) curSrc = null; done(); };
+        curSrc = src; src.start();
+      });
+      return;
+    }
+    speakLocal(text, done);
+  }
+  function speakLocal(text, done) {
     const p = PERSONAS[S.voice];
     if (!("speechSynthesis" in window)) { setTimeout(done, 900 + text.length * 90); return; }
     try {
@@ -854,12 +946,12 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     if (S.missed) {
       const li = document.createElement("li");
       li.className = "missed";
-      li.innerHTML = `<span class="n">?</span><div><div class="what">아빠가 못 본 게 ${S.missed}개 더 있어요</div><div class="say">엄마한테 걸리기 전에 아줌마모드로 다시 검사해보세요.</div></div>`;
+      li.innerHTML = `<span class="n">?</span><div><div class="what">아빠가 못 본 게 ${S.missed}개 더 있어요</div><div class="say">엄마한테 걸리기 전에 엄마모드로 다시 검사해보세요.</div></div>`;
       list.appendChild(li);
     }
     $("prev").disabled = S.idx <= 0;
-    $("next").disabled = S.idx >= S.items.length - 1;
-    $("replay").disabled = !S.items.length;
+    $("next").disabled = !S.items.length || S.idx >= S.items.length;
+    $("replay").disabled = S.idx < -1 || S.score == null;
   }
   function escapeHtml(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
@@ -876,11 +968,52 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     say(it.line);
     setTimeout(() => speak(it.line, () => {
       if (chain && S.playing && i < S.items.length - 1) setTimeout(() => S.playing && show(i + 1, true), 500);
+      else if (chain && S.playing) setTimeout(() => S.playing && finale(true), 700);
       else S.playing = false;
     }), 280);
   }
-  function play(from) { if (!S.items.length) return; S.playing = true; show(from, true); }
-  function stopPlay() { S.playing = false; try { speechSynthesis.cancel(); } catch {} }
+  function play(from) {
+    hideScore();
+    S.playing = true;
+    if (!S.items.length || from >= S.items.length) finale(true); else show(from, true);
+  }
+  const GRADES = [[95, "완벽! 용돈 인상 각"], [80, "이 정도면 봐준다"], [60, "등짝 스매싱 주의"], [40, "오늘 저녁밥 없다"], [0, "집 나가!"]];
+  function grade(sc) { return GRADES.find(([g]) => sc >= g)[1]; }
+  // 다 찝은 뒤: 한숨 섞인 마무리 잔소리 → 두둥 점수
+  function finale(chain) {
+    S.idx = S.items.length; renderBoxes();
+    const ch = $("char");
+    pointAt(null);
+    ch.classList.remove("mad"); void ch.offsetWidth; ch.classList.add("mad");
+    const line = S.closer || PERSONAS[S.voice].closers[0];
+    say(line);
+    speak(line, () => { if (!chain || S.playing) showScore(); });
+  }
+  function hideScore() { const el = $("score"); el.hidden = true; el.classList.remove("rolling", "land"); clearInterval(S.rollT); }
+  function showScore() {
+    const el = $("score"), num = $("scoreNum"), sc = S.score == null ? 100 : S.score;
+    el.hidden = false; el.classList.remove("land"); el.classList.add("rolling");
+    $("scoreGrade").textContent = grade(sc);
+    drumroll(1.5);
+    clearInterval(S.rollT);
+    S.rollT = setInterval(() => { num.innerHTML = Math.floor(Math.random() * 100) + "<small>점</small>"; }, 60);
+    setTimeout(() => {
+      clearInterval(S.rollT);
+      num.innerHTML = sc + "<small>점</small>";
+      el.classList.remove("rolling"); void el.offsetWidth; el.classList.add("land");
+      boom();
+      setTimeout(() => speak(`${sc}점! ${grade(sc)}`, () => { S.playing = false; }), 450);
+    }, 1550);
+  }
+  $("score").onclick = () => { stopPlay(); hideScore(); };
+  // 점수: AI가 준 것, 없으면 걸린 개수로 계산. 아빠모드는 놓친 만큼 후하게
+  function computeScore(r) {
+    let sc = r.score;
+    if (sc == null) sc = 100 - r.items.reduce((a, it) => a + (it.size === "small" ? 6 : 14), 0);
+    if (S.mode === "dad") sc += (r.missed || 0) * 6;
+    return Math.round(Math.min(100, Math.max(5, sc)));
+  }
+  function stopPlay() { S.playing = false; try { speechSynthesis.cancel(); } catch {} try { if (curSrc) { const c = curSrc; curSrc = null; c.stop(); } } catch {} }
 
   /* ---------- 이벤트 ---------- */
   function showErr(msg) { const el = $("err"); el.hidden = !msg; el.textContent = msg || ""; }
@@ -908,7 +1041,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   });
   onPick($("inToday"), "thumbToday", async (f) => {
     S.today = await toJpeg(f);
-    S.items = []; S.idx = -1; S.missed = 0; renderBoxes();
+    S.items = []; S.idx = -1; S.missed = 0; S.score = null; hideScore(); renderBoxes();
     const img = $("stagePhoto");
     img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
     renderThumbs();
@@ -1026,14 +1159,21 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     try {
       const r = await analyze(base, S.today);
       S.items = r.items; S.idx = -1; S.missed = r.missed || 0;
+      S.score = computeScore(r);
+      const cl = PERSONAS[S.voice].closers;
+      S.closer = r.closing || (S.items.length ? cl[Math.floor(Math.random() * cl.length)] : "오늘은 봐준다~ 계속 이렇게만 해!");
+      hideScore();
       $("mode").hidden = false; $("mode").textContent = r.mode === "AI" ? "AI 검사" : "간단 비교 모드";
       renderBoxes();
       if (!S.items.length) {
-        say(S.missed ? "음? 뭐 바뀐 거 있나? 괜찮은데?" : (r.summary || "오~ 웬일로 깨끗하네?"), true);
+        const praise = S.missed ? "음? 뭐 바뀐 거 있나? 괜찮은데?" : (r.summary || "오~ 웬일로 깨끗하네?");
+        say(praise); S.playing = true;
+        speak(praise, () => S.playing && showScore());
       } else {
         const intro = r.summary || `${S.items.length}개나 걸렸어!`;
         say(intro);
-        speak(intro, () => play(0));
+        S.playing = true;
+        speak(intro, () => S.playing && play(0));
       }
       $("h-stage").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {
@@ -1045,12 +1185,52 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
       $("go").disabled = false; $("go").textContent = "빠직 검사하기";
     }
   };
-  $("replay").onclick = () => { unlockAudio(); stopPlay(); play(Math.max(0, S.idx)); };
-  $("prev").onclick = () => { unlockAudio(); stopPlay(); if (S.idx > 0) show(S.idx - 1, false); };
-  $("next").onclick = () => { unlockAudio(); stopPlay(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); };
+  $("replay").onclick = () => { unlockAudio(); stopPlay(); play(S.idx >= S.items.length ? 0 : Math.max(0, S.idx)); };
+  $("prev").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx > 0) show(Math.min(S.idx, S.items.length) - 1, false); };
+  $("next").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); else if (S.idx === S.items.length - 1) finale(false); };
+
+  /* ---------- 내 목소리 (ElevenLabs, 서버 필요) ---------- */
+  function renderClone(msg) {
+    const on = !!(window.JANSORI_API && S.server.clone);
+    $("inVoice").disabled = !on; $("consent").disabled = !on;
+    $("cloneState").textContent = S.cloneVoice ? "켜짐" : "꺼짐";
+    $("cloneClear").hidden = !S.cloneVoice;
+    $("cloneNote").textContent = msg || (on
+      ? "목소리 샘플을 올리면 잔소리를 그 목소리로 해요. 다른 소리 없이 또박또박 말한 녹음이 좋아요."
+      : "ElevenLabs 서버를 연결한 스토어 앱 버전에서 켜져요. 지금은 폰 기본 음성으로 말해요.");
+  }
+  $("inVoice").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!$("consent").checked) { renderClone("먼저 허락받은 목소리라는 칸에 체크해주세요."); return; }
+    renderClone("목소리 만드는 중... (10초쯤 걸려요)");
+    try {
+      const fd = new FormData();
+      fd.append("sample", f, f.name || "voice.m4a"); fd.append("consent", "true");
+      const res = await fetch(window.JANSORI_API.replace(/\/$/, "") + "/api/voice-clone", { method: "POST", body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.voice_id) throw new Error(j.detail || res.status);
+      S.cloneVoice = j.voice_id; save();
+      renderClone("완료! 이제 이 목소리로 잔소리해요. '목소리 들어보기'로 확인해보세요.");
+    } catch (err) {
+      console.error(err);
+      renderClone("목소리를 만들지 못했어요. 30초 이상, 조용한 곳에서 녹음한 파일로 다시 해주세요.");
+    }
+  });
+  $("cloneClear").onclick = () => { S.cloneVoice = null; save(); renderClone(); };
+  async function checkServer() {
+    const api = window.JANSORI_API;
+    if (!api) return;
+    try {
+      const j = await (await fetch(api.replace(/\/$/, "") + "/health")).json();
+      S.server = { tts: !!j.tts, clone: !!j.clone };
+    } catch {}
+    renderClone();
+  }
 
   function save() {
-    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, cloneVoice: S.cloneVoice, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
   }
 
   /* ---------- 시작 ---------- */
@@ -1060,6 +1240,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
     if (st) Object.assign(S, st);
     for (const r of S.rooms) { const b = await kvGet("base:" + r); if (b) S.base[r] = b; }
     renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    renderClone(); checkServer();
     getSample();
   }
   init();
