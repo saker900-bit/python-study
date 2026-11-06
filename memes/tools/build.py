@@ -30,6 +30,9 @@ else:
     memes = [{k: v for k, v in m.items() if k != "media"} for m in memes]
 
 if mode == "artifact":
+    # 미리보기는 짤 파일이 있는 밈만
+    memes = [m for m in memes if m.get("media")]
+
     def fetch(m):
         dst = out / "m" / f"{m['id']}.mp4"
         if dst.exists() and dst.stat().st_size > 1000:
