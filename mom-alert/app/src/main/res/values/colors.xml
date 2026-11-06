@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FF3B5BDB</color>
+    <color name="alert">#FFE03131</color>
+    <color name="bg">#FF101320</color>
+    <color name="card">#FF1C2033</color>
+    <color name="text">#FFF1F3F5</color>
+    <color name="subtext">#FFADB5BD</color>
+</resources>

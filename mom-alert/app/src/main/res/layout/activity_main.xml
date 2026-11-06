@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📡 엄마레이더"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="다가오는 발소리·진동을 감지하면 알려드려요"
+            android:textColor="@color/subtext" />
+
+        <!-- 상태 + 시작 버튼 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="꺼져 있음"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/liveText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:text="-"
+                android:textColor="@color/subtext"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/toggleButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:text="감시 시작"
+                android:textSize="17sp" />
+        </LinearLayout>
+
+        <!-- 감지 방식 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <Switch
+                android:id="@+id/micSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🎤 발소리 감지 (마이크)"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/micSensLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/subtext" />
+
+            <SeekBar
+                android:id="@+id/micSens"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="9" />
+
+            <Switch
+                android:id="@+id/vibSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="📳 바닥 진동 감지 (폰을 내려놨을 때)"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/vibSensLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/subtext" />
+
+            <SeekBar
+                android:id="@+id/vibSens"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="9" />
+        </LinearLayout>
+
+        <!-- 판정 조건 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/stepsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/subtext" />
+
+            <SeekBar
+                android:id="@+id/stepsSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="4" />
+
+            <Switch
+                android:id="@+id/approachSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="점점 커질 때만 알림 (다가오는 소리)"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="알림 문구"
+                android:textColor="@color/subtext" />
+
+            <EditText
+                android:id="@+id/messageEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLength="40"
+                android:singleLine="true"
+                android:textColor="@color/text" />
+
+            <Button
+                android:id="@+id/testButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="🔔 알림 테스트" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:lineSpacingExtra="4dp"
+            android:text="💡 팁\n• 게임 소리가 마이크로 들어가면 오작동해요. 이어폰을 쓰면 정확해져요.\n• 진동 감지는 폰을 바닥·책상에 내려놨을 때만 동작해요. 손에 들고 있으면 자동으로 쉬어요.\n• 다른 앱이 마이크를 쓰는 중(통화, 녹음)에는 발소리 감지가 멈춰요.\n• 소리는 녹음·저장·전송되지 않고 폰 안에서 크기만 분석해요."
+            android:textColor="@color/subtext"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

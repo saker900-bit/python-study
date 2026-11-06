@@ -1,0 +1,56 @@
+name: 엄마레이더 Android 빌드
+
+on:
+  push:
+    paths:
+      - "mom-alert/**"
+      - ".github/workflows/mom-alert-android.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
+    defaults:
+      run:
+        working-directory: mom-alert
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 테스트용 APK 빌드
+        run: chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+
+      - name: 테스트용 APK 올리기
+        uses: actions/upload-artifact@v4
+        with:
+          name: mom-radar-debug-apk
+          path: mom-alert/app/build/outputs/apk/debug/app-debug.apk
+
+      # 아래는 GitHub Secrets에 서명 키를 등록했을 때만 실행 (스토어 업로드용 .aab)
+      - name: 서명 키 준비
+        if: env.HAS_KEY == 'true'
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: 스토어용 AAB 빌드
+        if: env.HAS_KEY == 'true'
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: 스토어용 AAB 올리기
+        if: env.HAS_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mom-radar-release-aab
+          path: mom-alert/app/build/outputs/bundle/release/app-release.aab
