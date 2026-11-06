@@ -269,7 +269,7 @@ class CleanerService : AccessibilityService() {
         if (overlay != null) return
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val dp = resources.displayMetrics.density
-        val text = TextView(this).apply {
+        val label = TextView(this).apply {
             setTextColor(Color.WHITE)
             textSize = 18f
             gravity = Gravity.CENTER
@@ -285,7 +285,7 @@ class CleanerService : AccessibilityService() {
             setBackgroundColor(Color.argb(235, 15, 23, 42))
             setPadding((24 * dp).toInt(), (24 * dp).toInt(), (24 * dp).toInt(), (24 * dp).toInt())
             addView(ProgressBar(this@CleanerService))
-            addView(text, LinearLayout.LayoutParams(-2, -2).apply { topMargin = (16 * dp).toInt() })
+            addView(label, LinearLayout.LayoutParams(-2, -2).apply { topMargin = (16 * dp).toInt() })
             addView(stop, LinearLayout.LayoutParams(-2, -2).apply { topMargin = (24 * dp).toInt() })
         }
         val lp = WindowManager.LayoutParams(
@@ -299,7 +299,7 @@ class CleanerService : AccessibilityService() {
         runCatching {
             wm.addView(layout, lp)
             overlay = layout
-            overlayText = text
+            overlayText = label
         }
     }
 
