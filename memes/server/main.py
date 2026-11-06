@@ -55,6 +55,9 @@ class SearchIn(BaseModel):
 
 SYSTEM = (
     "너는 한국 인터넷 밈 전문가야. 사용자가 흐릿하게 기억하는 밈 설명을 듣고, 주어진 밈 도감에서 그 밈일 가능성이 있는 항목을 고른다. "
+    "사람들은 밈 이름보다 장면(누가, 어떤 표정·동작·옷·피·자막), 대사 일부, 쓰는 상황으로 설명하는 경우가 많다. "
+    "도감의 '장면'과 '다른 이름' 칸을 꼭 보고, 대사를 틀리게 기억하거나 사투리·오타로 적어도 뜻이 맞으면 고른다. "
+    "1순위는 장면·대사·상황이 가장 많이 겹치는 것. "
     "관련 있는 항목만 가능성 높은 순으로 최대 5개 id를 고르고, 억지로 채우지 않는다. "
     "도감에 없더라도 확실히 아는 실제 밈이면 guess에 적고, 모르면 guess는 null로 둔다. 지어내지 않는다. "
     "사용자가 이미 아니라고 한 게 있으면 그것과 비슷하지만 다른 걸 찾는다. "
@@ -101,7 +104,9 @@ def search(body: SearchIn, request: Request):
     memes = catalog()["memes"]
     rejected = set(body.rejected)
     lines = "\n".join(
-        f"{m['id']} | {m['name']} | {m['quote']} | {m['source']} | {m['desc']}" for m in memes if m["id"] not in rejected
+        " | ".join([m["id"], m["name"], m["quote"], m["source"], m["desc"], m.get("scene") or "",
+                    ", ".join((m.get("aliases") or []) + ([m["keyword"]] if m.get("keyword") and any(ch.isascii() and ch.isalpha() for ch in m["keyword"]) else []))])
+        for m in memes if m["id"] not in rejected
     )
     try:
         resp = client.beta.messages.create(
@@ -113,7 +118,7 @@ def search(body: SearchIn, request: Request):
             # 도감은 매번 같으니 캐시해서 비용 절약
             system=[
                 {"type": "text", "text": SYSTEM},
-                {"type": "text", "text": f"밈 도감 (id | 이름 | 대사 | 출처 | 설명):\n{lines}", "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": f"밈 도감 (id | 이름 | 대사 | 출처 | 설명 | 장면 | 다른 이름):\n{lines}", "cache_control": {"type": "ephemeral"}},
             ],
             messages=[{"role": "user", "content": f"사용자 설명: {body.query}" + (
                 f"\n이미 아니라고 한 것: {', '.join(body.wrong[:15])}" if body.wrong else "")}],

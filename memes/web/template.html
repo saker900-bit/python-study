@@ -28,7 +28,7 @@ html, body { margin: 0; background: var(--screen); color: var(--ink); font-famil
 .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 h1 {
   margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 9vw, 46px); line-height: 1.05;
-  color: var(--caption); -webkit-text-stroke: 2px #1a1400; paint-order: stroke fill; text-shadow: 3px 3px 0 #000;
+  color: var(--caption); text-shadow: 2.0px 0.0px 0 #000, 1.8px 0.8px 0 #000, 1.4px 1.4px 0 #000, 0.8px 1.8px 0 #000, 0.0px 2.0px 0 #000, -0.8px 1.8px 0 #000, -1.4px 1.4px 0 #000, -1.8px 0.8px 0 #000, -2.0px 0.0px 0 #000, -1.8px -0.8px 0 #000, -1.4px -1.4px 0 #000, -0.8px -1.8px 0 #000, -0.0px -2.0px 0 #000, 0.8px -1.8px 0 #000, 1.4px -1.4px 0 #000, 1.8px -0.8px 0 #000, 3px 4px 0 #000;
 }
 .noads {
   border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px;
@@ -54,13 +54,13 @@ label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: 
 
 .stage { position: relative; border-radius: 18px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
 .textcard { flex-direction: column; gap: 8px; padding: 48px 20px; background: radial-gradient(120% 90% at 50% 0%, #2a2f48 0%, #151722 70%); }
-.bigname { margin: 0; font-family: var(--display); font-size: clamp(34px, 10vw, 54px); color: var(--caption); text-align: center; word-break: keep-all; -webkit-text-stroke: 2px #1a1400; paint-order: stroke fill; }
+.bigname { margin: 0; font-family: var(--display); font-size: clamp(34px, 10vw, 54px); color: var(--caption); text-align: center; word-break: keep-all; text-shadow: 2.0px 0.0px 0 #000, 1.8px 0.8px 0 #000, 1.4px 1.4px 0 #000, 0.8px 1.8px 0 #000, 0.0px 2.0px 0 #000, -0.8px 1.8px 0 #000, -1.4px 1.4px 0 #000, -1.8px 0.8px 0 #000, -2.0px 0.0px 0 #000, -1.8px -0.8px 0 #000, -1.4px -1.4px 0 #000, -0.8px -1.8px 0 #000, -0.0px -2.0px 0 #000, 0.8px -1.8px 0 #000, 1.4px -1.4px 0 #000, 1.8px -0.8px 0 #000; }
 .stage img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; }
 .stage video { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; background: #000; }
 .badge { position: absolute; top: 10px; left: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.65); color: var(--muted); font-size: 12px; font-weight: 700; }
 .caption {
   font-family: var(--display); font-size: clamp(26px, 7.5vw, 40px); line-height: 1.15; text-align: center;
-  color: #fff; -webkit-text-stroke: 5px #000; paint-order: stroke fill; word-break: keep-all; text-wrap: balance; margin: 0;
+  color: #fff; text-shadow: 3.0px 0.0px 0 #000, 2.8px 1.1px 0 #000, 2.1px 2.1px 0 #000, 1.1px 2.8px 0 #000, 0.0px 3.0px 0 #000, -1.1px 2.8px 0 #000, -2.1px 2.1px 0 #000, -2.8px 1.1px 0 #000, -3.0px 0.0px 0 #000, -2.8px -1.1px 0 #000, -2.1px -2.1px 0 #000, -1.1px -2.8px 0 #000, -0.0px -3.0px 0 #000, 1.1px -2.8px 0 #000, 2.1px -2.1px 0 #000, 2.8px -1.1px 0 #000, 0 4px 6px rgba(0,0,0,.6); word-break: keep-all; text-wrap: balance; margin: 0;
 }
 .sub { text-align: center; color: var(--muted); font-size: 14px; margin: -6px 0 0; }
 .ask { font-family: var(--display); font-size: 30px; text-align: center; margin: 4px 0 0; color: var(--caption); }
@@ -490,7 +490,7 @@ function status(html) { out.innerHTML = `<div class="status">${html}</div>`; }
 function localRank(q) {
   const toks = q.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
   return LIB.map(m => {
-    const hay = `${m.name} ${m.quote} ${m.source} ${m.desc} ${m.keyword || ""}`.toLowerCase();
+    const hay = `${m.name} ${m.quote} ${m.source} ${m.desc} ${m.keyword || ""} ${m.scene || ""} ${(m.aliases || []).join(" ")}`.toLowerCase();
     let s = 0;
     for (const t of toks) {
       if (hay.includes(t)) s += t.length >= 2 ? 3 : 1;
@@ -501,22 +501,28 @@ function localRank(q) {
 }
 
 function buildPrompt(q, exclude, wrongNames) {
-  const list = LIB.filter(m => !exclude.has(m.id)).map(m => `${m.id} | ${m.name} | ${m.quote} | ${m.source} | ${m.desc}`).join("\n");
+  const list = LIB.filter(m => !exclude.has(m.id)).map(memeLine).join("\n");
   return `너는 한국 인터넷 밈 전문가야. 사용자가 흐릿하게 기억하는 밈을 설명했어. 아래 '밈 도감'에서 그 밈일 가능성이 있는 항목을 골라 줘.
+사람들은 밈 이름보다 장면(누가, 어떤 표정·동작·옷·피·자막)이나 대사 일부, 상황(언제 쓰는지)으로 설명하는 경우가 많아.
+'장면'과 '다른 이름' 칸을 꼭 보고, 대사를 잘못 기억하거나 사투리·오타로 적어도 뜻이 맞으면 그걸 골라.
 
 사용자 설명: """${q}"""
 ${wrongNames.length ? `사용자가 이미 아니라고 한 것: ${wrongNames.join(", ")}\n그것과 비슷하지만 다른 걸 찾아.` : ""}
 
-밈 도감 (id | 이름 | 대사 | 출처 | 설명):
+밈 도감 (id | 이름 | 대사 | 출처 | 설명 | 장면 | 다른 이름):
 ${list}
 
 규칙:
-- 관련 있을 만한 항목을 가능성 높은 순으로 최대 6개 id. 조금이라도 관련 있으면 넣어.
+- 관련 있을 만한 항목을 가능성 높은 순으로 최대 6개 id. 1순위는 장면·대사·상황이 가장 많이 겹치는 것. 조금이라도 관련 있으면 뒤에 넣어.
 - 도감에 없더라도 네가 확실히 아는 실제 밈이면 guess에 적어. 모르면 null. 지어내지 마.
 - alt_queries: GIF 사이트에서 이 밈 짤이 나올 만한 짧은 검색어 4~6개 (한국어와 영어 섞어서, 인물·작품·대사·장면 묘사).
 
 이 JSON만 출력해:
 {"ids": ["id1"], "guess": {"name": "", "quote": "", "source": "", "description": ""} 또는 null, "alt_queries": ["검색어1", "검색어2"]}`;
+}
+
+function memeLine(m) {
+  return [m.id, m.name, m.quote, m.source, m.desc, m.scene || "", (m.aliases || []).concat(m.keyword && /[a-z]/i.test(m.keyword) ? [m.keyword] : []).join(", ")].join(" | ");
 }
 
 function wrongNames() {
