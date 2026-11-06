@@ -134,6 +134,15 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
 @keyframes jitter { 50% { translate: 3px -3px; } }
 @keyframes slam { 0% { transform: scale(3.2) rotate(-10deg); opacity: 0; } 55% { opacity: 1; } 100% { transform: none; } }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.adbody { border: 2px solid var(--ink); border-radius: 12px; background: var(--sun); padding: 18px 14px; text-align: center; display: grid; gap: 6px; }
+.adbody b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.2; }
+.adbody .glove { font-size: 15px; }
+.buyline { font-family: var(--display); font-size: 18px; border: 3px solid var(--ink); border-radius: 12px; background: var(--angry); color: #fff; padding: 10px; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
+.price { font-family: var(--display); font-size: 36px; line-height: 1; }
+.price small { font-family: var(--body); font-size: 14px; color: var(--muted); }
+.perks { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.linkbtn { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; justify-self: center; padding: 4px; }
+.adrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .voicebox { display: grid; gap: 8px; padding: 10px; border: 2px dashed var(--line); border-radius: 12px; }
 .voicebox .filebtn:has(input:disabled) { background: #e4dfd2; color: var(--muted); cursor: not-allowed; }
 .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
@@ -196,6 +205,18 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     <ol class="list" id="list"></ol>
   </section>
 
+  <section class="card" aria-labelledby="h-ads">
+    <h2 id="h-ads">광고 제거</h2>
+    <div class="adrow">
+      <span class="mode" id="adState">광고 있음</span>
+      <span class="note" id="adNote">첫 검사는 무료, 새 사진으로 다시 검사하면 광고가 나와요.</span>
+    </div>
+    <div class="adrow">
+      <button class="buyline" id="openBuy" type="button">2,900원으로 광고 평생 제거</button>
+      <button class="linkbtn" id="restore" type="button">구매 복원</button>
+    </div>
+  </section>
+
   <section class="card" aria-labelledby="h-set">
     <h2 id="h-set">3. 잔소리꾼 고르기</h2>
     <div class="personas" id="looks" role="group" aria-label="생김새"></div>
@@ -223,6 +244,36 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       <button class="small" id="cloneClear" hidden>기본 목소리로 돌아가기</button>
     </div>
   </section>
+</div>
+
+<div class="modal" id="adModal" hidden role="dialog" aria-modal="true" aria-labelledby="adTitle">
+  <div class="sheet">
+    <div class="row" style="justify-content: space-between"><span class="mode" id="adTitle">광고</span><span class="note" id="adCount">5초 뒤에 닫을 수 있어요</span></div>
+    <div class="adbody">
+      <b>잔소리 듣기 전에<br>고무장갑 끼고 3분 정리!</b>
+      <span class="glove">미리 치우면 등짝이 안전합니다</span>
+      <span class="note">테스트 광고예요. 스토어 앱에서는 이 자리에 진짜 광고가 나와요.</span>
+    </div>
+    <button class="buyline" id="adRemove" type="button">2,900원으로 광고 평생 제거</button>
+    <div class="controls"><button id="adClose" type="button" disabled>닫고 검사하기 (5)</button></div>
+  </div>
+</div>
+
+<div class="modal" id="buyModal" hidden role="dialog" aria-modal="true" aria-labelledby="buyTitle">
+  <div class="sheet">
+    <h3 id="buyTitle">광고 평생 제거</h3>
+    <div class="price">2,900원 <small>한 번만 결제</small></div>
+    <ul class="perks">
+      <li>검사할 때 광고가 다시는 안 나와요</li>
+      <li>월 구독 아님, 평생 그대로</li>
+      <li>폰을 바꿔도 '구매 복원'으로 되살릴 수 있어요</li>
+    </ul>
+    <p class="note" id="buyTestNote">테스트 결제예요. 실제로 돈이 나가지 않아요.</p>
+    <div class="controls">
+      <button id="buyCancel" type="button">다음에</button>
+      <button id="buyOk" type="button" class="primary">2,900원 결제하기</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="faceEditor" hidden role="dialog" aria-modal="true" aria-labelledby="feTitle">
@@ -318,6 +369,10 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
     spice: 2,
     mode: "mom",
     cloneVoice: null,  // ElevenLabs voice_id
+    premium: false,    // 광고 평생 제거 구매함
+    runs: 0,           // 검사한 횟수
+    photoId: 0,        // 오늘 사진 올릴 때마다 +1
+    lastRunPhotoId: -1,
     server: { tts: false, clone: false },
     face: null,        // 잘라낸 얼굴 dataURL
     faceSrc: null,     // 원본 (다시 맞추기용)
@@ -1041,6 +1096,7 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
   });
   onPick($("inToday"), "thumbToday", async (f) => {
     S.today = await toJpeg(f);
+    S.photoId++;
     S.items = []; S.idx = -1; S.missed = 0; S.score = null; hideScore(); renderBoxes();
     const img = $("stagePhoto");
     img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
@@ -1148,7 +1204,7 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
     const ch = $("char"); ch.classList.remove("mad"); void ch.offsetWidth; ch.classList.add("mad");
     say(PERSONAS[S.voice].lines[S.spice - 1] || PERSONAS[S.voice].lines[0], true);
   };
-  $("go").onclick = async () => {
+  async function runInspect() {
     const base = S.base[S.room];
     if (!base || !S.today) return;
     unlockAudio(); stopPlay();
@@ -1159,6 +1215,7 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
     try {
       const r = await analyze(base, S.today);
       S.items = r.items; S.idx = -1; S.missed = r.missed || 0;
+      S.runs++; S.lastRunPhotoId = S.photoId; save();
       S.score = computeScore(r);
       const cl = PERSONAS[S.voice].closers;
       S.closer = r.closing || (S.items.length ? cl[Math.floor(Math.random() * cl.length)] : "오늘은 봐준다~ 계속 이렇게만 해!");
@@ -1184,10 +1241,86 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
     } finally {
       $("go").disabled = false; $("go").textContent = "빠직 검사하기";
     }
+  }
+  $("go").onclick = async () => {
+    if (!S.base[S.room] || !S.today) return;
+    unlockAudio();
+    if (needAd()) await showAd();
+    runInspect();
   };
   $("replay").onclick = () => { unlockAudio(); stopPlay(); play(S.idx >= S.items.length ? 0 : Math.max(0, S.idx)); };
   $("prev").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx > 0) show(Math.min(S.idx, S.items.length) - 1, false); };
   $("next").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); else if (S.idx === S.items.length - 1) finale(false); };
+
+  /* ---------- 광고 + 광고 제거 결제 ----------
+     웹에서는 테스트 광고/테스트 결제. 스토어 앱에서는 아래 두 군데에 진짜를 연결:
+     - 광고: Capacitor AdMob 플러그인 (window.Capacitor.Plugins.AdMob, 광고 ID는 window.JANSORI_ADMOB_ID)
+     - 결제: window.JANSORI_STORE = { buy(): Promise<boolean>, restore(): Promise<boolean> }
+       (구글 플레이 결제 / 애플 인앱결제. 상품 ID "remove_ads_forever", 비소모성, 2,900원) */
+  const PRODUCT_ID = "remove_ads_forever";
+  function nativeStore() { return window.JANSORI_STORE || null; }
+  function nativeAdMob() { try { return window.Capacitor.Plugins.AdMob || null; } catch { return null; } }
+  // 첫 검사는 무료. 그 뒤로 새 사진으로 검사하면 광고 (같은 사진으로 모드만 바꿔 다시 보는 건 광고 없음)
+  function needAd() { return !S.premium && S.runs >= 1 && S.photoId !== S.lastRunPhotoId; }
+
+  function showAd() {
+    const admob = nativeAdMob();
+    if (admob && window.JANSORI_ADMOB_ID) {
+      return admob.prepareInterstitial({ adId: window.JANSORI_ADMOB_ID })
+        .then(() => admob.showInterstitial())
+        .catch((e) => { console.warn("admob failed", e); });
+    }
+    return new Promise((resolve) => {
+      const m = $("adModal"), btn = $("adClose");
+      let left = 5;
+      btn.disabled = true; btn.textContent = `닫고 검사하기 (${left})`;
+      $("adCount").textContent = `${left}초 뒤에 닫을 수 있어요`;
+      m.hidden = false;
+      const t = setInterval(() => {
+        left--;
+        if (left > 0) { btn.textContent = `닫고 검사하기 (${left})`; $("adCount").textContent = `${left}초 뒤에 닫을 수 있어요`; return; }
+        clearInterval(t); btn.disabled = false; btn.textContent = "닫고 검사하기"; $("adCount").textContent = "";
+      }, 1000);
+      const done = () => { clearInterval(t); m.hidden = true; resolve(); };
+      btn.onclick = () => { unlockAudio(); done(); };
+      $("adRemove").onclick = async () => { if (await buyRemoveAds()) done(); };
+    });
+  }
+
+  function buyRemoveAds() {
+    const store = nativeStore();
+    if (store) {
+      return store.buy(PRODUCT_ID).then((ok) => { if (ok) setPremium(); return !!ok; })
+        .catch((e) => { console.warn("buy failed", e); return false; });
+    }
+    // 웹: 테스트 결제
+    return new Promise((resolve) => {
+      const m = $("buyModal");
+      $("buyTestNote").hidden = false;
+      m.hidden = false;
+      $("buyOk").onclick = () => { m.hidden = true; setPremium(); resolve(true); };
+      $("buyCancel").onclick = () => { m.hidden = true; resolve(false); };
+    });
+  }
+  function setPremium() {
+    S.premium = true; save(); renderAds();
+    say("광고 없어졌다! 고맙다~ 이제 마음껏 혼나라!");
+  }
+  function renderAds() {
+    $("adState").textContent = S.premium ? "광고 제거됨" : "광고 있음";
+    $("adNote").textContent = S.premium ? "평생 광고 없이 쓰세요. 고마워요!" : "첫 검사는 무료, 새 사진으로 다시 검사하면 광고가 나와요.";
+    $("openBuy").hidden = S.premium;
+  }
+  $("openBuy").onclick = () => buyRemoveAds();
+  $("restore").onclick = async () => {
+    const store = nativeStore();
+    if (store) {
+      const ok = await store.restore(PRODUCT_ID).catch(() => false);
+      if (ok) setPremium(); else $("adNote").textContent = "복원할 구매가 없어요. 구매한 계정으로 로그인했는지 확인해주세요.";
+      return;
+    }
+    $("adNote").textContent = S.premium ? "이미 광고가 제거돼 있어요." : "테스트 버전이라 복원할 구매가 없어요. 스토어 앱에서는 구매한 계정으로 되살릴 수 있어요.";
+  };
 
   /* ---------- 내 목소리 (ElevenLabs, 서버 필요) ---------- */
   function renderClone(msg) {
@@ -1230,7 +1363,7 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
   }
 
   function save() {
-    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, cloneVoice: S.cloneVoice, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, cloneVoice: S.cloneVoice, premium: S.premium, runs: S.runs, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
   }
 
   /* ---------- 시작 ---------- */
@@ -1240,7 +1373,7 @@ JSON만 출력: {"summary": string, "closing": string, "score": number, "items":
     if (st) Object.assign(S, st);
     for (const r of S.rooms) { const b = await kvGet("base:" + r); if (b) S.base[r] = b; }
     renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
-    renderClone(); checkServer();
+    renderClone(); renderAds(); checkServer();
     getSample();
   }
   init();
