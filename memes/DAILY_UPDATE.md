@@ -36,12 +36,16 @@ python tools/candidates.py '{"영문_id": "테너 검색어", ...}'
 `new_memes.json` 을 만들고:
 
 ```json
-[{"id": "...", "pick": 0, "name": "...", "quote": "...", "source": "...", "desc": "...", "region": "ko"}]
+[{"id": "...", "pick": 0, "name": "...", "quote": "...", "source": "...", "desc": "...", "region": "ko",
+  "keyword": "KLIPY 검색어", "kind": "gifs"}]
 ```
 
 - `quote`: 짤 속 대사/자막. 대사가 없으면 괄호로 동작 설명, 예: `"(고개 끄덕)"`
 - `source`: 출처 (프로그램/영화/인물). **확실하지 않은 사실은 쓰지 않는다.** 모르면 더 일반적으로.
 - `desc`: 어떤 장면이고 언제 쓰는지 두 문장 이내.
+- `keyword`: 스토어 앱이 KLIPY에서 짤을 찾을 때 쓰는 검색어. 밈 이름 + 인물/프로그램 이름처럼 짤이 바로 나올 말.
+  환경변수 `KLIPY_KEY` 가 있으면 `python tools/klipy_check.py '{"id": "검색어"}'` 로 KLIPY 결과가 그 밈인지 확인하고 검색어를 고친다.
+- `kind`: 보통 `"gifs"`. 영화·드라마 장면이면 `"clips"` 가 더 잘 나오는지도 klipy_check 로 비교.
 
 ```bash
 python tools/add_meme.py new_memes.json

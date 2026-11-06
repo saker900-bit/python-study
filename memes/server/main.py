@@ -86,7 +86,9 @@ SCHEMA = {
 
 @app.get("/api/catalog")
 def get_catalog():
-    return catalog()
+    # 앱에는 우리가 쓴 텍스트(이름·대사·설명·검색어)만 내려준다. 짤은 앱이 KLIPY에서 직접 받음.
+    data = catalog()
+    return {**data, "memes": [{k: v for k, v in m.items() if k != "media"} for m in data["memes"]]}
 
 
 @app.post("/api/search")

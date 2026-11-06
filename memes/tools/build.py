@@ -1,7 +1,8 @@
 """도감(catalog.json)으로 앱 화면을 만든다.
 
   python tools/build.py artifact   # Claude 아티팩트용: 짤 mp4를 받아서 site/m/ 에 넣음
-  python tools/build.py app        # 스토어 앱용: 짤은 원격 URL로 재생, site/ 에 index.html
+  KLIPY_KEY=... KLIPY_KEY_NOADS=... MEME_API=https://서버 python tools/build.py app
+                                   # 스토어 앱용: 짤은 KLIPY에서 앱이 직접 받아 옴
 """
 import json
 import subprocess
@@ -16,7 +17,17 @@ out = ROOT / "site"
 
 catalog = json.loads((ROOT / "catalog.json").read_text())
 memes = catalog["memes"]
-config = {"mediaBase": "m"} if mode == "artifact" else {}
+if mode == "artifact":
+    config = {"mediaBase": "m"}
+else:
+    # 스토어 앱: 짤은 KLIPY에서 앱이 직접 받음. 앱 안에는 우리 텍스트만 넣고 Tenor 주소는 빼기
+    import os
+    config = {k: v for k, v in {
+        "klipyKey": os.environ.get("KLIPY_KEY", ""),
+        "klipyKeyNoAds": os.environ.get("KLIPY_KEY_NOADS", ""),
+        "api": os.environ.get("MEME_API", ""),
+    }.items() if v}
+    memes = [{k: v for k, v in m.items() if k != "media"} for m in memes]
 
 if mode == "artifact":
     def fetch(m):

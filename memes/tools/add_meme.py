@@ -35,6 +35,7 @@ for e in json.loads(Path(sys.argv[1]).read_text()):
         "region": e.get("region", "ko"),
         "media": {"provider": "tenor", "id": c["tenor_id"], "mp4": c["mp4"], "w": w, "h": h},
         "added": today,
+        "keyword": e.get("keyword", e["name"]), "kind": e.get("kind", "gifs"),
     })
     added.append(e["id"])
 
