@@ -134,7 +134,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
       <div class="slot">
         <span class="label">오늘 사진</span>
         <div class="thumb" id="thumbToday">같은 자리에서 찍어주세요</div>
-        <label class="filebtn">오늘 사진 찍기<input id="inToday" type="file" accept="image/*" capture="environment"></label>
+        <label class="filebtn">오늘 사진 찍기<input id="inToday" type="file" accept="image/*"></label>
       </div>
     </div>
     <p class="note">평소 사진과 같은 위치, 같은 방향에서 찍을수록 정확해요.</p>
@@ -205,6 +205,7 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
   function db() {
     if (dbp) return dbp;
     dbp = new Promise((res) => {
+      setTimeout(() => res(null), 1500);
       try {
         const r = indexedDB.open("jansori", 1);
         r.onupgradeneeded = () => r.result.createObjectStore("kv");
@@ -344,24 +345,36 @@ button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); o
   }
 
   /* ---------- 이미지 처리 ---------- */
+  // 사진 열기: createImageBitmap 이 안 되는 폰은 <img> 로
+  async function loadImage(file) {
+    try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch {}
+    try { return await createImageBitmap(file); } catch {}
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => { res(img); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+      img.onerror = () => rej(new Error("이미지를 열 수 없음"));
+      img.src = url;
+    });
+  }
   async function toJpeg(file, max = 1280) {
-    let bmp;
-    try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); }
-    catch { bmp = await createImageBitmap(file); }
-    const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const bmp = await loadImage(file);
+    const W = bmp.naturalWidth || bmp.width, H = bmp.naturalHeight || bmp.height;
+    const s = Math.min(1, max / Math.max(W, H));
     const c = document.createElement("canvas");
-    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.width = Math.round(W * s); c.height = Math.round(H * s);
     c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
-    return new Promise((res) => c.toBlob(res, "image/jpeg", 0.85));
+    const out = await new Promise((res) => { try { c.toBlob(res, "image/jpeg", 0.85); } catch { res(null); } });
+    return out || file;
   }
   async function toFaceDataUrl(file) {
-    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => createImageBitmap(file));
+    const img = await loadImage(file);
+    const bmp = { width: img.naturalWidth || img.width, height: img.naturalHeight || img.height };
     const side = Math.min(bmp.width, bmp.height);
     const c = document.createElement("canvas");
     c.width = c.height = 256;
     // 얼굴이 보통 사진 위쪽에 있어서 살짝 위를 잘라옴
     const sx = (bmp.width - side) / 2, sy = Math.max(0, (bmp.height - side) / 2 - side * 0.1);
-    c.getContext("2d").drawImage(bmp, sx, sy, side, side, 0, 0, 256, 256);
+    c.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, 256, 256);
     return c.toDataURL("image/jpeg", 0.85);
   }
 
@@ -444,7 +457,7 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   async function pixelDiff(aBlob, bBlob) {
     const GW = 48, GH = 36;
     async function grid(blob) {
-      const bmp = await createImageBitmap(blob);
+      const bmp = await loadImage(blob);
       const c = document.createElement("canvas");
       c.width = GW; c.height = GH;
       const g = c.getContext("2d");
@@ -714,28 +727,40 @@ JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, 
   function stopPlay() { S.playing = false; try { speechSynthesis.cancel(); } catch {} }
 
   /* ---------- 이벤트 ---------- */
-  $("inBase").onchange = async (e) => {
-    const f = e.target.files[0]; e.target.value = "";
-    if (!f) return;
+  function showErr(msg) { const el = $("err"); el.hidden = !msg; el.textContent = msg || ""; }
+  function onPick(input, thumbId, handle) {
+    const run = async () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      const th = thumbId && $(thumbId);
+      if (th) { th.classList.remove("has"); th.style.backgroundImage = ""; th.textContent = "불러오는 중..."; }
+      showErr("");
+      try { await handle(f); }
+      catch (err) {
+        console.error(err);
+        showErr("사진을 못 열었어요. 다른 사진으로 해보거나, 사진 앱에서 JPG로 저장한 걸 올려주세요.");
+        renderThumbs();
+      }
+      input.value = "";
+    };
+    input.addEventListener("change", run);
+  }
+  onPick($("inBase"), "thumbBase", async (f) => {
     S.base[S.room] = await toJpeg(f);
-    await kvSet("base:" + S.room, S.base[S.room]);
     renderRooms(); renderThumbs();
-  };
-  $("inToday").onchange = async (e) => {
-    const f = e.target.files[0]; e.target.value = "";
-    if (!f) return;
+    kvSet("base:" + S.room, S.base[S.room]);
+  });
+  onPick($("inToday"), "thumbToday", async (f) => {
     S.today = await toJpeg(f);
     S.items = []; S.idx = -1; renderBoxes();
     const img = $("stagePhoto");
     img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
     renderThumbs();
-  };
-  $("inFace").onchange = async (e) => {
-    const f = e.target.files[0]; e.target.value = "";
-    if (!f) return;
+  });
+  onPick($("inFace"), null, async (f) => {
     S.face = await toFaceDataUrl(f); save();
     renderFace(); renderLooks(); renderChar();
-  };
+  });
   $("faceClear").onclick = () => { S.face = null; save(); renderFace(); renderLooks(); renderChar(); };
   function renderFace() {
     $("faceThumb").style.backgroundImage = S.face ? `url(${S.face})` : "";
