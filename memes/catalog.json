@@ -1,0 +1,1238 @@
+{
+ "version": 1,
+ "updated": "2026-11-06",
+ "memes": [
+  {
+   "id": "gazua",
+   "name": "가즈아",
+   "quote": "가즈아~!!!",
+   "source": "코인·주식 커뮤니티 유행어 (2017~2018 비트코인 열풍)",
+   "desc": "오를 거라 믿고 전부 걸 때 외치는 유행어. 짤은 '가즈아!!!' 자막을 단 타짜 장면.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "7458389994793711566",
+    "mp4": "https://media.tenor.com/Z4GGLxwBt84AAAPo/%EA%B0%80%EC%A6%88%EC%95%84-%ED%83%80%EC%A7%9C.mp4",
+    "w": 398,
+    "h": 498
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "muyaho",
+   "name": "무야호",
+   "quote": "무야호~!",
+   "source": "무한도전 알래스카 편",
+   "desc": "알래스카 교민 할아버지가 '무한도전'을 '무야호'로 외친 장면. 신날 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "7070282312487486516",
+    "mp4": "https://media.tenor.com/Yh6wTaGLRDQAAAPo/%EB%AC%B4%EC%95%BC%ED%98%B8-%EB%AC%B4%ED%95%9C%EB%8F%84%EC%A0%84.mp4",
+    "w": 640,
+    "h": 458
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "gwak_double",
+   "name": "묻고 더블로 가",
+   "quote": "묻고 더블로 가!",
+   "source": "영화 타짜, 곽철용(김응수)",
+   "desc": "판을 키울 때, 손해 보고도 한 번 더 걸 때 쓰는 곽철용 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "7802065460997944249",
+    "mp4": "https://media.tenor.com/bEaBMx0gc7kAAAPo/%EB%AC%BB%EA%B3%A0-%EB%8D%94%EB%B8%94.mp4",
+    "w": 320,
+    "h": 136
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "pyeong",
+   "name": "아수라발발타",
+   "quote": "아수라발발타",
+   "source": "영화 타짜, 평경장(백윤식)",
+   "desc": "평경장이 화투 기술을 가르치며 외는 주문. 뭔가 비장하게 주문 걸 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "14130019403418036616",
+    "mp4": "https://media.tenor.com/xBfpyIob6YgAAAPo/%EC%95%84%EC%88%98%EB%9D%BC%EB%B0%9C%EB%B0%9C%ED%83%80-%ED%8F%89%EA%B2%BD%EC%9E%A5.mp4",
+    "w": 640,
+    "h": 270
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "eoiga",
+   "name": "어이가 없네",
+   "quote": "어이가 없네",
+   "source": "영화 베테랑, 조태오(유아인)",
+   "desc": "황당할 때 쓰는 조태오의 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "6850557962151822218",
+    "mp4": "https://media.tenor.com/XxISK7dIg4oAAAPo/%EC%96%B4%EC%9D%B4%EA%B0%80%EC%97%86%EB%84%A4-%EC%9C%A0%EC%95%84%EC%9D%B8.mp4",
+    "w": 640,
+    "h": 418
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "hawaii",
+   "name": "니가 가라 하와이",
+   "quote": "니가 가라 하와이",
+   "source": "영화 친구",
+   "desc": "하기 싫은 걸 떠넘길 때 쓰는 영화 친구의 명대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "5757771521392405080",
+    "mp4": "https://media.tenor.com/T-e2sVZ0algAAAPo/%EB%8B%88%EA%B0%80-%EA%B0%80%EB%9D%BC%ED%95%98%EC%99%80%EC%9D%B4-%EB%A9%8B%EC%A7%90%ED%8F%AD%EB%B0%9C.mp4",
+    "w": 220,
+    "h": 106
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "namcheondong",
+   "name": "느그 서장 남천동 살제",
+   "quote": "느그 서장 남천동 살제? 내가 임마 느그 서장이랑 어저께도 같이 밥 묵고",
+   "source": "영화 범죄와의 전쟁, 최익현(최민식)",
+   "desc": "인맥 자랑하며 허세 부릴 때 쓰는 최익현의 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "16668790270152785158",
+    "mp4": "https://media.tenor.com/51Nwb4fxvQYAAAPo/%EB%8A%90%EA%B7%B8%EC%84%9C%EC%9E%A5%EC%96%B4%EB%94%A8%EC%96%B4-%EA%B0%95%EC%84%9C%EC%9E%A5%EB%82%98%EC%98%A4%EB%9D%BC%EA%B5%AC%EB%9E%98.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "saraitne",
+   "name": "살아있네",
+   "quote": "살아있네~",
+   "source": "영화 범죄와의 전쟁",
+   "desc": "기세가 좋거나 감이 살아있을 때 쓰는 부산 사투리 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "3359529736748577950",
+    "mp4": "https://media.tenor.com/Lp9yfvtCtJ4AAAPo/%EC%82%B4%EC%95%84%EC%9E%88%EB%84%A4-%EC%86%A8%EB%9D%BC%EC%9E%88%EB%84%A4.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "4dollar",
+   "name": "사딸라",
+   "quote": "4딸라!",
+   "source": "드라마 야인시대, 김두한(김영철)",
+   "desc": "협상에서 한 치도 안 물러설 때 쓰는 김두한의 '포 달러'. 미군과 임금 협상하는 장면.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "15338275510914048868",
+    "mp4": "https://media.tenor.com/1NyAT78a42QAAAPo/kim-youngchul-kim-doohan.mp4",
+    "w": 600,
+    "h": 338
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "goja",
+   "name": "내가 고자라니",
+   "quote": "내가 고자라니!!",
+   "source": "드라마 야인시대, 심영",
+   "desc": "충격적인 소식을 들었을 때 절규하는 장면.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "18273810039118553303",
+    "mp4": "https://media.tenor.com/_ZmdaWqg4NcAAAPo/%EC%8B%AC%EC%98%81-%EA%B3%A0%EC%9E%90.mp4",
+    "w": 640,
+    "h": 512
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "neona",
+   "name": "너나 잘하세요",
+   "quote": "너나 잘하세요",
+   "source": "영화 친절한 금자씨, 금자(이영애)",
+   "desc": "참견하는 사람에게 쓰는 금자씨의 한마디. 짤은 금자 역의 이영애.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "4212235253510127232",
+    "mp4": "https://media.tenor.com/OnTdpUvZPoAAAAPo/%EC%9D%B4%EC%98%81%EC%95%A0.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "nuguna",
+   "name": "올드보이 오대수 웃음",
+   "quote": "my honest reaction",
+   "source": "영화 올드보이, 오대수(최민식)",
+   "desc": "오대수가 섬뜩하게 웃는 장면. 해외에서 'my honest reaction' 밈으로 유명해졌다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "7301182807421467447",
+    "mp4": "https://media.tenor.com/ZVMDFHyLuzcAAAPo/oldboy-information.mp4",
+    "w": 498,
+    "h": 324
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "deuruwa",
+   "name": "드루와",
+   "quote": "드루와~ 드루와~",
+   "source": "영화 신세계, 정청(황정민)",
+   "desc": "덤빌 테면 덤벼보라는 정청의 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "984440194234833598",
+    "mp4": "https://media.tenor.com/DalvJA_72r4AAAPo/hwang-jungmin-come.mp4",
+    "w": 550,
+    "h": 274
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "wang",
+   "name": "내가 왕이 될 상인가",
+   "quote": "내가 왕이 될 상인가?",
+   "source": "영화 관상, 수양대군(이정재)",
+   "desc": "이정재의 등장 장면. 거만하게 묻거나 폼 잡을 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "11538772532371029805",
+    "mp4": "https://media.tenor.com/oCH0e7ACfy0AAAPo/%EC%9D%B4%EC%A0%95%EC%9E%AC-%EC%88%98%EC%96%91%EB%8C%80%EA%B5%B0.mp4",
+    "w": 640,
+    "h": 320
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "teukmat",
+   "name": "왜 자꾸 장사가 잘되는데",
+   "quote": "왜 자꾸 장사가 잘되는데!",
+   "source": "영화 극한직업, 고반장(류승룡)",
+   "desc": "잠복하려고 차린 치킨집이 대박 나서 당황하는 장면. 의도와 다르게 일이 잘 풀릴 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "3844652756658382316",
+    "mp4": "https://media.tenor.com/NVrzT_VZZewAAAPo/%EC%99%9C-%EC%9E%90%EA%BE%B8-%EC%9E%A5%EC%82%AC%EA%B0%80-%EC%9E%98%EB%90%98%EB%8A%94%EB%8D%B0-%EA%B7%B9%ED%95%9C%EC%A7%81%EC%97%85.mp4",
+    "w": 498,
+    "h": 314
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "typhoon",
+   "name": "태풍 중계 기자",
+   "quote": "(강풍에 휘청이며 중계)",
+   "source": "태풍 뉴스 현장 중계",
+   "desc": "우비 입은 기자가 태풍 속에서 바람에 밀려 휘청이는 뉴스 짤. 정신없이 힘들 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "243265996702727012",
+    "mp4": "https://media.tenor.com/A2BBIpdlu2QAAAPo/typhoon-weatherman.mp4",
+    "w": 638,
+    "h": 322
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "ma_dongseok",
+   "name": "진실의 방으로",
+   "quote": "진실의 방으로",
+   "source": "영화 범죄도시, 마석도(마동석)",
+   "desc": "마동석이 상대를 끌고 가며 하는 대사. 혼내줄 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "672513106524034527",
+    "mp4": "https://media.tenor.com/CVU_G3Uo1d8AAAPo/madongseok-donlee.mp4",
+    "w": 498,
+    "h": 374
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "hobak",
+   "name": "호박고구마",
+   "quote": "호박고구마!",
+   "source": "시트콤 거침없이 하이킥, 나문희",
+   "desc": "단어를 잘못 알아들어 버럭하는 나문희 할머니의 명장면.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "8208021810869484123",
+    "mp4": "https://media.tenor.com/cejAWVmIulsAAAPo/%ED%98%B8%EB%B0%95%EA%B3%A0%EA%B5%AC%EB%A7%88-%EC%A7%80%EB%B6%95%EB%9A%AB%EA%B3%A0%ED%95%98%EC%9D%B4%ED%82%A5.mp4",
+    "w": 640,
+    "h": 358
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "gangnam",
+   "name": "강남스타일 말춤",
+   "quote": "오빤 강남스타일",
+   "source": "싸이 '강남스타일' 뮤직비디오(2012)",
+   "desc": "전 세계를 휩쓴 말춤. 신날 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "1249582644782844261",
+    "mp4": "https://media.tenor.com/EVdoy3vGSWUAAAPo/psy-gangnam-style.mp4",
+    "w": 170,
+    "h": 170
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "hiddink",
+   "name": "히딩크 환호",
+   "quote": "(얼싸안고 환호)",
+   "source": "2002 한일 월드컵, 히딩크 감독",
+   "desc": "2002 월드컵 때 기뻐하는 히딩크 감독. 이겼을 때, 해냈을 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "5417704001065379750",
+    "mp4": "https://media.tenor.com/Sy-NFbG256YAAAPo/guus-hiddink-celebration.mp4",
+    "w": 498,
+    "h": 282
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "sonny_chalkak",
+   "name": "손흥민 찰칵 세리머니",
+   "quote": "찰칵!",
+   "source": "손흥민 골 세리머니",
+   "desc": "골 넣고 카메라 찍는 손동작. 기념할 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "11412700282606661121",
+    "mp4": "https://media.tenor.com/nmIOcKDFLgEAAAPo/heung-min-son-sonny.mp4",
+    "w": 498,
+    "h": 358
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "jungkkeokma",
+   "name": "중꺾마",
+   "quote": "중요한 건 꺾이지 않는 마음",
+   "source": "2022 롤드컵, DRX 데프트 인터뷰 영상 제목",
+   "desc": "지고 있어도 포기하지 않는다는 뜻으로 퍼진 말.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "1133140351244080066",
+    "mp4": "https://media.tenor.com/D7m5JVSQk8IAAAPo/deft-%EB%8D%B0%ED%94%84%ED%8A%B8.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "kkang",
+   "name": "1일 1깡",
+   "quote": "깡!",
+   "source": "비(정지훈) '깡' 뮤직비디오",
+   "desc": "과하게 멋부린 안무가 역주행하며 '1일 1깡' 유행이 됐다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "3627623878499549269",
+    "mp4": "https://media.tenor.com/MlfospCwwFUAAAPo/%EA%B9%A1rain-%EA%B9%A1gang.mp4",
+    "w": 640,
+    "h": 370
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "rollin",
+   "name": "롤린",
+   "quote": "롤린 롤린 롤린",
+   "source": "브레이브걸스 '롤린' 군부대 위문공연 영상",
+   "desc": "역주행 신화의 상징. 신날 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "17118449646196628184",
+    "mp4": "https://media.tenor.com/7ZDzQXr2GtgAAAPo/soldier-fainting-rollin-brave-girls-soldier-fainting.mp4",
+    "w": 640,
+    "h": 352
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "pengsoo",
+   "name": "펭수",
+   "quote": "펭-하!",
+   "source": "EBS 자이언트 펭TV",
+   "desc": "EBS 펭귄 캐릭터. 펭하(펭수 하이) 인사와 당당한 태도로 유명.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "1363919984995245795",
+    "mp4": "https://media.tenor.com/Eu2d__-ynuMAAAPo/%ED%8E%AD%EC%88%98-pengsoo.mp4",
+    "w": 640,
+    "h": 464
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "yeonjin",
+   "name": "멋지다 연진아",
+   "quote": "멋지다 연진아",
+   "source": "드라마 더 글로리, 문동은(송혜교)",
+   "desc": "비꼬면서 칭찬할 때 쓰는 대사. '브라보'와 함께 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "16177828132925942223",
+    "mp4": "https://media.tenor.com/4IMw-RxfKc8AAAPo/songhyekyo-the-glory.mp4",
+    "w": 640,
+    "h": 340
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "squid_doll",
+   "name": "무궁화 꽃이 피었습니다",
+   "quote": "무궁화 꽃이 피었습니다",
+   "source": "드라마 오징어 게임, 영희 인형",
+   "desc": "고개를 휙 돌리는 영희 인형. 얼음, 멈춰야 할 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "5942778607017393054",
+    "mp4": "https://media.tenor.com/Unj9qCoP-54AAAPo/playing-red-light-green-light-young-hee.mp4",
+    "w": 498,
+    "h": 282
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "kkanbu",
+   "name": "우린 깐부잖아",
+   "quote": "우린 깐부잖아",
+   "source": "드라마 오징어 게임, 오일남(오영수)",
+   "desc": "친한 사이, 한편이라는 걸 강조할 때 쓰는 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "2089993237222176010",
+    "mp4": "https://media.tenor.com/HQElxqeYtQoAAAPo/%EC%98%A4%EC%A7%95%EC%96%B4%EA%B2%8C%EC%9E%84-%EA%B9%90%EB%B6%80.mp4",
+    "w": 456,
+    "h": 372
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "jessica",
+   "name": "제시카 징글",
+   "quote": "제시카 외동딸 일리노이 시카고",
+   "source": "영화 기생충, 기정(박소담)",
+   "desc": "거짓말 설정을 외우려고 부르는 노래. 뭔가 외울 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "17807243633794523114",
+    "mp4": "https://media.tenor.com/9yAJvPUon-oAAAPo/parasite-jessica.mp4",
+    "w": 640,
+    "h": 354
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "plan",
+   "name": "아들아 너는 계획이 다 있구나",
+   "quote": "아들아, 너는 계획이 다 있구나",
+   "source": "영화 기생충, 기택(송강호)",
+   "desc": "누군가 뭔가 꾸밀 때 쓰는 대사.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "17011112211224729602",
+    "mp4": "https://media.tenor.com/7BOcbWhcGAIAAAPo/%EA%B8%B0%EC%83%9D%EC%B6%A9-%EC%86%A1%EA%B0%95%ED%98%B8.mp4",
+    "w": 640,
+    "h": 452
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "woo_youngwoo",
+   "name": "우영우",
+   "quote": "똑바로 읽어도 거꾸로 읽어도 우영우",
+   "source": "드라마 이상한 변호사 우영우, 우영우(박은빈)",
+   "desc": "자기소개 대사. '기러기 토마토 스위스 인도인 별똥별 우영우'.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "9987556527282487492",
+    "mp4": "https://media.tenor.com/iprtvsbOgMQAAAPo/attorney-woo-%EC%9A%B0%EC%98%81%EC%9A%B0.mp4",
+    "w": 640,
+    "h": 358
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "stop",
+   "name": "멈춰!",
+   "quote": "멈춰!",
+   "source": "학교폭력 예방 교육 영상",
+   "desc": "어설픈 연기의 '멈춰!' 외침. 뭔가 그만두라고 할 때 쓴다.",
+   "region": "ko",
+   "media": {
+    "provider": "tenor",
+    "id": "10499782120372566719",
+    "mp4": "https://media.tenor.com/kba4NU_N-r8AAAPo/korea-stop.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "cat_yell",
+   "name": "여자가 고양이한테 소리지르는 짤",
+   "quote": "(여자) 삿대질하며 소리침 / (고양이) 식탁에서 어리둥절",
+   "source": "해외 밈 Woman Yelling at Cat",
+   "desc": "리얼리티쇼 장면과 식탁 앞 고양이 사진을 붙인 밈.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5976843234853415932",
+    "mp4": "https://media.tenor.com/UvIDQWOia_wAAAPo/yelling-yelling-at-cat.mp4",
+    "w": 640,
+    "h": 424
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "this_is_fine",
+   "name": "This is fine",
+   "quote": "This is fine.",
+   "source": "해외 밈, 웹툰 'On Fire'",
+   "desc": "불타는 방에서 괜찮다며 커피 마시는 개. 망했는데 태연한 척할 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "18034187551411867825",
+    "mp4": "https://media.tenor.com/-kZOB16tELEAAAPo/this-is-fine-fire.mp4",
+    "w": 480,
+    "h": 266
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "rickroll",
+   "name": "릭롤",
+   "quote": "Never gonna give you up",
+   "source": "해외 밈, 릭 애슬리 뮤직비디오",
+   "desc": "낚시 링크로 이 뮤비를 보게 만드는 장난.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "14396870704937998862",
+    "mp4": "https://media.tenor.com/x8v1oNUOmg4AAAPo/rickroll-roll.mp4",
+    "w": 640,
+    "h": 640
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "mj_popcorn",
+   "name": "팝콘 먹는 마이클 잭슨",
+   "quote": "(팝콘 먹으며 구경)",
+   "source": "해외 밈, 마이클 잭슨 'Thriller'",
+   "desc": "남의 싸움 구경할 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "11040065238845078056",
+    "mp4": "https://media.tenor.com/mTYw14p_uigAAAPo/michael-jackson-eating-popcorn.mp4",
+    "w": 498,
+    "h": 372
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "math_lady",
+   "name": "계산하는 아줌마",
+   "quote": "(머릿속에 수식이 떠다님)",
+   "source": "해외 밈, 브라질 드라마 Senhora do Destino",
+   "desc": "혼란스러워 머리 굴리는 표정. Confused Math Lady.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13279431748799582282",
+    "mp4": "https://media.tenor.com/uEoE0W4-UEoAAAPo/confused-lady-math-lady.mp4",
+    "w": 200,
+    "h": 130
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "blinking",
+   "name": "눈 깜빡이는 남자",
+   "quote": "(놀라서 눈 깜빡)",
+   "source": "해외 밈, Drew Scanlon",
+   "desc": "황당한 말 듣고 눈 깜빡이는 리액션.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13754032537638186464",
+    "mp4": "https://media.tenor.com/vuAjuJMWreAAAAPo/drew-scanlon-white-guy-blinking.mp4",
+    "w": 200,
+    "h": 234
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "leo_cheers",
+   "name": "디카프리오 건배",
+   "quote": "(잔을 들며 건배)",
+   "source": "영화 위대한 개츠비, 디카프리오",
+   "desc": "축하하거나 인정할 때 쓰는 건배 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "11145545050456231734",
+    "mp4": "https://media.tenor.com/mqzuK_iOjzYAAAPo/leonardo-dicaprio-cheers.mp4",
+    "w": 400,
+    "h": 224
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "leo_point",
+   "name": "디카프리오 손가락질",
+   "quote": "(TV 보다가 손가락으로 가리킴)",
+   "source": "영화 원스 어폰 어 타임 인 할리우드",
+   "desc": "아는 게 나왔을 때 '저거다!' 하는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "7472673742174693335",
+    "mp4": "https://media.tenor.com/Z7RFLTS2J9cAAAPo/leonardo-dicaprio-rick-dalton.mp4",
+    "w": 640,
+    "h": 606
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "homer_bush",
+   "name": "덤불로 사라지는 호머",
+   "quote": "(뒷걸음질로 덤불 속으로)",
+   "source": "해외 밈, 심슨",
+   "desc": "민망해서 슬그머니 빠질 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "11923207559666255885",
+    "mp4": "https://media.tenor.com/pXe-GokoyA0AAAPo/the-s-impsons-bush.mp4",
+    "w": 500,
+    "h": 374
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "mind_blown",
+   "name": "머리 폭발",
+   "quote": "(머리가 펑 터짐)",
+   "source": "해외 밈, Tim and Eric",
+   "desc": "충격적일 때 쓰는 리액션.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "15988393676782422262",
+    "mp4": "https://media.tenor.com/3eIvVsG3yPYAAAPo/the-universe-tim-and-eric-mind-blown.mp4",
+    "w": 640,
+    "h": 408
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "kermit_tea",
+   "name": "차 마시는 커밋",
+   "quote": "But that's none of my business",
+   "source": "해외 밈, 머펫 커밋",
+   "desc": "할 말 다 하고 모른 척 차 마실 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "11581365558519311071",
+    "mp4": "https://media.tenor.com/oLlGnWF8qt8AAAPo/kermit-sips-tea.mp4",
+    "w": 640,
+    "h": 356
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "pikachu",
+   "name": "놀란 피카츄",
+   "quote": "(입 벌리고 놀람)",
+   "source": "해외 밈, 포켓몬 애니",
+   "desc": "뻔한 결과에 놀라는 척할 때. Surprised Pikachu.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5877863639941374163",
+    "mp4": "https://media.tenor.com/UZJd1pjj4NMAAAPo/surprised-pikachu.mp4",
+    "w": 634,
+    "h": 640
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "coffin",
+   "name": "관짝 댄스",
+   "quote": "(관 들고 춤추는 사람들)",
+   "source": "가나 장례 댄스팀, Coffin Dance",
+   "desc": "망했을 때, 실패 영상 끝에 붙이는 밈.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "9486319563247507847",
+    "mp4": "https://media.tenor.com/g6YtYdE02YcAAAPo/coffin-coffin-dance.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "travolta",
+   "name": "두리번거리는 존 트라볼타",
+   "quote": "(어리둥절하게 두리번)",
+   "source": "영화 펄프 픽션, 존 트라볼타",
+   "desc": "아무것도 없거나 찾을 때 쓰는 리액션.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "17791318249764092164",
+    "mp4": "https://media.tenor.com/9ud1r4sc-QQAAAPo/confused-john-travolta.mp4",
+    "w": 400,
+    "h": 388
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "ight",
+   "name": "Ight imma head out",
+   "quote": "Ight imma head out",
+   "source": "해외 밈, 스펀지밥",
+   "desc": "분위기 안 좋을 때 슬쩍 자리 뜨는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "2037220130362476356",
+    "mp4": "https://media.tenor.com/HEWo6jeHx0QAAAPo/ight-imma-head-out.mp4",
+    "w": 498,
+    "h": 430
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "doge",
+   "name": "도지",
+   "quote": "(시바견 곁눈질)",
+   "source": "해외 밈, 시바견 카보스",
+   "desc": "도지코인의 그 강아지.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13219103497005122541",
+    "mp4": "https://media.tenor.com/t3Owl7wdQ-0AAAPo/doge-doge-meme.mp4",
+    "w": 480,
+    "h": 480
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "nyan",
+   "name": "냥캣",
+   "quote": "냐냐냐냐냐",
+   "source": "해외 밈, Nyan Cat",
+   "desc": "무지개 꼬리 달린 픽셀 고양이.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "14706281786432507178",
+    "mp4": "https://media.tenor.com/zBc1XhcbTSoAAAPo/nyan-cat-rainbow.mp4",
+    "w": 240,
+    "h": 152
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "harold",
+   "name": "해롤드 할아버지",
+   "quote": "(고통을 숨기는 미소)",
+   "source": "해외 밈, Hide the Pain Harold",
+   "desc": "웃고 있지만 속은 괴로울 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13865351284615259277",
+    "mp4": "https://media.tenor.com/wGufiBV_pI0AAAPo/hide-the-pain-harold-pain.mp4",
+    "w": 498,
+    "h": 446
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "roll_safe",
+   "name": "머리 톡톡",
+   "quote": "(관자놀이 톡톡)",
+   "source": "해외 밈, Roll Safe",
+   "desc": "잔머리 굴린 해결책을 자랑할 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13751793251399285156",
+    "mp4": "https://media.tenor.com/vtgvGh5EuaQAAAPo/roll-safe-clever.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "no_god",
+   "name": "노 갓 플리즈 노",
+   "quote": "No, God! Please, no!",
+   "source": "미드 오피스, 마이클 스콧",
+   "desc": "절망할 때 절규하는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "10499069295156374466",
+    "mp4": "https://media.tenor.com/kbQv5cIBq8IAAAPo/the-office-steve-carell.mp4",
+    "w": 244,
+    "h": 244
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "elmo_fire",
+   "name": "불타는 엘모",
+   "quote": "(불길 속에서 두 팔 번쩍)",
+   "source": "해외 밈, 세서미 스트리트 엘모",
+   "desc": "혼돈 속에서 신난 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "17565388579825786462",
+    "mp4": "https://media.tenor.com/88TL2RI4Hl4AAAPo/elmo-elmo-fire.mp4",
+    "w": 320,
+    "h": 180
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "crying_jordan",
+   "name": "우는 조던",
+   "quote": "(눈물 흘리는 마이클 조던)",
+   "source": "해외 밈, Crying Jordan",
+   "desc": "졌을 때, 슬플 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13922690372106605742",
+    "mp4": "https://media.tenor.com/wTdVILsqVK4AAAPo/michael-jordan-mj.mp4",
+    "w": 600,
+    "h": 368
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "mr_bean_wait",
+   "name": "미스터 빈",
+   "quote": "(들판에서 엉뚱한 몸짓)",
+   "source": "해외 밈, 미스터 빈",
+   "desc": "미스터 빈의 엉뚱한 몸짓 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "12531047668555787111",
+    "mp4": "https://media.tenor.com/rec5dlPBK2cAAAPo/mr-bean-waiting.mp4",
+    "w": 640,
+    "h": 362
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "stonks",
+   "name": "스톡스",
+   "quote": "Stonks",
+   "source": "해외 밈, Meme Man",
+   "desc": "주식 오를 때, 이득 볼 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13994010815479935523",
+    "mp4": "https://media.tenor.com/wjS2sXen8iMAAAPo/stonks-up-stongs.mp4",
+    "w": 640,
+    "h": 480
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "cat_vibe",
+   "name": "고개 끄덕이는 고양이",
+   "quote": "(음악에 맞춰 고개 까딱)",
+   "source": "해외 밈, Cat Vibing",
+   "desc": "노래에 리듬 탈 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5242638067070560396",
+    "mp4": "https://media.tenor.com/SMGXi5muaIwAAAPo/cat-vibe.mp4",
+    "w": 200,
+    "h": 200
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "chipi",
+   "name": "치피치피 차파차파 고양이",
+   "quote": "Chipi chipi chapa chapa",
+   "source": "해외 밈, 춤추는 고양이",
+   "desc": "신나게 뛰는 고양이 밈.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "10997735880837555564",
+    "mp4": "https://media.tenor.com/mJ_Og97j5WwAAAPo/chipi-chapa.mp4",
+    "w": 498,
+    "h": 310
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "pedro",
+   "name": "페드로 너구리",
+   "quote": "Pedro pedro pedro",
+   "source": "해외 밈, 빙글빙글 도는 너구리",
+   "desc": "너구리가 노래에 맞춰 빙글빙글 도는 밈.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "7008179305311883220",
+    "mp4": "https://media.tenor.com/YUIN8n9bz9QAAAPo/raccoon-dancing-raccon.mp4",
+    "w": 498,
+    "h": 480
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "bongo",
+   "name": "봉고 캣",
+   "quote": "(앞발로 봉고 두드림)",
+   "source": "해외 밈, Bongo Cat",
+   "desc": "신나게 두드리는 고양이.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "4444747366899186940",
+    "mp4": "https://media.tenor.com/Pa7qLlBg_PwAAAPo/bongo-cat-cat.mp4",
+    "w": 494,
+    "h": 498
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "pablo",
+   "name": "기다리는 파블로",
+   "quote": "(혼자 쓸쓸히 기다림)",
+   "source": "드라마 나르코스, 파블로 에스코바르",
+   "desc": "외롭게 기다리는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "17942254571401536468",
+    "mp4": "https://media.tenor.com/-P-xeHYEY9QAAAPo/sad-pablo-lonely.mp4",
+    "w": 640,
+    "h": 426
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "kombucha",
+   "name": "콤부차 걸",
+   "quote": "(맛보고 표정 변화)",
+   "source": "해외 밈, Kombucha Girl",
+   "desc": "좋은지 싫은지 애매한 반응.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "1222175417584094023",
+    "mp4": "https://media.tenor.com/EPYKESJQi0cAAAPo/brittany-tomlinson-brittany.mp4",
+    "w": 498,
+    "h": 498
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "salt_bae",
+   "name": "솔트배",
+   "quote": "(팔꿈치로 소금 뿌리기)",
+   "source": "해외 밈, 셰프 누스렛",
+   "desc": "뭔가에 양념 치듯 폼 잡을 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "11906497413575825417",
+    "mp4": "https://media.tenor.com/pTxgUHdLWAkAAAPo/salt-bae-sprinkling-salt.mp4",
+    "w": 480,
+    "h": 374
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "side_eye",
+   "name": "곁눈질하는 아기 (클로이)",
+   "quote": "(의심스럽게 곁눈질)",
+   "source": "해외 밈, Side Eye Chloe",
+   "desc": "못 믿겠을 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "2325840775946194234",
+    "mp4": "https://media.tenor.com/IEcL3OZkTToAAAPo/chloe-sideye.mp4",
+    "w": 292,
+    "h": 322
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "monkey",
+   "name": "눈치 보는 원숭이 인형",
+   "quote": "(눈 피하기)",
+   "source": "해외 밈, Monkey Puppet",
+   "desc": "찔릴 때 슬쩍 눈 돌리는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "9340792328097484017",
+    "mp4": "https://media.tenor.com/gaEpIfzxzPEAAAPo/pedro-monkey-puppet.mp4",
+    "w": 482,
+    "h": 640
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "spiderman",
+   "name": "서로 가리키는 스파이더맨",
+   "quote": "(서로 손가락질)",
+   "source": "해외 밈, 스파이더맨 애니",
+   "desc": "똑같은 둘이 서로 탓할 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "8794728403162200268",
+    "mp4": "https://media.tenor.com/eg0m4t6FeMwAAAPo/spiderman-meme-pointing.mp4",
+    "w": 640,
+    "h": 584
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "keanu",
+   "name": "유어 브레스테이킹",
+   "quote": "You're breathtaking!",
+   "source": "E3 2019, 키아누 리브스",
+   "desc": "누군가 칭찬할 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5850163180390113653",
+    "mp4": "https://media.tenor.com/US_0asU44XUAAAPo/keanu-reeves-youre-breathtaking.mp4",
+    "w": 484,
+    "h": 640
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "baby_yoda",
+   "name": "차 마시는 베이비 요다",
+   "quote": "(컵 들고 홀짝)",
+   "source": "드라마 만달로리안, 그로구",
+   "desc": "구경하며 홀짝일 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5835152807158261677",
+    "mp4": "https://media.tenor.com/UPqgj-jKp60AAAPo/baby-yoda-star-wars.mp4",
+    "w": 640,
+    "h": 640
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "dramatic",
+   "name": "드라마틱 다람쥐",
+   "quote": "(휙 돌아보며 노려봄)",
+   "source": "해외 밈, Dramatic Chipmunk",
+   "desc": "과장되게 놀랄 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "14145570194726505797",
+    "mp4": "https://media.tenor.com/xE8pJUoGzUUAAAPo/chipmunk-dramatic.mp4",
+    "w": 244,
+    "h": 180
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "success",
+   "name": "석세스 키드",
+   "quote": "(주먹 꽉 쥔 아기)",
+   "source": "해외 밈, Success Kid",
+   "desc": "뭔가 해냈을 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "14166020143049456506",
+    "mp4": "https://media.tenor.com/xJfQQ-t9u3oAAAPo/success-kid-hells-yes.mp4",
+    "w": 580,
+    "h": 580
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "shaq",
+   "name": "샤킬 오닐 어깨춤",
+   "quote": "(어깨 들썩)",
+   "source": "해외 밈, 샤킬 오닐",
+   "desc": "신날 때 쓰는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "13664592304740446111",
+    "mp4": "https://media.tenor.com/vaJiTZSXL58AAAPo/shaquille-o-neal-shimmy.mp4",
+    "w": 640,
+    "h": 482
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "disaster",
+   "name": "재난 소녀",
+   "quote": "(불난 집 앞에서 미소)",
+   "source": "해외 밈, Disaster Girl",
+   "desc": "사고 쳐놓고 웃는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "17931703730302515231",
+    "mp4": "https://media.tenor.com/-No1iVY6eB8AAAPo/disaster-girl-fire-starter.mp4",
+    "w": 498,
+    "h": 374
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "grumpy",
+   "name": "그럼피 캣",
+   "quote": "(심통 난 표정)",
+   "source": "해외 밈, Grumpy Cat",
+   "desc": "짜증날 때 쓰는 고양이.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "7759637831705119579",
+    "mp4": "https://media.tenor.com/a6_FfuB3S1sAAAPo/grumpy-cat.mp4",
+    "w": 500,
+    "h": 310
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "hamster",
+   "name": "햄터 (멍한 햄스터)",
+   "quote": "(멍하니 쳐다봄)",
+   "source": "해외 밈, hampter",
+   "desc": "허술하게 그린 햄스터가 멍하니 보는 짤. 할 말 잃었을 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "14091425662344157380",
+    "mp4": "https://media.tenor.com/w47M-vbY2MQAAAPo/hamster-stare.mp4",
+    "w": 228,
+    "h": 230
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "jim",
+   "name": "카메라 쳐다보는 짐",
+   "quote": "(어이없어 카메라 응시)",
+   "source": "미드 오피스, 짐 핼퍼트",
+   "desc": "황당할 때 시청자 쳐다보는 짤.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "6194027636045350479",
+    "mp4": "https://media.tenor.com/VfWbUU9vhk8AAAPo/the-office-jim-halpert.mp4",
+    "w": 640,
+    "h": 360
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "thanos",
+   "name": "타노스 핑거스냅",
+   "quote": "(손가락 튕김)",
+   "source": "영화 어벤져스: 인피니티 워",
+   "desc": "싹 다 없앨 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "5507425258050956715",
+    "mp4": "https://media.tenor.com/TG5OF7UkLasAAAPo/thanos-infinity.mp4",
+    "w": 500,
+    "h": 472
+   },
+   "added": "2026-11-06"
+  },
+  {
+   "id": "obama_mic",
+   "name": "오바마 마이크 드롭",
+   "quote": "Obama out",
+   "source": "2016 백악관 기자단 만찬",
+   "desc": "할 말 다 하고 퇴장할 때.",
+   "region": "global",
+   "media": {
+    "provider": "tenor",
+    "id": "9254974801029201887",
+    "mp4": "https://media.tenor.com/gHBGi-yJf98AAAPo/obama-mic-drop.mp4",
+    "w": 480,
+    "h": 240
+   },
+   "added": "2026-11-06"
+  }
+ ]
+}

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>밈 탐정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 한 가지 세계: 밤 TV 화면 + 예능 자막. 짤이 화면 한가운데 주인공, 위엔 검색, 아래엔 판정 버튼 */
+  --screen: #0f1016;
+  --panel: #1b1d27;
+  --line: #2d3040;
+  --ink: #eef0f6;
+  --muted: #9aa0b4;
+  --caption: #ffd400;
+  --hot: #ff4f6d;
+  --ok: #3fd68a;
+  --display: "Black Han Sans", "Noto Sans KR", system-ui, sans-serif;
+  --body: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--screen); color: var(--ink); font-family: var(--body); }
+.wrap { max-width: 720px; margin: 0 auto; padding: 18px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+h1 {
+  margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 9vw, 46px); line-height: 1.05;
+  color: var(--caption); -webkit-text-stroke: 2px #1a1400; paint-order: stroke fill; text-shadow: 3px 3px 0 #000;
+}
+.noads {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px;
+  padding: 8px 12px; font: 700 13px var(--body); cursor: pointer; white-space: nowrap;
+}
+.noads[hidden] { display: none; }
+form { display: flex; gap: 8px; }
+label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+#q {
+  flex: 1; min-width: 0; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--line);
+  background: var(--panel); color: var(--ink); font: 500 16px var(--body);
+}
+#q::placeholder { color: #6c7187; }
+#q:focus { outline: none; border-color: var(--caption); }
+.btn {
+  border: 0; border-radius: 14px; padding: 14px 18px; font: 700 16px var(--body); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none; white-space: nowrap;
+}
+.btn:focus-visible, .noads:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.btn[disabled] { opacity: .5; cursor: default; }
+.primary { background: var(--caption); color: #111; }
+.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+
+.stage { position: relative; border-radius: 18px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+.stage video { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; background: #000; }
+.badge { position: absolute; top: 10px; left: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.65); color: var(--muted); font-size: 12px; font-weight: 700; }
+.caption {
+  font-family: var(--display); font-size: clamp(26px, 7.5vw, 40px); line-height: 1.15; text-align: center;
+  color: #fff; -webkit-text-stroke: 5px #000; paint-order: stroke fill; word-break: keep-all; text-wrap: balance; margin: 0;
+}
+.sub { text-align: center; color: var(--muted); font-size: 14px; margin: -6px 0 0; }
+.ask { font-family: var(--display); font-size: 30px; text-align: center; margin: 4px 0 0; color: var(--caption); }
+.verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.verdict .btn { font-size: 20px; padding: 18px; font-family: var(--display); font-weight: 400; }
+.yes { background: var(--ok); color: #06210f; }
+.no { background: var(--hot); color: #fff; }
+.info { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.info p { margin: 0; line-height: 1.6; font-size: 15px; }
+.info .k { color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row .btn { flex: 1; }
+#out > .btn { width: 100%; }
+.status { text-align: center; padding: 60px 16px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.dots::after { content: "…"; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.win { font-family: var(--display); font-size: 32px; color: var(--ok); text-align: center; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 7px 12px; border-radius: 999px; font: 14px var(--body); cursor: pointer; }
+.chip:hover, .chip:focus-visible { color: var(--ink); border-color: var(--muted); outline: none; }
+.foot { color: #6c7187; font-size: 12px; text-align: center; margin: 0; }
+.toast { text-align: center; font-size: 14px; color: var(--muted); margin: 0; min-height: 1.4em; }
+
+/* 광고 / 결제 오버레이 */
+.overlay { position: fixed; inset: 0; background: rgba(5,6,10,.92); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+.overlay[hidden] { display: none; }
+.sheet { width: 100%; max-width: 420px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.adbox {
+  aspect-ratio: 4 / 3; border-radius: 14px; border: 2px dashed var(--line); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; color: var(--muted); text-align: center; padding: 16px;
+}
+.adbox b { font-family: var(--display); font-weight: 400; font-size: 26px; color: var(--ink); }
+.adtag { align-self: flex-start; font-size: 11px; font-weight: 700; color: #111; background: var(--caption); padding: 2px 8px; border-radius: 6px; }
+.price { font-family: var(--display); font-size: 40px; color: var(--caption); text-align: center; margin: 0; font-variant-numeric: tabular-nums; }
+.sheet h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 26px; text-align: center; }
+.sheet p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; text-align: center; }
+.link { background: none; border: 0; color: var(--muted); font: 13px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; }
+@media (prefers-reduced-motion: reduce) { .dots::after { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>무슨 밈인가요?</h1>
+    <button class="noads" id="noads" type="button">광고 제거</button>
+  </div>
+  <form id="f">
+    <label class="sr" for="q">기억나는 밈 설명</label>
+    <input id="q" type="text" autocomplete="off" placeholder="예: 가즈아 소리치는 짤">
+    <button class="btn primary" id="go" type="submit">찾기</button>
+  </form>
+  <div class="chips" id="chips">
+    <button type="button" class="chip">알래스카 할아버지 신나는 거</button>
+    <button type="button" class="chip">관에 들고 춤추는 사람들</button>
+    <button type="button" class="chip">황당해서 어이없다는 재벌</button>
+    <button type="button" class="chip">태풍 속 기자</button>
+  </div>
+  <section id="out" aria-live="polite"></section>
+  <p class="foot" id="foot"></p>
+</div>
+
+<div class="overlay" id="ad" hidden role="dialog" aria-modal="true" aria-labelledby="adtitle">
+  <div class="sheet">
+    <span class="adtag">광고</span>
+    <div class="adbox"><b id="adtitle">광고 자리</b><span>스토어 앱에서는 여기에 실제 광고가 나와요</span></div>
+    <button class="btn ghost" id="adclose" type="button" disabled>3초 후 닫기</button>
+    <button class="link" id="adbuy" type="button">광고 없이 보기 · 평생 2,900원</button>
+  </div>
+</div>
+
+<div class="overlay" id="buy" hidden role="dialog" aria-modal="true" aria-labelledby="buytitle">
+  <div class="sheet">
+    <h2 id="buytitle">광고 평생 제거</h2>
+    <p class="price">₩2,900</p>
+    <p>한 번만 결제하면 검색할 때 나오는 광고가 영원히 사라져요. 구독 아님.</p>
+    <button class="btn primary" id="buygo" type="button">결제하기</button>
+    <button class="link" id="restore" type="button">이미 결제했어요 (구매 복원)</button>
+    <p class="toast" id="buymsg"></p>
+    <button class="btn ghost" id="buyclose" type="button">닫기</button>
+  </div>
+</div>
+
+<script>
+// 빌드할 때 채워짐: LIB = 밈 도감, CONFIG = { mediaBase, api, adSeconds }
+const LIB0 = __LIB__;
+const CONFIG = Object.assign({ mediaBase: "", api: "", adSeconds: 3 }, __CONFIG__, window.MEME_CONFIG || {});
+let LIB = LIB0;
+let byId = Object.fromEntries(LIB.map(m => [m.id, m]));
+const $ = (s) => document.querySelector(s);
+const out = $("#out");
+const st = { query: "", queue: [], rejected: new Set(), busy: false, guess: null, exhausted: false };
+let sample = null, downloads = null;
+
+const Cap = window.Capacitor;
+const isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+const plugin = (name) => (Cap && Cap.Plugins && Cap.Plugins[name]) || null;
+
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function mediaUrl(m) { return CONFIG.mediaBase ? `${CONFIG.mediaBase}/${m.id}.mp4` : m.media.mp4; }
+function setFoot() { $("#foot").textContent = `밈 도감 ${LIB.length}개 · 짤 출처 Tenor`; }
+setFoot();
+
+/* ---------- 광고 제거 상태 ---------- */
+const ent = {
+  get adFree() { try { return localStorage.getItem("memeAdFree") === "1"; } catch { return false; } },
+  set adFree(v) { try { localStorage.setItem("memeAdFree", v ? "1" : "0"); } catch {} renderNoAds(); },
+};
+function renderNoAds() { $("#noads").hidden = ent.adFree; }
+renderNoAds();
+
+/* ---------- 결제 (스토어 앱: cordova-plugin-purchase) ---------- */
+const PRODUCT_ID = "remove_ads";
+let iap = null;
+function initIAP() {
+  const P = window.CdvPurchase;
+  if (!P) return;
+  const { store, ProductType, Platform } = P;
+  store.register([
+    { id: PRODUCT_ID, type: ProductType.NON_CONSUMABLE, platform: Platform.GOOGLE_PLAY },
+    { id: PRODUCT_ID, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE },
+  ]);
+  store.when()
+    .approved(t => t.verify())
+    .verified(r => r.finish())
+    .productUpdated(p => { if (p.id === PRODUCT_ID && p.owned) ent.adFree = true; });
+  store.initialize([Platform.GOOGLE_PLAY, Platform.APPLE_APPSTORE]);
+  iap = store;
+}
+document.addEventListener("deviceready", initIAP, false);
+
+function openBuy() { $("#buymsg").textContent = ""; $("#buy").hidden = false; $("#buygo").focus(); }
+$("#noads").addEventListener("click", openBuy);
+$("#buyclose").addEventListener("click", () => { $("#buy").hidden = true; });
+$("#buygo").addEventListener("click", async () => {
+  const msg = $("#buymsg");
+  if (!iap) { msg.textContent = "결제는 스토어 앱에서만 돼요."; return; }
+  const p = iap.get(PRODUCT_ID);
+  const offer = p && p.getOffer();
+  if (!offer) { msg.textContent = "상품 정보를 못 불러왔어요. 잠시 후 다시 해 주세요."; return; }
+  msg.textContent = "결제 창을 여는 중…";
+  const err = await offer.order();
+  msg.textContent = err ? "결제가 취소됐거나 실패했어요." : "결제 확인 중…";
+  setTimeout(() => { if (ent.adFree) { msg.textContent = "광고가 제거됐어요. 고마워요!"; setTimeout(() => { $("#buy").hidden = true; }, 1200); } }, 1500);
+});
+$("#restore").addEventListener("click", async () => {
+  const msg = $("#buymsg");
+  if (!iap) { msg.textContent = "구매 복원은 스토어 앱에서만 돼요."; return; }
+  msg.textContent = "구매 내역 확인 중…";
+  await iap.restorePurchases();
+  setTimeout(() => { msg.textContent = ent.adFree ? "복원됐어요. 광고가 사라졌어요." : "결제 내역을 못 찾았어요."; }, 1500);
+});
+
+/* ---------- 광고 (스토어 앱: AdMob 전면 광고 / 그 외: 광고 자리 미리보기) ---------- */
+const ADMOB = {
+  // TODO: 출시 전 내 AdMob 광고 단위 ID로 바꾸기. 지금은 구글 공식 테스트 ID.
+  android: "ca-app-pub-3940256099942544/1033173712",
+  ios: "ca-app-pub-3940256099942544/4411468910",
+  testing: true,
+};
+let admobReady = null;
+async function initAdMob() {
+  const AdMob = plugin("AdMob");
+  if (!AdMob) return null;
+  if (!admobReady) admobReady = AdMob.initialize({}).then(() => AdMob).catch(() => null);
+  return admobReady;
+}
+async function showAd() {
+  if (ent.adFree) return;
+  if (isNative) {
+    const AdMob = await initAdMob();
+    if (!AdMob) return;
+    try {
+      const ios = Cap.getPlatform() === "ios";
+      await AdMob.prepareInterstitial({ adId: ios ? ADMOB.ios : ADMOB.android, isTesting: ADMOB.testing });
+      await AdMob.showInterstitial();
+    } catch { /* 광고 실패해도 결과는 보여줌 */ }
+    return;
+  }
+  // 웹/미리보기: 광고 자리 화면
+  return new Promise((resolve) => {
+    const ov = $("#ad"), close = $("#adclose");
+    let left = CONFIG.adSeconds;
+    ov.hidden = false; close.disabled = true; close.textContent = `${left}초 후 닫기`;
+    const t = setInterval(() => {
+      left -= 1;
+      if (left > 0) { close.textContent = `${left}초 후 닫기`; return; }
+      clearInterval(t); close.disabled = false; close.textContent = "닫고 결과 보기"; close.focus();
+    }, 1000);
+    const done = () => { clearInterval(t); ov.hidden = true; close.onclick = null; $("#adbuy").onclick = null; resolve(); };
+    close.onclick = done;
+    $("#adbuy").onclick = () => { done(); openBuy(); };
+  });
+}
+
+/* ---------- 다운로드 ---------- */
+async function saveMeme(m, btn) {
+  const name = `${m.name.replace(/[\\/:*?"<>|]/g, "")}.mp4`;
+  btn.disabled = true; btn.textContent = "받는 중…";
+  try {
+    const blob = await (await fetch(mediaUrl(m))).blob();
+    if (downloads) {
+      await downloads.save({ filename: name, data: blob });
+      btn.textContent = "저장했어요";
+    } else if (isNative && plugin("Filesystem") && plugin("Share")) {
+      const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
+      const f = await plugin("Filesystem").writeFile({ path: name, data: b64, directory: "CACHE" });
+      await plugin("Share").share({ title: m.name, url: f.uri });
+      btn.textContent = "공유/저장 창을 열었어요";
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      btn.textContent = "저장했어요";
+    }
+  } catch (e) {
+    btn.textContent = e && e.code === "declined" ? "저장 취소됨" : "저장 실패, 다시 눌러 주세요";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---------- 화면 ---------- */
+function stageHtml(m, badge) {
+  const q = m.quote.startsWith("(") ? esc(m.quote) : `“${esc(m.quote)}”`;
+  return `<div class="stage">
+    <video src="${esc(mediaUrl(m))}" autoplay loop muted playsinline width="${m.media.w}" height="${m.media.h}"></video>
+    ${badge ? `<span class="badge">${esc(badge)}</span>` : ""}
+  </div>
+  <p class="caption">${q}</p>`;
+}
+
+function showCandidate(m) {
+  const left = st.queue.length;
+  out.innerHTML = `${stageHtml(m, left ? `후보 · 다음 ${left}개 대기` : "후보")}
+    <p class="ask">이거 맞음?</p>
+    <div class="verdict">
+      <button class="btn yes" id="yes" type="button">맞음!</button>
+      <button class="btn no" id="no" type="button">아님</button>
+    </div>`;
+  $("#yes").addEventListener("click", () => showWin(m));
+  $("#no").addEventListener("click", () => { st.rejected.add(m.id); next(); });
+}
+
+function showWin(m) {
+  out.innerHTML = `${stageHtml(m, "찾았다")}
+    <p class="win">찾았다!</p>
+    <button class="btn primary" id="save" type="button">짤 저장하기</button>
+    <div class="info">
+      <p><span class="k">밈 이름</span><br><b>${esc(m.name)}</b></p>
+      <p><span class="k">출처</span><br>${esc(m.source)}</p>
+      <p>${esc(m.desc)}</p>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="copy" type="button">밈 이름 복사</button>
+      <button class="btn ghost" id="again" type="button">다른 밈 찾기</button>
+    </div>`;
+  $("#save").addEventListener("click", (e) => saveMeme(m, e.currentTarget));
+  $("#copy").addEventListener("click", async (e) => {
+    try { await navigator.clipboard.writeText(m.name); e.target.textContent = "복사했어요"; }
+    catch { e.target.textContent = "복사가 막혔어요"; }
+  });
+  $("#again").addEventListener("click", () => { $("#q").value = ""; $("#q").focus(); showExample(); });
+}
+
+function showNotFound() {
+  const g = st.guess;
+  const name = g?.name || st.query;
+  out.innerHTML = `<div class="info">
+      <p class="ask" style="color:var(--ink)">도감에 그 짤이 아직 없어요</p>
+      ${g ? `<p><span class="k">아마 이 밈 같아요</span><br><b>${esc(g.name)}</b>${g.quote ? ` · “${esc(g.quote)}”` : ""}</p>
+      ${g.source ? `<p><span class="k">출처</span><br>${esc(g.source)}</p>` : ""}
+      ${g.description ? `<p>${esc(g.description)}</p>` : ""}` : `<p>설명을 조금 바꿔서 다시 찾아보세요. 누가 나왔는지, 무슨 대사였는지 적으면 잘 찾아요.</p>`}
+      <p class="k">도감은 매일 새벽 업데이트돼요.</p>
+    </div>
+    <div class="row">
+      <a class="btn ghost" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(name + " 짤 gif")}" target="_blank" rel="noopener">구글에서 짤 보기</a>
+      <a class="btn ghost" href="https://www.youtube.com/results?search_query=${encodeURIComponent(name)}" target="_blank" rel="noopener">유튜브 원본</a>
+    </div>`;
+}
+
+function status(html) { out.innerHTML = `<div class="status">${html}</div>`; }
+
+function next() {
+  while (st.queue.length && st.rejected.has(st.queue[0])) st.queue.shift();
+  if (st.queue.length) { showCandidate(byId[st.queue.shift()]); return; }
+  showNotFound();
+}
+
+/* ---------- 검색 ---------- */
+// AI가 없을 때 쓰는 단순 검색
+function localRank(q) {
+  const toks = q.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  return LIB.map(m => {
+    const hay = `${m.name} ${m.quote} ${m.source} ${m.desc}`.toLowerCase();
+    let s = 0;
+    for (const t of toks) {
+      if (hay.includes(t)) s += t.length >= 2 ? 3 : 1;
+      else if (t.length >= 3 && hay.includes(t.slice(0, 2))) s += 1;
+    }
+    return [m.id, s];
+  }).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 6).map(x => x[0]);
+}
+
+function buildPrompt(q, rejected) {
+  const list = LIB.filter(m => !rejected.has(m.id)).map(m => `${m.id} | ${m.name} | ${m.quote} | ${m.source} | ${m.desc}`).join("\n");
+  return `너는 한국 인터넷 밈 전문가야. 사용자가 흐릿하게 기억하는 밈을 설명했어. 아래 '밈 도감'에서 그 밈일 가능성이 있는 항목을 골라 줘.
+
+사용자 설명: """${q}"""
+
+밈 도감 (id | 이름 | 대사 | 출처 | 설명):
+${list}
+
+규칙:
+- 사용자 설명과 실제로 관련 있는 항목만 가능성 높은 순으로 최대 5개 id를 골라. 억지로 채우지 마.
+- 도감에 맞는 게 없으면 ids는 빈 배열로 둬.
+- 도감에 없더라도 네가 확실히 아는 실제 밈이면 guess에 적어. 모르면 guess는 null. 지어내지 마.
+
+이 JSON만 출력해:
+{"ids": ["id1", "id2"], "guess": {"name": "밈 이름", "quote": "대사", "source": "출처", "description": "한두 문장"} 또는 null}`;
+}
+
+async function rank(q) {
+  if (sample) {
+    const r = await sample.json(buildPrompt(q, st.rejected), { modelTier: "complex", cache: false });
+    return { ids: r?.ids || [], guess: r?.guess || null };
+  }
+  if (CONFIG.api) {
+    const res = await fetch(`${CONFIG.api}/api/search`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: q, rejected: [...st.rejected] }),
+    });
+    if (!res.ok) throw new Error(`server ${res.status}`);
+    return await res.json();
+  }
+  return { ids: localRank(q), guess: null };
+}
+
+async function start(q) {
+  Object.assign(st, { query: q, queue: [], rejected: new Set(), guess: null, busy: true });
+  $("#go").disabled = true;
+  status(`밈 뒤지는 중<span class="dots"></span>`);
+  let ids = [];
+  try {
+    const r = await rank(q);
+    ids = (r.ids || []).filter(id => byId[id]);
+    st.guess = r.guess || null;
+  } catch {
+    ids = localRank(q);
+  }
+  st.queue = ids;
+  await showAd();
+  st.busy = false; $("#go").disabled = false;
+  next();
+}
+
+function showExample() {
+  const m = byId.muyaho || LIB[0];
+  out.innerHTML = `${stageHtml(m, "예시")}
+    <p class="sub">위에 기억나는 걸 적으면 이렇게 짤이 바로 떠요. 아니면 '아님' 눌러서 다음 후보.</p>`;
+}
+
+$("#f").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const q = $("#q").value.trim();
+  if (!q) { $("#q").focus(); return; }
+  if (st.busy) return;
+  $("#q").blur();
+  start(q);
+});
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => { $("#q").value = c.textContent; $("#f").requestSubmit(); }));
+
+// 서버가 있으면 최신 도감 받아오기 (매일 업데이트된 밈)
+async function refreshCatalog() {
+  if (!CONFIG.api) return;
+  try {
+    const r = await fetch(`${CONFIG.api}/api/catalog`);
+    if (!r.ok) return;
+    const data = await r.json();
+    if (Array.isArray(data.memes) && data.memes.length) {
+      LIB = data.memes; byId = Object.fromEntries(LIB.map(m => [m.id, m])); setFoot();
+    }
+  } catch {}
+}
+
+showExample();
+refreshCatalog();
+if (window.claude?.use) {
+  window.claude.use("sample").then(s => { sample = s; }).catch(() => {});
+  window.claude.use("downloads").then(d => { downloads = d; }).catch(() => {});
+}
+</script>
+</body>
+</html>
