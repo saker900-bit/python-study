@@ -154,6 +154,7 @@ const CONFIG = Object.assign({
   klipyKey: "",        // 광고 켜진 KLIPY 키 (일반 사용자)
   klipyKeyNoAds: "",   // 광고 꺼진 KLIPY 키 (광고 제거 결제한 사용자)
   locale: "kr",
+  noAds: false,        // 테스트 버전: 광고·결제 버튼 없음
 }, __CONFIG__, window.MEME_CONFIG || {});
 let LIB = LIB0;
 let byId = Object.fromEntries(LIB.map(m => [m.id, m]));
@@ -171,7 +172,7 @@ function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;",
 function setFoot() {
   $("#foot").innerHTML = KLIPY
     ? `밈 도감 ${LIB.length}개 · <b>Powered by KLIPY</b>`
-    : `밈 도감 ${LIB.length}개 · 미리보기 버전`;
+    : `밈 도감 ${LIB.length}개 · ${CONFIG.noAds ? "테스트 버전 (광고 없음)" : "미리보기 버전"}`;
 }
 if (KLIPY) $("#q").placeholder = "Search KLIPY · 예: 가즈아 소리치는 짤";
 setFoot();
@@ -190,7 +191,7 @@ const ent = {
   get adFree() { try { return localStorage.getItem("memeAdFree") === "1"; } catch { return false; } },
   set adFree(v) { try { localStorage.setItem("memeAdFree", v ? "1" : "0"); } catch {} renderNoAds(); },
 };
-function renderNoAds() { $("#noads").hidden = ent.adFree; }
+function renderNoAds() { $("#noads").hidden = ent.adFree || CONFIG.noAds; }
 renderNoAds();
 function klipyKey() { return ent.adFree && CONFIG.klipyKeyNoAds ? CONFIG.klipyKeyNoAds : CONFIG.klipyKey; }
 
@@ -251,7 +252,7 @@ async function initAdMob() {
   return admobReady;
 }
 async function showAd() {
-  if (ent.adFree) return;
+  if (ent.adFree || CONFIG.noAds) return;
   if (isNative) {
     const AdMob = await initAdMob();
     if (!AdMob) return;

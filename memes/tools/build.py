@@ -12,13 +12,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 mode = sys.argv[1] if len(sys.argv) > 1 else "artifact"
+test = mode == "test"   # 테스트 버전: 미리보기와 같은데 광고 없음
+if test:
+    mode = "artifact"
 out = ROOT / "site"
 (out / "m").mkdir(parents=True, exist_ok=True)
 
 catalog = json.loads((ROOT / "catalog.json").read_text())
 memes = catalog["memes"]
 if mode == "artifact":
-    config = {"mediaBase": "m"}
+    config = {"mediaBase": "m", "noAds": test}
 else:
     # 스토어 앱: 짤은 KLIPY에서 앱이 직접 받음. 앱 안에는 우리 텍스트만 넣고 Tenor 주소는 빼기
     import os
@@ -48,10 +51,11 @@ if mode == "artifact":
 lib = json.dumps(memes, ensure_ascii=False).replace("</", "<\\/")
 html = (ROOT / "web" / "template.html").read_text()
 html = html.replace("__LIB__", lib).replace("__CONFIG__", json.dumps(config))
-(out / "index.html").write_text(html)
+index_name = "index_test.html" if test else "index.html"
+(out / index_name).write_text(html)
 
-files = [{"as": "index.html", "path": str(out / "index.html")}]
+files = [{"as": "index.html", "path": str(out / index_name)}]
 if mode == "artifact":
     files += [{"as": f"m/{m['id']}.mp4", "path": str(out / "m" / f"{m['id']}.mp4")} for m in memes]
-(out / "files.json").write_text(json.dumps(files, ensure_ascii=False))
+(out / ("files_test.json" if test else "files.json")).write_text(json.dumps(files, ensure_ascii=False))
 print(f"{mode}: {len(memes)}개 밈 -> {out}/index.html (publish 목록: site/files.json)")
