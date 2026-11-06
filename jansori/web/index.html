@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>빠직 잔소리 탐지기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+/* 시장 몸빼 바지 팔레트: 진분홍 + 해바라기 노랑 + 장판 민트, 한 가지 테마로 고정 */
+:root {
+  --ink: #2b2140;
+  --paper: #fff8e6;
+  --mint: #d8f0e3;
+  --magenta: #c2185b;
+  --sun: #ffc93c;
+  --angry: #e53935;
+  --line: #e7d9b8;
+  --muted: #6d6480;
+  --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--mint);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+header { display: flex; align-items: center; gap: 10px; }
+header h1 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0; text-wrap: balance; }
+header h1 b { color: var(--angry); font-weight: 400; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+.card { background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 14px; display: grid; gap: 12px; box-shadow: 4px 4px 0 var(--ink); }
+.card h2 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; border: 2px solid var(--ink); background: #fff; border-radius: 999px; padding: 4px 14px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chip.add { border-style: dashed; }
+.chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--magenta); margin-left: 6px; vertical-align: middle; }
+.photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.slot { display: grid; gap: 6px; }
+.slot .label { font-size: 13px; color: var(--muted); }
+.thumb { aspect-ratio: 4 / 3; border: 2px dashed var(--line); border-radius: 10px; background: #fff center / cover no-repeat; display: grid; place-items: center; text-align: center; font-size: 13px; color: var(--muted); padding: 6px; }
+.thumb.has { border-style: solid; border-color: var(--ink); color: transparent; }
+.filebtn { position: relative; overflow: hidden; display: block; text-align: center; font: inherit; font-size: 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--sun); padding: 6px; cursor: pointer; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 3px solid var(--magenta); outline-offset: 2px; }
+.go { font-family: var(--display); font-size: 24px; border: 3px solid var(--ink); border-radius: 14px; background: var(--angry); color: #fff; padding: 12px; cursor: pointer; box-shadow: 4px 4px 0 var(--ink); }
+.go:disabled { background: #bdb5c9; cursor: not-allowed; }
+button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); outline-offset: 2px; }
+
+/* 무대: 오늘 사진 위에 박스와 잔소리꾼 */
+.stage { position: relative; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: #f3ead2; min-height: 260px; }
+.stage img.photo { display: block; width: 100%; height: auto; }
+.stage .empty { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, #f3ead2 0 14px, #efe3c4 14px 28px); }
+.box { position: absolute; border: 3px dashed rgba(255,255,255,.9); border-radius: 8px; box-shadow: 0 0 0 2px rgba(0,0,0,.25); transition: all .2s; }
+.box .tag { position: absolute; left: -3px; top: -26px; background: var(--ink); color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
+.box.on { border: 4px solid var(--angry); box-shadow: 0 0 0 4px rgba(229,57,53,.35), 0 0 24px rgba(229,57,53,.6); animation: pulse .7s ease-in-out infinite alternate; }
+.box.on .tag { background: var(--angry); }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
+.char { position: absolute; bottom: -2%; height: 58%; aspect-ratio: 220 / 300; pointer-events: none; transition: left .35s, right .35s; }
+.char.left { left: -3%; }
+.char.right { right: -3%; }
+.char .flip { width: 100%; height: 100%; }
+.char.right .flip { transform: scaleX(-1); }
+.char svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.char #arm { transform-box: view-box; transform-origin: 128px 112px; transition: transform .45s cubic-bezier(.3,1.6,.5,1); }
+.char #anger { transform-box: fill-box; transform-origin: center; }
+.char.mad #anger { animation: pop .45s ease-out; }
+.char.mad { animation: stomp .35s ease-in-out 2; }
+@keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.6); } 100% { transform: scale(1); } }
+@keyframes stomp { 0%,100% { translate: 0 0; } 50% { translate: 0 -5%; } }
+.stage.shake { animation: shake .3s linear; }
+@keyframes shake { 25% { translate: -6px 0; } 50% { translate: 6px 0; } 75% { translate: -4px 0; } }
+.bubble { position: absolute; top: 3%; max-width: 72%; background: #fff; border: 3px solid var(--ink); border-radius: 16px; padding: 8px 12px; font-family: var(--display); font-size: clamp(18px, 5.4vw, 26px); line-height: 1.25; box-shadow: 3px 3px 0 var(--ink); }
+.bubble.left { left: 3%; }
+.bubble.right { right: 3%; }
+.bubble.loading::after { content: ""; display: inline-block; width: 1.2em; animation: dots 1s steps(4) infinite; text-align: left; }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+.controls { display: flex; gap: 8px; }
+.controls button { flex: 1; font: inherit; border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 8px 4px; cursor: pointer; }
+.controls button.primary { background: var(--sun); font-weight: 700; }
+.controls button:disabled { opacity: .4; cursor: not-allowed; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.list li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: #fff; border: 2px solid var(--line); cursor: pointer; }
+.list li.on { border-color: var(--angry); }
+.list .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.list .what { font-weight: 700; }
+.list .say { color: var(--muted); font-size: 14px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.mode { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--ink); color: #fff; }
+.personas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.persona { font: inherit; font-size: 13px; border: 2px solid var(--ink); background: #fff; border-radius: 10px; padding: 4px 2px 6px; cursor: pointer; display: grid; justify-items: center; gap: 2px; }
+.persona[aria-pressed="true"] { background: var(--sun); box-shadow: inset 0 0 0 2px var(--ink); }
+.persona svg { width: 100%; height: 74px; overflow: visible; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row label { font-size: 14px; }
+.spice { display: flex; gap: 6px; }
+.facebox { display: flex; align-items: center; gap: 10px; }
+.facebox .face { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); background: #fff center / cover no-repeat; flex: none; }
+.small { font: inherit; font-size: 14px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 6px 10px; cursor: pointer; }
+.err { color: var(--angry); font-size: 14px; margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><b>빠직!</b> 잔소리 탐지기</h1>
+      <p>평소 사진이랑 오늘 사진을 비교해서, 혼날 만한 걸 먼저 찝어드립니다.</p>
+    </div>
+  </header>
+
+  <section class="card" aria-labelledby="h-room">
+    <h2 id="h-room">1. 어느 방이에요?</h2>
+    <div class="chips" id="rooms"></div>
+    <div class="photos">
+      <div class="slot">
+        <span class="label">평소 사진 (깨끗할 때)</span>
+        <div class="thumb" id="thumbBase">아직 없어요</div>
+        <label class="filebtn">평소 사진 등록<input id="inBase" type="file" accept="image/*"></label>
+      </div>
+      <div class="slot">
+        <span class="label">오늘 사진</span>
+        <div class="thumb" id="thumbToday">같은 자리에서 찍어주세요</div>
+        <label class="filebtn">오늘 사진 찍기<input id="inToday" type="file" accept="image/*" capture="environment"></label>
+      </div>
+    </div>
+    <p class="note">평소 사진과 같은 위치, 같은 방향에서 찍을수록 정확해요.</p>
+  </section>
+
+  <button class="go" id="go" disabled>빠직 검사하기</button>
+  <p class="err" id="err" hidden></p>
+
+  <section class="card" aria-labelledby="h-stage">
+    <h2 id="h-stage">2. 잔소리 타임 <span class="mode" id="mode" hidden></span></h2>
+    <div class="stage" id="stage">
+      <div class="empty" id="stageEmpty"></div>
+      <img class="photo" id="stagePhoto" alt="오늘 찍은 방 사진" hidden>
+      <div id="boxes"></div>
+      <div class="char left" id="char"><div class="flip" id="charFlip"></div></div>
+      <div class="bubble right" id="bubble">평소 사진부터 올려봐라!</div>
+    </div>
+    <div class="controls">
+      <button id="prev" disabled>◀ 이전</button>
+      <button id="replay" class="primary" disabled>▶ 듣기</button>
+      <button id="next" disabled>다음 ▶</button>
+    </div>
+    <ol class="list" id="list"></ol>
+  </section>
+
+  <section class="card" aria-labelledby="h-set">
+    <h2 id="h-set">3. 잔소리꾼 고르기</h2>
+    <div class="personas" id="looks" role="group" aria-label="생김새"></div>
+    <div class="facebox">
+      <div class="face" id="faceThumb"></div>
+      <label class="filebtn" style="flex:1">얼굴 사진으로 바꾸기<input id="inFace" type="file" accept="image/*"></label>
+      <button class="small" id="faceClear" hidden>원래대로</button>
+    </div>
+    <p class="note">사진 속 얼굴이 가운데 오게 올려주세요. 뽀글머리는 그대로 씌워드립니다.</p>
+    <div class="row">
+      <label>목소리</label>
+      <div class="chips" id="voices" role="group" aria-label="목소리"></div>
+    </div>
+    <div class="row">
+      <label>맵기</label>
+      <div class="spice" id="spice" role="group" aria-label="잔소리 맵기"></div>
+      <button class="small" id="testVoice">목소리 들어보기</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- 데이터 ---------- */
+  const PERSONAS = {
+    ajumma:   { name: "아줌마", pitch: 1.15, rate: 1.15, female: true,
+                lines: ["이거 뭐야!", "이거 치워!", "내가 몇 번을 말했니!", "이게 왜 여기 있어?!", "당장 치워라 진짜!"] },
+    halmeoni: { name: "할머니", pitch: 0.7, rate: 0.82, female: true,
+                lines: ["아이고 이게 다 뭐꼬!", "이거 얼른 치아라!", "니 이래 살면 못 쓴다!", "할미 속 터진다 속 터져!"] },
+    ajeossi:  { name: "아저씨", pitch: 0.35, rate: 0.95, female: false,
+                lines: ["어허! 이게 뭐야!", "당장 치워라!", "정리 좀 하고 살자!", "이거 누가 이랬어!"] },
+    kid:      { name: "어린아이", pitch: 1.9, rate: 1.1, female: true,
+                lines: ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!", "나보다 더 어지르네!"] },
+  };
+  const SPICE = ["순한맛", "보통맛", "매운맛"];
+  const DEFAULT_ROOMS = ["거실", "안방", "작은방", "주방", "현관"];
+
+  /* ---------- 저장 (IndexedDB, 실패하면 메모리) ---------- */
+  const mem = new Map();
+  let dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise((res) => {
+      try {
+        const r = indexedDB.open("jansori", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => res(null);
+      } catch { res(null); }
+    });
+    return dbp;
+  }
+  async function kvGet(k) {
+    const d = await db();
+    if (!d) return mem.get(k);
+    return new Promise((res) => {
+      try {
+        const q = d.transaction("kv").objectStore("kv").get(k);
+        q.onsuccess = () => res(q.result);
+        q.onerror = () => res(mem.get(k));
+      } catch { res(mem.get(k)); }
+    });
+  }
+  async function kvSet(k, v) {
+    mem.set(k, v);
+    const d = await db();
+    if (!d) return;
+    try { d.transaction("kv", "readwrite").objectStore("kv").put(v, k); } catch {}
+  }
+
+  /* ---------- 상태 ---------- */
+  const S = {
+    rooms: DEFAULT_ROOMS.slice(),
+    room: "거실",
+    base: {},          // room -> Blob
+    today: null,       // Blob
+    look: "ajumma",
+    voice: "ajumma",
+    spice: 2,
+    face: null,        // dataURL
+    items: [],
+    idx: -1,
+    playing: false,
+  };
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- 캐릭터 SVG ---------- */
+  function charSVG(look, face, uid) {
+    const C = {
+      ajumma:   { hair: "#3b2530", blouse: "#ff7aa8", bdot: "#fff3a6", pants: "#6a3fa0", pdot: "#ffd1e3", skin: "#f3c39d" },
+      halmeoni: { hair: "#c9c4cf", blouse: "#8fd3a6", bdot: "#ffffff", pants: "#a33a5b", pdot: "#ffe08a", skin: "#eab892" },
+      ajeossi:  { hair: "#2a2a2a", blouse: "#ffffff", bdot: "#ffffff", pants: "#8a6a45", pdot: "#8a6a45", skin: "#e8b48a" },
+      kid:      { hair: "#4a2c1d", blouse: "#ffd84d", bdot: "#ff8a3d", pants: "#3fa0d8", pdot: "#ffffff", skin: "#f7cfae" },
+    }[look];
+    const u = uid;
+    // 머리카락
+    let hairBack = "", hairFront = "";
+    if (look === "ajumma" || look === "halmeoni") {
+      for (let i = 0; i < 15; i++) {
+        const a = Math.PI * (0.92 + (i / 14) * 1.16);
+        const x = 100 + Math.cos(a) * 33, y = 80 + Math.sin(a) * 33;
+        hairBack += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11"/>`;
+      }
+      for (let i = 0; i < 7; i++) {
+        const x = 76 + i * 8, y = 54 + Math.abs(3 - i) * 1.6;
+        hairFront += `<circle cx="${x}" cy="${y.toFixed(1)}" r="7.5"/>`;
+      }
+      hairBack += `<circle cx="100" cy="50" r="22"/>`;
+    } else if (look === "ajeossi") {
+      hairBack = `<path d="M70 86 Q68 60 78 58 L80 84 Z M130 86 Q132 60 122 58 L120 84 Z"/>`;
+      hairFront = `<ellipse cx="100" cy="56" rx="14" ry="3" fill="#fff" opacity=".55"/>`;
+    } else {
+      hairBack = `<circle cx="66" cy="58" r="13"/><circle cx="134" cy="58" r="13"/><path d="M70 82 Q70 46 100 46 Q130 46 130 82 Q118 62 100 62 Q82 62 70 82 Z"/>`;
+      hairFront = `<path d="M74 70 Q86 52 100 56 Q114 52 126 70 Q112 60 100 64 Q88 60 74 70 Z"/>`;
+    }
+    const faceArt = face
+      ? `<image href="${face}" x="70" y="52" width="60" height="60" clip-path="url(#fc${u})" preserveAspectRatio="xMidYMid slice"/>
+         <circle cx="100" cy="82" r="29" fill="none" stroke="#2b2140" stroke-width="2.5"/>`
+      : `<circle cx="100" cy="82" r="29" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
+         <path d="M82 71 L96 77 M118 71 L104 77" stroke="#2b2140" stroke-width="4" stroke-linecap="round"/>
+         <circle cx="90" cy="84" r="3.2" fill="#2b2140"/><circle cx="110" cy="84" r="3.2" fill="#2b2140"/>
+         <ellipse cx="100" cy="99" rx="8" ry="6.5" fill="#7a1f2b" stroke="#2b2140" stroke-width="2"/>
+         <ellipse cx="100" cy="102" rx="4" ry="2" fill="#ff8a9a"/>
+         <circle cx="82" cy="94" r="5" fill="#ff7a7a" opacity=".45"/><circle cx="118" cy="94" r="5" fill="#ff7a7a" opacity=".45"/>
+         ${look === "halmeoni" ? `<path d="M86 64 Q100 60 114 64 M80 104 Q83 108 86 106 M120 104 Q117 108 114 106" stroke="#a5765a" stroke-width="1.6" fill="none"/>` : ""}
+         ${look === "ajeossi" ? `<path d="M88 93 Q100 88 112 93 Q100 96 88 93 Z" fill="#2a2a2a"/>` : ""}`;
+    const top = look === "ajeossi"
+      ? `<path d="M70 106 Q100 100 130 106 L136 150 L64 150 Z" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
+         <path d="M84 104 Q100 122 116 104" fill="none" stroke="#2b2140" stroke-width="2"/>`
+      : `<path d="M68 106 Q100 98 132 106 L138 150 L62 150 Z" fill="url(#bl${u})" stroke="#2b2140" stroke-width="2.5"/>
+         <path d="M90 104 L100 118 L110 104" fill="#fff" stroke="#2b2140" stroke-width="2"/>`;
+    return `
+<svg viewBox="0 0 220 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <pattern id="bl${u}" width="14" height="14" patternUnits="userSpaceOnUse">
+      <rect width="14" height="14" fill="${C.blouse}"/>
+      <circle cx="4" cy="4" r="2.2" fill="${C.bdot}"/><circle cx="11" cy="10" r="1.6" fill="${C.bdot}"/>
+    </pattern>
+    <pattern id="pt${u}" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="${C.pants}"/>
+      <g fill="${C.pdot}"><circle cx="6" cy="6" r="2.4"/><circle cx="3.4" cy="6" r="1.6"/><circle cx="8.6" cy="6" r="1.6"/><circle cx="6" cy="3.4" r="1.6"/><circle cx="6" cy="8.6" r="1.6"/></g>
+      <circle cx="16" cy="16" r="2" fill="#ffd84d"/>
+    </pattern>
+    <clipPath id="fc${u}"><circle cx="100" cy="82" r="28"/></clipPath>
+  </defs>
+  <!-- 고무신 -->
+  <ellipse cx="80" cy="288" rx="16" ry="7" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
+  <ellipse cx="120" cy="288" rx="16" ry="7" fill="#fff" stroke="#2b2140" stroke-width="2.5"/>
+  <!-- 배바지 (몸빼) -->
+  <path d="M62 140 L138 140 L142 272 Q132 284 116 280 L104 196 L96 196 L84 280 Q68 284 58 272 Z" fill="url(#pt${u})" stroke="#2b2140" stroke-width="2.5"/>
+  <path d="M60 270 Q70 278 84 276 M116 276 Q130 278 140 270" stroke="#2b2140" stroke-width="2" fill="none"/>
+  ${top}
+  <rect x="60" y="138" width="80" height="12" rx="5" fill="${look === "ajeossi" ? "#3a2a1a" : C.pants}" stroke="#2b2140" stroke-width="2.5"/>
+  ${look === "ajeossi" ? `<rect x="94" y="139" width="12" height="10" rx="2" fill="#e0c060" stroke="#2b2140" stroke-width="1.5"/>` : `<path d="M64 144 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3" stroke="#2b2140" stroke-width="1.2" fill="none"/>`}
+  <!-- 허리에 손 -->
+  <path d="M72 112 L50 134 L64 150" stroke="#2b2140" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M72 112 L50 134 L64 150" stroke="${look === "ajeossi" ? C.skin : C.blouse}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="65" cy="150" r="7" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
+  <!-- 머리 -->
+  <g fill="${C.hair}" stroke="#2b2140" stroke-width="2">${hairBack}</g>
+  <circle cx="70" cy="86" r="5" fill="${C.skin}" stroke="#2b2140" stroke-width="2"/>
+  <circle cx="130" cy="86" r="5" fill="${C.skin}" stroke="#2b2140" stroke-width="2"/>
+  ${faceArt}
+  <g fill="${C.hair}" stroke="#2b2140" stroke-width="2">${hairFront}</g>
+  <!-- 가리키는 팔 -->
+  <g id="arm">
+    <path d="M128 112 L176 112" stroke="#2b2140" stroke-width="17" stroke-linecap="round"/>
+    <path d="M128 112 L176 112" stroke="${look === "ajeossi" ? C.skin : C.blouse}" stroke-width="12" stroke-linecap="round"/>
+    ${look === "ajeossi" ? "" : `<rect x="150" y="105" width="22" height="14" rx="4" fill="#fff" stroke="#2b2140" stroke-width="2"/>`}
+    <circle cx="182" cy="112" r="8.5" fill="${C.skin}" stroke="#2b2140" stroke-width="2.5"/>
+    <rect x="186" y="108.5" width="18" height="7" rx="3.5" fill="${C.skin}" stroke="#2b2140" stroke-width="2.2"/>
+  </g>
+  <!-- 빠직 -->
+  <g id="anger" transform="translate(128 54)">
+    <g stroke="#e53935" stroke-width="4" stroke-linecap="round" fill="none">
+      <path d="M-9 -3 Q-3 -3 -3 -9"/><path d="M3 -9 Q3 -3 9 -3"/><path d="M9 3 Q3 3 3 9"/><path d="M-3 9 Q-3 3 -9 3"/>
+    </g>
+  </g>
+</svg>`;
+  }
+
+  /* ---------- 이미지 처리 ---------- */
+  async function toJpeg(file, max = 1280) {
+    let bmp;
+    try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); }
+    catch { bmp = await createImageBitmap(file); }
+    const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    return new Promise((res) => c.toBlob(res, "image/jpeg", 0.85));
+  }
+  async function toFaceDataUrl(file) {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => createImageBitmap(file));
+    const side = Math.min(bmp.width, bmp.height);
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    // 얼굴이 보통 사진 위쪽에 있어서 살짝 위를 잘라옴
+    const sx = (bmp.width - side) / 2, sy = Math.max(0, (bmp.height - side) / 2 - side * 0.1);
+    c.getContext("2d").drawImage(bmp, sx, sy, side, side, 0, 0, 256, 256);
+    return c.toDataURL("image/jpeg", 0.85);
+  }
+
+  /* ---------- AI 프롬프트 (server/main.py 와 같은 내용) ---------- */
+  function buildPrompt(voice, spice) {
+    const p = PERSONAS[voice];
+    return `너는 "잔소리 탐지기" 앱의 눈이다. 사진 두 장이 주어진다.
+첫 번째 사진: 이 방의 평소(깨끗한) 모습. 두 번째 사진: 오늘 모습.
+두 사진을 비교해서 평소와 달라진 것, 특히 엄마나 아내가 잔소리할 만한 것을 찾아라.
+예: 새로 생긴 물건, 바닥/소파/식탁에 널린 것, 쌓인 빨래나 설거지, 쓰레기, 열린 문이나 서랍, 사라지거나 자리가 바뀐 물건.
+조명 차이, 사진 각도 차이, 사소한 그림자 차이는 무시해라.
+중요도 높은 순서로 최대 6개.
+
+각 항목마다:
+- label: 무엇인지 짧게 (예: "소파 위 빨래")
+- line: ${p.name} 말투로 그 물건을 손가락으로 찝으며 하는 잔소리 한두 마디. 맵기 ${spice}단계(1 순한맛, 2 보통, 3 매운맛). 욕설·비하 금지, 웃기게.
+  ${p.name} 말투 예시: ${p.lines.slice(0, 3).map((s) => `"${s}"`).join(", ")}
+- kind: "new"(새로 생김) | "moved"(자리 바뀜) | "missing"(없어짐) | "messy"(어질러짐)
+- x, y, w, h: 두 번째(오늘) 사진 기준 위치. 0~1 비율 (왼쪽 위가 0,0). 없어진 물건은 원래 있던 자리.
+
+summary: 전체 총평 한 줄 (${p.name} 말투). 달라진 게 없으면 items는 빈 배열, summary는 칭찬.
+
+JSON만 출력: {"summary": string, "items": [{"label": string, "line": string, "kind": string, "x": number, "y": number, "w": number, "h": number}]}`;
+  }
+
+  function cleanResult(r) {
+    const n = (v) => Math.min(1, Math.max(0, Number(v) || 0));
+    const items = (Array.isArray(r && r.items) ? r.items : []).slice(0, 6).map((it) => {
+      let x = n(it.x), y = n(it.y), w = n(it.w), h = n(it.h);
+      if (w < 0.04) w = 0.08; if (h < 0.04) h = 0.08;
+      if (x + w > 1) w = 1 - x; if (y + h > 1) h = 1 - y;
+      return { label: String(it.label || "이거"), line: String(it.line || "이거 뭐야!"), kind: String(it.kind || "new"), x, y, w, h };
+    });
+    return { summary: String((r && r.summary) || ""), items };
+  }
+
+  /* ---------- 분석: 1) Claude 2) 내 서버 3) 간단 픽셀 비교 ---------- */
+  let samplePromise = null;
+  function getSample() {
+    if (!samplePromise) {
+      samplePromise = (async () => {
+        try {
+          if (!window.claude || !window.claude.use) return null;
+          const s = await window.claude.use("sample");
+          if (!s) return null;
+          const lim = await s.limits();
+          return lim && lim.images ? s : null;
+        } catch { return null; }
+      })();
+    }
+    return samplePromise;
+  }
+
+  async function analyze(baseBlob, todayBlob) {
+    const prompt = buildPrompt(S.voice, S.spice);
+    const sample = await getSample();
+    if (sample) {
+      try {
+        const r = await sample.json(prompt, { images: [baseBlob, todayBlob], modelTier: "default" });
+        return { mode: "AI", ...cleanResult(r) };
+      } catch (e) {
+        console.warn("sample failed", e);
+      }
+    }
+    const api = window.JANSORI_API; // 스토어 앱에서는 내 서버 주소를 넣음
+    if (api) {
+      try {
+        const fd = new FormData();
+        fd.append("baseline", baseBlob, "base.jpg");
+        fd.append("today", todayBlob, "today.jpg");
+        fd.append("voice", S.voice);
+        fd.append("spice", String(S.spice));
+        const res = await fetch(api.replace(/\/$/, "") + "/api/inspect", { method: "POST", body: fd });
+        if (res.ok) return { mode: "AI", ...cleanResult(await res.json()) };
+      } catch (e) { console.warn("server failed", e); }
+    }
+    return { mode: "간단 비교", ...(await pixelDiff(baseBlob, todayBlob)) };
+  }
+
+  async function pixelDiff(aBlob, bBlob) {
+    const GW = 48, GH = 36;
+    async function grid(blob) {
+      const bmp = await createImageBitmap(blob);
+      const c = document.createElement("canvas");
+      c.width = GW; c.height = GH;
+      const g = c.getContext("2d");
+      g.filter = "blur(1px)";
+      g.drawImage(bmp, 0, 0, GW, GH);
+      const d = g.getImageData(0, 0, GW, GH).data;
+      const out = new Float32Array(GW * GH * 3);
+      for (let i = 0; i < GW * GH; i++) { out[i * 3] = d[i * 4]; out[i * 3 + 1] = d[i * 4 + 1]; out[i * 3 + 2] = d[i * 4 + 2]; }
+      return out;
+    }
+    const A = await grid(aBlob), B = await grid(bBlob);
+    // 밝기 차이 보정
+    let ma = 0, mb = 0;
+    for (let i = 0; i < A.length; i++) { ma += A[i]; mb += B[i]; }
+    const shift = (mb - ma) / A.length;
+    const diff = new Float32Array(GW * GH);
+    let sum = 0, sq = 0;
+    for (let i = 0; i < GW * GH; i++) {
+      const v = (Math.abs(B[i * 3] - A[i * 3] - shift) + Math.abs(B[i * 3 + 1] - A[i * 3 + 1] - shift) + Math.abs(B[i * 3 + 2] - A[i * 3 + 2] - shift)) / 3;
+      diff[i] = v; sum += v; sq += v * v;
+    }
+    const mean = sum / diff.length, sd = Math.sqrt(Math.max(0, sq / diff.length - mean * mean));
+    const th = Math.max(28, mean + 1.6 * sd);
+    const seen = new Uint8Array(diff.length), blobs = [];
+    for (let i = 0; i < diff.length; i++) {
+      if (seen[i] || diff[i] < th) continue;
+      const q = [i]; seen[i] = 1;
+      let x0 = GW, y0 = GH, x1 = 0, y1 = 0, cnt = 0;
+      while (q.length) {
+        const k = q.pop(), x = k % GW, y = (k / GW) | 0; cnt++;
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          const nx = x + dx, ny = y + dy, nk = ny * GW + nx;
+          if (nx >= 0 && ny >= 0 && nx < GW && ny < GH && !seen[nk] && diff[nk] >= th * 0.8) { seen[nk] = 1; q.push(nk); }
+        }
+      }
+      if (cnt >= 6) blobs.push({ x0, y0, x1, y1, cnt });
+    }
+    blobs.sort((a, b) => b.cnt - a.cnt);
+    const lines = PERSONAS[S.voice].lines;
+    const items = blobs.slice(0, 4).map((b, i) => ({
+      label: `달라진 곳 ${i + 1}`, line: lines[i % lines.length], kind: "new",
+      x: b.x0 / GW, y: b.y0 / GH, w: (b.x1 - b.x0 + 1) / GW, h: (b.y1 - b.y0 + 1) / GH,
+    }));
+    return {
+      summary: items.length ? "뭐가 이렇게 많이 바뀌었어!" : "오~ 웬일로 깨끗하네?",
+      items: cleanResult({ items }).items,
+    };
+  }
+
+  /* ---------- 소리 ---------- */
+  let actx = null;
+  function unlockAudio() {
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+    } catch {}
+    try {
+      if ("speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(" ");
+        u.volume = 0; speechSynthesis.speak(u);
+      }
+    } catch {}
+  }
+  function zap() {
+    if (!actx) return;
+    try {
+      const t = actx.currentTime;
+      // 빠직: 짧은 지직 소리 + 툭 떨어지는 음
+      const len = 0.18, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length) * (i % 400 < 200 ? 1 : 0.3);
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2400; bp.Q.value = 2;
+      const g1 = actx.createGain(); g1.gain.value = 0.5;
+      src.connect(bp).connect(g1).connect(actx.destination); src.start(t);
+      const o = actx.createOscillator(); o.type = "square";
+      o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(120, t + 0.22);
+      const g2 = actx.createGain(); g2.gain.setValueAtTime(0.18, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      o.connect(g2).connect(actx.destination); o.start(t); o.stop(t + 0.26);
+    } catch {}
+  }
+  function pickVoice(female) {
+    try {
+      const vs = speechSynthesis.getVoices().filter((v) => /^ko/i.test(v.lang));
+      if (!vs.length) return null;
+      const fem = /yuna|sora|heami|sunhi|female|여/i, mal = /minsu|injoon|jian|male|남|hyunsu|bongjin/i;
+      return vs.find((v) => (female ? fem : mal).test(v.name)) || vs[0];
+    } catch { return null; }
+  }
+  function speak(text, done) {
+    const p = PERSONAS[S.voice];
+    if (!("speechSynthesis" in window)) { setTimeout(done, 900 + text.length * 90); return; }
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR"; u.pitch = p.pitch; u.rate = p.rate;
+      const v = pickVoice(p.female); if (v) u.voice = v;
+      let fin = false;
+      const end = () => { if (!fin) { fin = true; done(); } };
+      u.onend = end; u.onerror = end;
+      setTimeout(end, 2500 + text.length * 160); // 일부 브라우저는 onend 안 줌
+      speechSynthesis.speak(u);
+    } catch { setTimeout(done, 900 + text.length * 90); }
+  }
+  try { speechSynthesis.onvoiceschanged = () => {}; } catch {}
+
+  /* ---------- 화면 그리기 ---------- */
+  let uidN = 0;
+  function renderChar() {
+    $("charFlip").innerHTML = charSVG(S.look, S.face, "main");
+  }
+  function renderLooks() {
+    $("looks").innerHTML = "";
+    for (const k of Object.keys(PERSONAS)) {
+      const b = document.createElement("button");
+      b.className = "persona"; b.type = "button";
+      b.setAttribute("aria-pressed", String(S.look === k));
+      b.innerHTML = charSVG(k, S.face, "p" + (uidN++)) + `<span>${PERSONAS[k].name}</span>`;
+      b.onclick = () => {
+        S.look = k; S.voice = k; save();
+        renderLooks(); renderVoices(); renderChar();
+        say(PERSONAS[k].lines[0], true);
+      };
+      $("looks").appendChild(b);
+    }
+  }
+  function renderVoices() {
+    $("voices").innerHTML = "";
+    for (const k of Object.keys(PERSONAS)) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = PERSONAS[k].name;
+      b.setAttribute("aria-pressed", String(S.voice === k));
+      b.onclick = () => { S.voice = k; save(); renderVoices(); };
+      $("voices").appendChild(b);
+    }
+    $("spice").innerHTML = "";
+    SPICE.forEach((name, i) => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = name;
+      b.setAttribute("aria-pressed", String(S.spice === i + 1));
+      b.onclick = () => { S.spice = i + 1; save(); renderVoices(); };
+      $("spice").appendChild(b);
+    });
+  }
+  function renderRooms() {
+    const box = $("rooms"); box.innerHTML = "";
+    for (const r of S.rooms) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.setAttribute("aria-pressed", String(S.room === r));
+      b.innerHTML = r + (S.base[r] ? '<span class="dot" title="평소 사진 있음"></span>' : "");
+      b.onclick = () => { S.room = r; save(); renderRooms(); renderThumbs(); };
+      box.appendChild(b);
+    }
+    const add = document.createElement("button");
+    add.className = "chip add"; add.type = "button"; add.textContent = "+ 방 추가";
+    add.onclick = () => {
+      const inp = document.createElement("input");
+      inp.className = "chip"; inp.placeholder = "방 이름"; inp.id = "newRoom"; inp.style.width = "8em";
+      add.replaceWith(inp); inp.focus();
+      const done = () => {
+        const v = inp.value.trim();
+        if (v && !S.rooms.includes(v)) { S.rooms.push(v); S.room = v; save(); }
+        renderRooms(); renderThumbs();
+      };
+      inp.onkeydown = (e) => { if (e.key === "Enter") done(); if (e.key === "Escape") renderRooms(); };
+      inp.onblur = done;
+    };
+    box.appendChild(add);
+  }
+  const urls = {};
+  function blobUrl(key, blob) {
+    if (urls[key]) URL.revokeObjectURL(urls[key]);
+    urls[key] = blob ? URL.createObjectURL(blob) : null;
+    return urls[key];
+  }
+  function renderThumbs() {
+    const b = S.base[S.room];
+    const tb = $("thumbBase");
+    tb.classList.toggle("has", !!b);
+    tb.style.backgroundImage = b ? `url(${blobUrl("base", b)})` : "";
+    tb.textContent = b ? "" : "아직 없어요";
+    const tt = $("thumbToday");
+    tt.classList.toggle("has", !!S.today);
+    tt.style.backgroundImage = S.today ? `url(${blobUrl("today", S.today)})` : "";
+    tt.textContent = S.today ? "" : "같은 자리에서 찍어주세요";
+    $("go").disabled = !(b && S.today);
+    if (!b) say("평소 사진부터 올려봐라!");
+    else if (!S.today) say("오늘 사진도 찍어 와 봐!");
+    else if (S.idx < 0) say("어디 한번 보자. 검사 눌러!");
+  }
+  function say(text, withVoice) {
+    const bub = $("bubble");
+    bub.classList.remove("loading");
+    bub.textContent = text;
+    if (withVoice) { unlockAudio(); speak(text, () => {}); }
+  }
+  function placeChar(side) {
+    const ch = $("char"), bub = $("bubble");
+    ch.classList.toggle("left", side === "left"); ch.classList.toggle("right", side === "right");
+    bub.classList.toggle("right", side === "left"); bub.classList.toggle("left", side === "right");
+  }
+  function pointAt(item) {
+    const arm = document.querySelector("#charFlip #arm");
+    if (!arm) return;
+    if (!item) { arm.style.transform = "rotate(-20deg)"; return; }
+    const cx = item.x + item.w / 2;
+    placeChar(cx < 0.5 ? "right" : "left");
+    // 위치 바뀐 뒤 좌표 계산
+    requestAnimationFrame(() => setTimeout(() => {
+      const st = $("stage").getBoundingClientRect();
+      const svg = document.querySelector("#charFlip svg").getBoundingClientRect();
+      const flipped = $("char").classList.contains("right");
+      const k = svg.height / 300;
+      const sx = flipped ? svg.right - 128 * k : svg.left + 128 * k;
+      const sy = svg.top + 112 * k;
+      const tx = st.left + cx * st.width, ty = st.top + (item.y + item.h / 2) * st.height;
+      let dx = tx - sx; const dy = ty - sy;
+      if (flipped) dx = -dx;
+      let a = Math.atan2(dy, dx) * 180 / Math.PI;
+      a = Math.max(-80, Math.min(85, a));
+      arm.style.transform = `rotate(${a.toFixed(1)}deg)`;
+    }, 360));
+  }
+  function renderBoxes() {
+    const box = $("boxes"); box.innerHTML = "";
+    S.items.forEach((it, i) => {
+      const d = document.createElement("div");
+      d.className = "box" + (i === S.idx ? " on" : "");
+      d.style.left = it.x * 100 + "%"; d.style.top = it.y * 100 + "%";
+      d.style.width = it.w * 100 + "%"; d.style.height = it.h * 100 + "%";
+      d.innerHTML = `<span class="tag">${i + 1}. ${escapeHtml(it.label)}</span>`;
+      box.appendChild(d);
+    });
+    const list = $("list"); list.innerHTML = "";
+    S.items.forEach((it, i) => {
+      const li = document.createElement("li");
+      if (i === S.idx) li.className = "on";
+      li.innerHTML = `<span class="n">${i + 1}</span><div><div class="what">${escapeHtml(it.label)}</div><div class="say">“${escapeHtml(it.line)}”</div></div>`;
+      li.onclick = () => { stopPlay(); unlockAudio(); show(i, false); };
+      list.appendChild(li);
+    });
+    $("prev").disabled = S.idx <= 0;
+    $("next").disabled = S.idx >= S.items.length - 1;
+    $("replay").disabled = !S.items.length;
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  function show(i, chain) {
+    S.idx = i;
+    const it = S.items[i];
+    renderBoxes();
+    pointAt(it);
+    const ch = $("char"), st = $("stage");
+    ch.classList.remove("mad"); st.classList.remove("shake");
+    void ch.offsetWidth;
+    ch.classList.add("mad"); st.classList.add("shake");
+    zap();
+    say(it.line);
+    setTimeout(() => speak(it.line, () => {
+      if (chain && S.playing && i < S.items.length - 1) setTimeout(() => S.playing && show(i + 1, true), 500);
+      else S.playing = false;
+    }), 280);
+  }
+  function play(from) { if (!S.items.length) return; S.playing = true; show(from, true); }
+  function stopPlay() { S.playing = false; try { speechSynthesis.cancel(); } catch {} }
+
+  /* ---------- 이벤트 ---------- */
+  $("inBase").onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    S.base[S.room] = await toJpeg(f);
+    await kvSet("base:" + S.room, S.base[S.room]);
+    renderRooms(); renderThumbs();
+  };
+  $("inToday").onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    S.today = await toJpeg(f);
+    S.items = []; S.idx = -1; renderBoxes();
+    const img = $("stagePhoto");
+    img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
+    renderThumbs();
+  };
+  $("inFace").onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    S.face = await toFaceDataUrl(f); save();
+    renderFace(); renderLooks(); renderChar();
+  };
+  $("faceClear").onclick = () => { S.face = null; save(); renderFace(); renderLooks(); renderChar(); };
+  function renderFace() {
+    $("faceThumb").style.backgroundImage = S.face ? `url(${S.face})` : "";
+    $("faceClear").hidden = !S.face;
+  }
+  $("testVoice").onclick = () => {
+    unlockAudio(); zap();
+    const ch = $("char"); ch.classList.remove("mad"); void ch.offsetWidth; ch.classList.add("mad");
+    say(PERSONAS[S.voice].lines[S.spice - 1] || PERSONAS[S.voice].lines[0], true);
+  };
+  $("go").onclick = async () => {
+    const base = S.base[S.room];
+    if (!base || !S.today) return;
+    unlockAudio(); stopPlay();
+    $("err").hidden = true;
+    $("go").disabled = true; $("go").textContent = "보는 중...";
+    const bub = $("bubble"); bub.textContent = "어디 보자"; bub.classList.add("loading");
+    pointAt(null);
+    try {
+      const r = await analyze(base, S.today);
+      S.items = r.items; S.idx = -1;
+      $("mode").hidden = false; $("mode").textContent = r.mode === "AI" ? "AI 검사" : "간단 비교 모드";
+      renderBoxes();
+      if (!S.items.length) {
+        say(r.summary || "오~ 웬일로 깨끗하네?", true);
+      } else {
+        const intro = r.summary || `${S.items.length}개나 걸렸어!`;
+        say(intro);
+        speak(intro, () => play(0));
+      }
+      $("h-stage").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      console.error(e);
+      $("err").hidden = false;
+      $("err").textContent = "사진을 비교하지 못했어요. 잠시 뒤에 다시 눌러주세요.";
+      say("이게 왜 안 되노...");
+    } finally {
+      $("go").disabled = false; $("go").textContent = "빠직 검사하기";
+    }
+  };
+  $("replay").onclick = () => { unlockAudio(); stopPlay(); play(Math.max(0, S.idx)); };
+  $("prev").onclick = () => { unlockAudio(); stopPlay(); if (S.idx > 0) show(S.idx - 1, false); };
+  $("next").onclick = () => { unlockAudio(); stopPlay(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); };
+
+  function save() {
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, face: S.face });
+  }
+
+  /* ---------- 시작 ---------- */
+  async function init() {
+    renderChar(); renderLooks(); renderVoices(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    const st = await kvGet("settings");
+    if (st) Object.assign(S, st);
+    for (const r of S.rooms) { const b = await kvGet("base:" + r); if (b) S.base[r] = b; }
+    renderChar(); renderLooks(); renderVoices(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    getSample();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
