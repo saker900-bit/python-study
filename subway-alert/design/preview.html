@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>지하철 지연알림 미리보기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 데스크톱에선 폰 프레임 하나를 가운데, 폰에선 화면 전체가 앱. 단일(라이트) 테마로 고정 */
+:root {
+  --ink: #141A33;
+  --muted: #5F6680;
+  --bg: #EEF0F5;
+  --card: #FFFFFF;
+  --navy: #141C52;
+  --navy-2: #1E2A78;
+  --gold: #FFD54F;
+  --alert: #D7263D;
+  --ok: #1F9D55;
+  --line-2: #00A84D;
+  --display: "IBM Plex Sans KR", "Noto Sans KR", system-ui, sans-serif;
+  --body: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: #D9DCE6;
+  font-family: var(--body);
+  word-break: keep-all;
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.phone {
+  position: relative; width: 390px; height: min(844px, calc(100% - 0px)); max-height: 844px;
+  background: var(--bg); border-radius: 44px; overflow: hidden;
+  box-shadow: 0 0 0 10px #0E1230, 0 30px 80px rgba(14,18,48,.35);
+  display: flex; flex-direction: column;
+}
+@media (max-width: 480px) {
+  body { padding: 0; }
+  .phone { width: 100%; height: 100%; max-height: none; border-radius: 0; box-shadow: none; }
+}
+
+.statusbar { height: 44px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 6px; font: 600 14px/1 var(--body); background: var(--card); padding-top: env(safe-area-inset-top); }
+.screen { flex: 1; display: none; flex-direction: column; min-height: 0; }
+.screen.on { display: flex; }
+
+.topbar { flex: none; background: var(--card); padding: 10px 16px 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #E3E6EE; }
+.topbar h1 { font: 700 20px/1.2 var(--display); margin: 0; flex: 1; letter-spacing: -.3px; }
+.iconbtn { background: none; border: 0; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); }
+.iconbtn:hover { background: var(--bg); }
+.back { background: none; border: 0; color: var(--navy-2); font-weight: 700; padding: 6px 0; }
+
+.scroll { flex: 1; overflow-y: auto; padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 12px; }
+
+/* 상단 요약 */
+.summary { background: var(--card); border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+.summary .big { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--alert); }
+.summary .big.zero { color: var(--ok); }
+.summary .lbl { font-weight: 700; }
+.summary .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.live { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-weight: 500; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 rgba(31,157,85,.5); animation: pulse 2s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(31,157,85,0); } 100% { box-shadow: 0 0 0 0 rgba(31,157,85,0); } }
+
+.promo { background: var(--navy); color: #fff; border: 0; border-radius: 18px; padding: 16px; text-align: left; display: flex; align-items: center; gap: 12px; }
+.promo b { display: block; font: 700 16px/1.3 var(--display); }
+.promo span { color: #B9C2FF; font-size: 13px; }
+.promo .arrow { margin-left: auto; background: var(--gold); color: #000; font-weight: 900; border-radius: 10px; padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+
+.section-h { font-size: 13px; font-weight: 700; color: var(--muted); margin: 8px 2px -2px; display: flex; justify-content: space-between; }
+
+.card { background: var(--card); border-radius: 16px; padding: 14px 14px 12px 16px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--alert); }
+.card.resolved::before { background: var(--ok); }
+.card.resolved { opacity: .8; }
+.card.new { animation: slidein .5s ease-out; }
+@keyframes slidein { from { transform: translateY(-8px); background: #FFF4D6; } to { transform: none; background: var(--card); } }
+.row { display: flex; align-items: center; gap: 8px; }
+.badge { min-width: 28px; height: 28px; border-radius: 14px; color: #fff; font: 900 13px/28px var(--body); text-align: center; padding: 0 8px; flex: none; }
+.badge.sm { min-width: 22px; height: 22px; line-height: 22px; font-size: 11px; padding: 0 6px; }
+.where { font: 700 17px/1.25 var(--display); flex: 1; }
+.when { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.state { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.state.delay { color: var(--alert); }
+.state.ok { color: var(--ok); }
+.pill { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 6px; background: #FDE7EA; color: var(--alert); }
+.state.ok .pill { background: #E3F5EA; color: var(--ok); }
+.summary-text { color: #3B4260; font-size: 14px; line-height: 1.5; }
+.src { font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+.src i { font-style: normal; background: var(--bg); border-radius: 6px; padding: 2px 6px; }
+.empty { text-align: center; color: var(--muted); padding: 18px; font-size: 14px; }
+
+.demo { background: none; border: 1.5px dashed #B4BAD0; color: var(--muted); border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 500; }
+.demo:hover { border-color: var(--navy-2); color: var(--navy-2); }
+.note { text-align: center; font-size: 11px; color: #8A90A8; }
+
+/* 푸시 배너 */
+.push { position: absolute; left: 10px; right: 10px; top: 52px; z-index: 30; background: rgba(250,250,252,.96); backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(14,18,48,.25); display: flex; gap: 10px; transform: translateY(-140%); transition: transform .45s cubic-bezier(.2,.9,.3,1.2); cursor: pointer; border: 0; text-align: left; width: auto; }
+.push.show { transform: none; }
+.push .appicon { width: 38px; height: 38px; border-radius: 10px; background: var(--navy); display: grid; place-items: center; flex: none; }
+.push .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+.push .t { font-weight: 700; font-size: 15px; margin-top: 2px; }
+.push .b { font-size: 14px; color: #2B3150; margin-top: 1px; line-height: 1.35; }
+
+/* 페이월 */
+#paywall { background: var(--navy); color: #fff; }
+#paywall .scroll { gap: 0; padding: 8px 22px 28px; }
+.close { align-self: flex-end; background: none; border: 0; color: #8C95C9; font-size: 26px; line-height: 1; padding: 6px; }
+.pw-title { font: 700 28px/1.3 var(--display); margin: 4px 0 0; text-wrap: balance; letter-spacing: -.5px; }
+.pw-title em { font-style: normal; color: var(--gold); }
+.feat { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.feat li { display: flex; gap: 10px; align-items: flex-start; color: #DDE2FF; font-size: 15px; line-height: 1.4; }
+.feat svg { flex: none; margin-top: 2px; }
+.plans { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.plan { border: 2px solid #2E3A7A; background: #18225E; border-radius: 16px; padding: 14px 16px; text-align: left; color: #fff; display: grid; grid-template-columns: 22px 1fr auto; gap: 4px 12px; align-items: center; }
+.plan.sel { border-color: var(--gold); background: var(--navy-2); }
+.radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #5A66A8; grid-row: span 2; }
+.plan.sel .radio { border: 7px solid var(--gold); }
+.plan .name { font-weight: 700; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+.plan .tag { background: var(--gold); color: #000; font-size: 11px; font-weight: 900; border-radius: 6px; padding: 2px 6px; }
+.plan .price { font: 700 18px/1.2 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
+.plan .desc { color: #AAB3E6; font-size: 13px; }
+.plan .strike { color: #7C86C0; text-decoration: line-through; font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.trial { margin-top: 14px; background: rgba(255,213,79,.12); color: var(--gold); border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.consent { display: flex; gap: 10px; margin-top: 16px; align-items: flex-start; background: none; border: 0; color: #DDE2FF; text-align: left; padding: 0; font-size: 13px; line-height: 1.55; }
+.box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--gold); flex: none; display: grid; place-items: center; color: #000; font-weight: 900; font-size: 14px; }
+.consent.on .box { background: var(--gold); }
+.cta { margin-top: 16px; background: var(--gold); color: #000; border: 0; border-radius: 16px; padding: 17px; font: 900 17px/1 var(--body); transition: opacity .2s; }
+.cta[aria-disabled="true"] { opacity: .45; }
+.hint { color: #FF9AA6; font-size: 12px; margin-top: 8px; min-height: 16px; text-align: center; }
+.fine { color: #8C95C9; font-size: 11.5px; line-height: 1.6; margin: 14px 0 0; padding-left: 16px; }
+.links { display: flex; justify-content: center; gap: 18px; margin-top: 14px; font-size: 13px; }
+.links button { background: none; border: 0; color: #AAB3E6; padding: 4px; }
+
+/* 결제 시트 (스토어 결제창 흉내) */
+.sheet-wrap { position: absolute; inset: 0; background: rgba(0,0,0,.4); z-index: 40; display: none; align-items: flex-end; }
+.sheet-wrap.on { display: flex; }
+.sheet { background: #F7F7F9; color: var(--ink); width: 100%; border-radius: 22px 22px 0 0; padding: 18px 20px 28px; display: flex; flex-direction: column; gap: 10px; animation: up .3s ease-out; }
+@keyframes up { from { transform: translateY(100%); } }
+.sheet h3 { margin: 0; font: 700 17px/1.3 var(--display); text-align: center; }
+.sheet .line { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #E3E5EC; }
+.sheet .line span:first-child { color: var(--muted); }
+.sheet .pay { background: #0A84FF; color: #fff; border: 0; border-radius: 12px; padding: 14px; font-weight: 700; margin-top: 6px; }
+.sheet .cancel { background: none; border: 0; color: #0A84FF; padding: 6px; }
+.sheet small { color: var(--muted); text-align: center; font-size: 11px; }
+
+/* 설정 */
+.group { background: var(--card); border-radius: 16px; padding: 4px 16px; }
+.group h2 { font: 700 15px/1 var(--display); margin: 14px 0 6px; }
+.item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #EEF0F5; font-size: 15px; }
+.item:first-of-type { border-top: 0; }
+.item small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.switch { width: 50px; height: 30px; border-radius: 15px; background: #CBD0DD; border: 0; position: relative; flex: none; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.switch[aria-checked="true"] { background: var(--ok); }
+.switch[aria-checked="true"]::after { transform: translateX(20px); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 14px; }
+.chip { display: flex; align-items: center; gap: 6px; border: 1.5px solid #DDE0E8; background: #fff; border-radius: 20px; padding: 5px 10px 5px 5px; font-size: 13px; font-weight: 500; opacity: .5; }
+.chip.on { opacity: 1; border-color: var(--c); }
+.linkbtn { background: none; border: 0; color: var(--navy-2); font-weight: 700; font-size: 14px; padding: 0; }
+.subcard { background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.subcard .k { font-size: 12px; color: #B9C2FF; }
+.subcard .v { font: 700 18px/1.3 var(--display); }
+.subcard .row2 { display: flex; gap: 16px; margin-top: 6px; }
+.subcard .linkbtn { color: var(--gold); }
+
+.toast { position: absolute; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #141A33; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13px; opacity: 0; transition: .25s; z-index: 50; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="statusbar"><span id="clock">8:12</span><span>📶 🔋</span></div>
+
+  <button class="push" id="push" type="button" aria-live="polite">
+    <span class="appicon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="14" rx="4" fill="#FFD54F"/><circle cx="9" cy="13" r="1.4" fill="#141C52"/><circle cx="15" cy="13" r="1.4" fill="#141C52"/><rect x="8" y="6" width="8" height="4" rx="1" fill="#141C52"/><path d="M8 17l-2 4M16 17l2 4" stroke="#FFD54F" stroke-width="2" stroke-linecap="round"/></svg></span>
+    <span style="flex:1;min-width:0">
+      <span class="meta"><span>지하철 지연알림</span><span>지금</span></span>
+      <span class="t" id="pushT" style="display:block"></span>
+      <span class="b" id="pushB" style="display:block"></span>
+    </span>
+  </button>
+
+  <!-- 피드 -->
+  <section class="screen on" id="feed">
+    <div class="topbar">
+      <h1>지하철 지연알림</h1>
+      <button class="iconbtn" id="toSettings" aria-label="설정 열기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+    <div class="scroll" id="feedScroll">
+      <div class="summary">
+        <div class="big" id="activeCount">2</div>
+        <div><div class="lbl">지금 지연 중</div><div class="sub" id="activeSub">수도권 23개 노선 감시 중</div></div>
+        <div class="live"><span class="dot"></span>실시간</div>
+      </div>
+      <button class="promo" id="promo" type="button">
+        <span><b>지연되면 바로 푸시로 알려드려요</b><span>첫 달 무료 · 이후 월 2,900원</span></span>
+        <span class="arrow">무료 체험</span>
+      </button>
+      <div class="section-h"><span>지연 중</span></div>
+      <div id="activeList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="section-h"><span>최근 복구됨</span><span>오늘</span></div>
+      <div id="resolvedList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button class="demo" id="demoBtn" type="button">▶ 새 지연 알림 받아보기 (시연)</button>
+      <div class="note">화면의 사고 정보는 디자인 확인용 예시입니다</div>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section class="screen" id="prefs">
+    <div class="topbar">
+      <button class="back" id="backFromSettings">‹ 피드</button>
+      <h1 style="text-align:center;margin-right:44px">설정</h1>
+    </div>
+    <div class="scroll">
+      <div class="subcard" id="subcard"></div>
+      <div class="group">
+        <h2>알림</h2>
+        <div class="item"><span>지연 알림 받기<small>지연이 확인되면 바로 푸시</small></span><button class="switch" role="switch" aria-checked="true" aria-label="지연 알림 받기" data-k="enabled"></button></div>
+        <div class="item"><span>정상 운행 재개 알림<small>복구되면 한 번 더 알려드려요</small></span><button class="switch" role="switch" aria-checked="true" aria-label="정상 운행 재개 알림" data-k="resolved"></button></div>
+        <div class="item"><span>출퇴근 시간에만<small>평일 7–10시, 17–20시</small></span><button class="switch" role="switch" aria-checked="false" aria-label="출퇴근 시간에만" data-k="rush"></button></div>
+      </div>
+      <div class="group">
+        <h2 style="display:flex;justify-content:space-between;align-items:center">알림 받을 노선 <button class="linkbtn" id="allLines">전체 선택</button></h2>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="links" style="color:var(--muted)">
+        <button class="linkbtn" style="color:var(--muted);font-weight:500">이용약관</button>
+        <button class="linkbtn" style="color:var(--muted);font-weight:500">개인정보처리방침</button>
+        <button class="linkbtn" style="color:var(--muted);font-weight:500">문의하기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 페이월 -->
+  <section class="screen" id="paywall">
+    <div class="statusbar" style="background:var(--navy);color:#fff;position:absolute;top:0;left:0;right:0;z-index:1;visibility:hidden"></div>
+    <div class="scroll">
+      <button class="close" id="closePaywall" aria-label="닫기">✕</button>
+      <h2 class="pw-title">지하철 지연,<br><em>뉴스보다 먼저</em> 알려드려요</h2>
+      <ul class="feat">
+        <li><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#FFD54F" stroke-width="3" fill="none" stroke-linecap="round"/></svg>전 노선, 전 역 지연을 즉시 푸시</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#FFD54F" stroke-width="3" fill="none" stroke-linecap="round"/></svg>뉴스·SNS·공식 공지를 24시간 감시</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#FFD54F" stroke-width="3" fill="none" stroke-linecap="round"/></svg>어느 역, 무슨 이유인지 한 줄로</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#FFD54F" stroke-width="3" fill="none" stroke-linecap="round"/></svg>정상 운행 재개되면 복구 알림까지</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" stroke="#FFD54F" stroke-width="3" fill="none" stroke-linecap="round"/></svg>내가 타는 노선만 골라 받기</li>
+      </ul>
+      <div class="plans" role="radiogroup" aria-label="요금제">
+        <button class="plan sel" data-plan="yearly" role="radio" aria-checked="true">
+          <span class="radio"></span>
+          <span class="name">연간 <span class="tag">30% 할인</span></span>
+          <span class="price">24,360원<span style="font-size:13px;font-weight:500">/년</span></span>
+          <span class="desc">월 2,030원꼴</span>
+          <span class="strike">34,800원</span>
+        </button>
+        <button class="plan" data-plan="monthly" role="radio" aria-checked="false">
+          <span class="radio"></span>
+          <span class="name">월간</span>
+          <span class="price">2,900원<span style="font-size:13px;font-weight:500">/월</span></span>
+          <span class="desc">언제든 해지 가능</span>
+          <span></span>
+        </button>
+      </div>
+      <div class="trial" id="trialText"></div>
+      <button class="consent" id="consent" type="button" role="checkbox" aria-checked="false">
+        <span class="box"></span>
+        <span id="consentText"></span>
+      </button>
+      <button class="cta" id="cta" aria-disabled="true">첫 달 무료로 시작하기</button>
+      <div class="hint" id="hint"></div>
+      <ul class="fine">
+        <li>무료 체험을 시작하려면 App Store / Google Play 계정에 결제수단이 등록되어 있어야 합니다.</li>
+        <li>체험 종료 3일 전에 알림으로 안내해 드립니다. 체험 중 해지하면 요금이 청구되지 않습니다.</li>
+        <li>기간 종료 24시간 전까지 해지하지 않으면 자동 갱신됩니다. 해지는 스토어 구독 관리에서 할 수 있습니다.</li>
+        <li>무료 체험은 계정당 1회 제공됩니다.</li>
+      </ul>
+      <div class="links"><button>구매 복원</button><button>이용약관</button><button>개인정보처리방침</button></div>
+    </div>
+  </section>
+
+  <div class="sheet-wrap" id="sheet">
+    <div class="sheet" role="dialog" aria-label="결제 확인">
+      <h3>구독 확인</h3>
+      <div class="line"><span>앱</span><span>지하철 지연알림 프리미엄</span></div>
+      <div class="line"><span>무료 체험</span><span id="sTrial"></span></div>
+      <div class="line"><span>이후 요금</span><span id="sPrice"></span></div>
+      <div class="line"><span>결제수단</span><span>등록된 카드 •••• 1234</span></div>
+      <button class="pay" id="payBtn">구독 확인</button>
+      <button class="cancel" id="cancelPay">취소</button>
+      <small>미리보기에서는 실제로 결제되지 않습니다. 실제 앱에서는 App Store / Google Play 결제창이 뜹니다.</small>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const LINES = [
+  ["1","1호선","#0052A4"],["2","2호선","#00A84D"],["3","3호선","#EF7C1C"],["4","4호선","#00A5DE"],
+  ["5","5호선","#996CAC"],["6","6호선","#CD7C2F"],["7","7호선","#747F00"],["8","8호선","#E6186C"],
+  ["9","9호선","#BDB092"],["shinbundang","신분당선","#D4003B"],["suinbundang","수인분당선","#F5A200"],
+  ["gyeongui","경의중앙선","#77C4A3"],["airport","공항철도","#0090D2"],["gyeongchun","경춘선","#0C8E72"],
+  ["seohae","서해선","#81A914"],["gtxa","GTX-A","#9A6292"],["incheon1","인천1호선","#7CA8D5"],
+  ["incheon2","인천2호선","#ED8B00"],["uisinseol","우이신설선","#B0CE18"],["sillim","신림선","#6789CA"],
+  ["gimpo","김포골드라인","#AD8605"],["everline","용인에버라인","#56AD2D"],["uijeongbu","의정부경전철","#FDA600"],
+];
+const L = Object.fromEntries(LINES.map(([id,name,color]) => [id,{name,color}]));
+const short = id => { const n = L[id].name; return /^\d호선$/.test(n) ? n[0] : n.replace(/선$/,"").replace("수인분당","수인분당").slice(0,4); };
+const badge = (id, sm) => `<span class="badge${sm?" sm":""}" style="background:${L[id].color}">${short(id)}</span>`;
+
+const now = Date.now();
+const min = m => now - m*60000;
+let incidents = [
+  { id:"a", line:"2", station:"강남", cause:"스크린도어 고장", status:"active", t:min(4),
+    text:"2호선 강남역 내선순환 스크린도어 고장으로 열차가 5~10분가량 지연되고 있습니다.", src:["뉴스 3","X 12"] },
+  { id:"b", line:"1", station:"구로", cause:"응급환자 발생", status:"active", t:min(11),
+    text:"1호선 구로역 하행 열차 내 응급환자 발생으로 구로~가산디지털단지 구간 열차가 지연 운행 중입니다.", src:["뉴스 2","인스타 4"] },
+  { id:"c", line:"shinbundang", station:"판교", cause:"차량 고장", status:"resolved", t:min(52), rt:min(18),
+    text:"신분당선 판교역 차량 고장으로 지연됐던 열차 운행이 정상화됐습니다.", src:["뉴스 4","X 21"] },
+  { id:"d", line:"7", station:"대림", cause:"신호 장애", status:"resolved", t:min(96), rt:min(70),
+    text:"7호선 대림~남구로 구간 신호 장애가 복구돼 운행이 재개됐습니다.", src:["뉴스 2"] },
+];
+const QUEUE = [
+  { line:"4", station:"사당", cause:"출입문 고장", text:"4호선 사당역 당고개행 열차 출입문 고장으로 후속 열차가 줄줄이 지연 중입니다.", src:["X 7","뉴스 1"] },
+  { line:"5", station:"광화문", cause:"선로 무단 진입", text:"5호선 광화문역 선로에 승객이 진입해 상하행 열차 운행이 잠시 중단됐습니다.", src:["뉴스 2"] },
+  { line:"gyeongui", station:"홍대입구", cause:"전력 장애", text:"경의중앙선 홍대입구역 인근 전차선 단전으로 열차가 서행 중입니다.", src:["뉴스 1","X 5"] },
+  { line:"9", station:"여의도", cause:"화재", text:"9호선 여의도역 승강장 쓰레기통 연기 발생으로 일부 열차가 무정차 통과합니다.", src:["뉴스 3"] },
+];
+
+const S = { subscribed:false, plan:"yearly", agreed:false, enabled:true, resolved:true, lines:new Set() };
+
+function ago(t) {
+  const m = Math.max(0, Math.round((Date.now()-t)/60000));
+  return m < 1 ? "방금" : m < 60 ? `${m}분 전` : `${Math.floor(m/60)}시간 ${m%60}분 전`;
+}
+function dur(a,b){ const m = Math.round((b-a)/60000); return m < 60 ? `${m}분` : `${Math.floor(m/60)}시간 ${m%60}분`; }
+
+function card(it, fresh) {
+  const ok = it.status === "resolved";
+  return `<article class="card${ok?" resolved":""}${fresh?" new":""}">
+    <div class="row">${badge(it.line)}<span class="where">${L[it.line].name} ${it.station}역</span><span class="when">${ago(ok?it.rt:it.t)}</span></div>
+    <div class="state ${ok?"ok":"delay"}"><span class="pill">${ok?"복구":"지연"}</span>${ok?`정상 운행 재개 · ${dur(it.t,it.rt)} 만에`:`${it.cause}`}</div>
+    <div class="summary-text">${it.text}</div>
+    <div class="src">출처 ${it.src.map(s=>`<i>${s}</i>`).join("")}</div>
+  </article>`;
+}
+let freshId = null;
+function renderFeed() {
+  const act = incidents.filter(i=>i.status==="active").sort((a,b)=>b.t-a.t);
+  const res = incidents.filter(i=>i.status==="resolved").sort((a,b)=>b.rt-a.rt);
+  document.getElementById("activeList").innerHTML = act.length ? act.map(i=>card(i, i.id===freshId)).join("") : `<div class="empty">지금은 보고된 지연이 없어요</div>`;
+  document.getElementById("resolvedList").innerHTML = res.map(i=>card(i, i.id===freshId)).join("");
+  const c = document.getElementById("activeCount");
+  c.textContent = act.length; c.classList.toggle("zero", !act.length);
+  document.getElementById("activeSub").textContent = act.length ? act.map(i=>L[i.line].name).join(" · ") : "수도권 23개 노선 감시 중";
+  document.getElementById("promo").style.display = S.subscribed ? "none" : "";
+  freshId = null;
+}
+
+let pushTimer;
+function push(title, body) {
+  const p = document.getElementById("push");
+  document.getElementById("pushT").textContent = title;
+  document.getElementById("pushB").textContent = body;
+  p.classList.add("show");
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>p.classList.remove("show"), 4500);
+}
+document.getElementById("push").onclick = () => { document.getElementById("push").classList.remove("show"); show("feed"); };
+
+let qi = 0;
+function newIncident() {
+  const q = QUEUE[qi++ % QUEUE.length];
+  const it = { ...q, id:"n"+Date.now(), status:"active", t:Date.now() };
+  incidents = incidents.filter(i => !(i.line===it.line && i.station===it.station));
+  incidents.push(it); freshId = it.id; renderFeed();
+  document.getElementById("feedScroll").scrollTo({top:0, behavior:"smooth"});
+  push(`🚨 ${L[it.line].name} ${it.station}역 지연`, `${it.cause}(으)로 열차 운행이 지연되고 있어요.`);
+  if (!S.subscribed) setTimeout(()=>toast("구독하면 이 알림이 잠금화면에도 떠요"), 1200);
+  return it;
+}
+function resolveOldest() {
+  const act = incidents.filter(i=>i.status==="active").sort((a,b)=>a.t-b.t)[0];
+  if (!act) return;
+  act.status = "resolved"; act.rt = Date.now(); freshId = act.id; renderFeed();
+  if (S.resolved) push(`✅ ${L[act.line].name} ${act.station}역 정상 운행`, `${act.cause} 상황이 해소돼 운행이 재개됐어요.`);
+}
+let step = 0;
+document.getElementById("demoBtn").onclick = () => { (step++ % 2 === 0) ? newIncident() : resolveOldest(); };
+
+function toast(msg) {
+  const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  document.querySelector(".statusbar").style.background = id === "paywall" ? "var(--navy)" : "var(--card)";
+  document.querySelector(".statusbar").style.color = id === "paywall" ? "#fff" : "var(--ink)";
+  if (id === "prefs") renderPrefs();
+  if (id === "paywall") renderPaywall();
+}
+document.getElementById("toSettings").onclick = () => show("prefs");
+document.getElementById("backFromSettings").onclick = () => show("feed");
+document.getElementById("promo").onclick = () => show("paywall");
+document.getElementById("closePaywall").onclick = () => show("feed");
+
+// 페이월
+const PLAN = {
+  yearly: { price:"24,360원", unit:"년" },
+  monthly:{ price:"2,900원", unit:"월" },
+};
+function trialEnd() { const d = new Date(); d.setDate(d.getDate()+30); return `${d.getMonth()+1}월 ${d.getDate()}일`; }
+function renderPaywall() {
+  document.querySelectorAll(".plan").forEach(b => {
+    const on = b.dataset.plan === S.plan; b.classList.toggle("sel", on); b.setAttribute("aria-checked", on);
+  });
+  const p = PLAN[S.plan];
+  document.getElementById("trialText").textContent = `오늘 0원 · ${trialEnd()}까지 무료, 이후 ${p.price}/${p.unit} 자동 결제`;
+  document.getElementById("consentText").textContent = `(필수) 30일 무료 체험이 끝나면 ${p.price}이 스토어에 등록된 결제수단으로 자동 결제되며, 해지 전까지 매${p.unit} 자동 갱신되는 것에 동의합니다.`;
+  const c = document.getElementById("consent");
+  c.classList.toggle("on", S.agreed); c.setAttribute("aria-checked", S.agreed);
+  c.querySelector(".box").textContent = S.agreed ? "✓" : "";
+  document.getElementById("cta").setAttribute("aria-disabled", !S.agreed);
+  document.getElementById("hint").textContent = "";
+}
+document.querySelectorAll(".plan").forEach(b => b.onclick = () => { S.plan = b.dataset.plan; renderPaywall(); });
+document.getElementById("consent").onclick = () => { S.agreed = !S.agreed; renderPaywall(); };
+document.getElementById("cta").onclick = () => {
+  if (!S.agreed) { document.getElementById("hint").textContent = "자동 결제 동의에 체크해 주세요"; return; }
+  const p = PLAN[S.plan];
+  document.getElementById("sTrial").textContent = `${trialEnd()}까지 무료`;
+  document.getElementById("sPrice").textContent = `${p.price}/${p.unit}`;
+  document.getElementById("sheet").classList.add("on");
+};
+document.getElementById("cancelPay").onclick = () => document.getElementById("sheet").classList.remove("on");
+document.getElementById("payBtn").onclick = () => {
+  document.getElementById("sheet").classList.remove("on");
+  S.subscribed = true; renderFeed(); show("feed");
+  toast("무료 체험이 시작됐어요 · 알림이 켜졌어요");
+};
+
+// 설정
+function renderPrefs() {
+  const sc = document.getElementById("subcard");
+  const p = PLAN[S.plan];
+  sc.innerHTML = S.subscribed
+    ? `<span class="k">프리미엄 · 무료 체험 중</span><span class="v">${trialEnd()}부터 ${p.price}/${p.unit}</span>
+       <div class="row2"><button class="linkbtn" id="manage">구독 관리 / 해지</button><button class="linkbtn">구매 복원</button></div>`
+    : `<span class="k">무료 이용 중</span><span class="v">푸시 알림은 구독 후 받을 수 있어요</span>
+       <div class="row2"><button class="linkbtn" id="goPay">첫 달 무료로 시작 →</button><button class="linkbtn">구매 복원</button></div>`;
+  const g = document.getElementById("goPay"); if (g) g.onclick = () => show("paywall");
+  const m = document.getElementById("manage"); if (m) m.onclick = () => { S.subscribed = false; renderPrefs(); renderFeed(); toast("구독이 해지됐어요 (미리보기)"); };
+  document.querySelectorAll(".switch").forEach(sw => sw.setAttribute("aria-checked", !!S[sw.dataset.k]));
+  const all = S.lines.size === 0;
+  document.getElementById("allLines").textContent = all ? "전체 노선 ✓" : "전체 선택";
+  document.getElementById("chips").innerHTML = LINES.map(([id,name,color]) =>
+    `<button class="chip${all||S.lines.has(id)?" on":""}" style="--c:${color}" data-id="${id}" aria-pressed="${all||S.lines.has(id)}">${badge(id,true)}${name}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(ch => ch.onclick = () => {
+    const id = ch.dataset.id;
+    if (S.lines.size === 0) { S.lines = new Set([id]); }
+    else if (S.lines.has(id)) S.lines.delete(id); else S.lines.add(id);
+    if (S.lines.size === LINES.length) S.lines.clear();
+    renderPrefs();
+  });
+}
+document.querySelectorAll(".switch").forEach(sw => sw.onclick = () => { S[sw.dataset.k] = !S[sw.dataset.k]; sw.setAttribute("aria-checked", S[sw.dataset.k]); });
+document.getElementById("allLines").onclick = () => { S.lines.clear(); renderPrefs(); };
+
+function tickClock(){ const d=new Date(); document.getElementById("clock").textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`; }
+tickClock(); setInterval(()=>{ tickClock(); renderFeedTimes(); }, 30000);
+function renderFeedTimes(){ if (document.getElementById("feed").classList.contains("on")) renderFeed(); }
+
+renderFeed();
+setTimeout(newIncident, 3500);
+</script>
+</body>
+</html>
