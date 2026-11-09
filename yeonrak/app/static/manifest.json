@@ -1,0 +1,9 @@
+{
+  "name": "연락각",
+  "short_name": "연락각",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7f2",
+  "theme_color": "#ff7a59",
+  "icons": []
+}
