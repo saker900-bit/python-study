@@ -203,6 +203,13 @@ footer { margin-top: 36px; font-size: 12.5px; color: var(--ink-3); border-top: 1
       <p id="hist-verdict" style="color:var(--ink-2)"></p>
       <ul class="checks" id="hist-checks"></ul>
     </div>
+    <div class="card verdict" id="q-card" hidden>
+      <div class="vhead"><h3>한 번에 먹는 양, 더 늘려야 할까?</h3><span class="vbadge" id="q-badge"></span></div>
+      <p id="q-answer" style="color:var(--ink-2)"></p>
+      <p class="cap" style="margin:4px 0 0">1회량별로 다음 수유까지 걸린 평균 시간 (10/1~11/8 낮 수유)</p>
+      <div class="chart" id="c-q"></div>
+      <ul class="checks" id="q-points"></ul>
+    </div>
     <div class="card">
       <div class="vhead" style="justify-content:space-between"><h3>복사해서 쓰기 좋은 요약</h3><button class="btn" id="copy-btn" type="button">텍스트 복사</button></div>
       <p class="copybox" id="copy-text" style="margin-top:10px"></p>
@@ -354,7 +361,7 @@ const fmtH = (h) => { const m = Math.round(h * 60); return `${Math.floor(m / 60)
 const clock = (h) => { h = ((h % 24) + 24) % 24; const m = Math.round(h * 60); return `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
 const md = (iso) => `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
 const avg = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
-const FMT = { f0: v => Math.round(v).toLocaleString(), f1: v => (+v).toFixed(1), clock, hm: v => fmtH(v).replace("시간 ", ":").replace("분", ""), min: v => Math.round(v) + "" };
+const FMT = { f0: v => Math.round(v).toLocaleString(), f1: v => (+v).toFixed(1), f2: v => String(+(+v).toFixed(2)), clock, hm: v => fmtH(v).replace("시간 ", ":").replace("분", ""), min: v => Math.round(v) + "" };
 const fm = (k) => FMT[k] || FMT.f1;
 const isCur = (iso) => iso >= C.range[0];
 const dayLabel = (iso) => (iso.endsWith("-01") || iso === (D.firstShown || "")) ? md(iso) : String(+iso.slice(8, 10));
@@ -654,9 +661,30 @@ if (D.hist) {
   });
 }
 
+
+function drawQ() {
+  const q = T.hist && T.hist.q; if (!q) return;
+  const box = $("#c-q"), H = 190, left = 34, top = 22, bottom = 40;
+  const { svg, w } = svgFor(box, H);
+  const b = q.buckets.filter(x => x[1] != null), max = 6.5, y = v => top + (1 - v / max) * (H - top - bottom);
+  [0, 2, 4, 6].forEach(v => { el("line", { x1: left, x2: w, y1: y(v), y2: y(v), stroke: css("--line") }, svg); txt(svg, left - 6, y(v) + 4, v + "h", { "text-anchor": "end" }); });
+  const band = (w - left) / b.length, bw = Math.min(56, band - 16);
+  b.forEach(([label, h, n], i) => {
+    const x = left + band * i + (band - bw) / 2;
+    el("path", { d: colPath(x, y(h), bw, y(0) - y(h)), fill: i >= 2 ? css("--feed") : css("--prev") }, svg);
+    txt(svg, x + bw / 2, y(h) - 6, `${Math.floor(h)}시간 ${String(Math.round((h % 1) * 60)).padStart(2, "0")}분`, { "text-anchor": "middle", class: "t1" });
+    txt(svg, x + bw / 2, H - 22, label, { "text-anchor": "middle", class: "t2" });
+    txt(svg, x + bw / 2, H - 8, `${n}번`, { "text-anchor": "middle" });
+    hover(el("rect", { x: left + band * i, y: top, width: band, height: H - top - bottom, class: "hit" }, svg), `<b>${label}</b> 먹은 뒤<br>다음 수유까지 평균 ${fmtH(h)} (${n}번)`);
+  });
+}
+if (T.hist && T.hist.q) {
+  $("#q-card").hidden = false; setText("#q-badge", T.hist.q.badge); setText("#q-answer", T.hist.q.answer);
+  $("#q-points").innerHTML = T.hist.q.points.map(([k, t]) => `<li><span class="mark ${k}">${k === "ok" ? "✓" : "!"}</span><span>${t}</span></li>`).join("");
+}
 // ---------- 렌더 ----------
 function drawAll() {
-  drawRulers(); drawMilk(); drawHours(); drawDiaper(); drawTemp(); drawHistory();
+  drawRulers(); drawMilk(); drawHours(); drawDiaper(); drawTemp(); drawHistory(); drawQ();
   if (T.chg) drawNights();
   if (C.has_sleep) {
     drawActo();

@@ -210,3 +210,16 @@ def feeding_history(recs, start, end):
                            breast_share=round(sum(x["breast"] for x in xs) / sum(x["total"] for x in xs) * 100, 1),
                            night=round(st.mean(x["night"] for x in xs), 2), gap=round(st.mean(x["gap"] for x in xs if x["gap"]), 2)))
     return dict(days=days, months=months)
+
+
+def interval_by_amount(recs, start, end, buckets=((0, 180), (180, 220), (220, 240), (240, 400))):
+    """낮(6~19시) 수유의 1회량 구간별로 다음 수유까지 평균 간격(시간)."""
+    feeds = sorted([r for r in recs if r.kind in ("formula", "breast") and r.amount and start <= r.start.date() <= end], key=lambda r: r.start)
+    pairs = [(a.amount, (b.start - a.start).total_seconds() / 3600) for a, b in zip(feeds, feeds[1:]) if 6 <= a.start.hour < 19]
+    out = []
+    for lo, hi in buckets:
+        g = [h for amt, h in pairs if lo <= amt < hi]
+        label = f"{hi}ml 미만" if lo == 0 else (f"{lo}ml 이상" if hi >= 400 else f"{lo}~{hi - 1}ml")
+        out.append([label, round(st.mean(g), 2) if g else None, len(g)])
+    share240 = round(sum(1 for f in feeds if f.amount >= 240) / len(feeds) * 100)
+    return dict(buckets=out, share240=share240, n=len(pairs))
