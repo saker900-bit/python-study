@@ -94,7 +94,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--gold);
 .state.ok .pill { background: #E3F5EA; color: var(--ok); }
 .summary-text { color: #3B4260; font-size: 14px; line-height: 1.5; }
 .src { font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
-.src i { font-style: normal; background: var(--bg); border-radius: 6px; padding: 2px 6px; }
+.src { align-items: center; }
+.src a { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; color: var(--navy-2); font-weight: 700; background: #E8EBFA; border-radius: 8px; padding: 5px 9px; }
+.src a:hover, .src a:active { background: #D6DBF6; }
+.src a svg { opacity: .7; }
+.src a.x { color: #141A33; background: #ECEDF1; }
+.src a.ig { color: #B4235B; background: #FCE8F0; }
 .empty { text-align: center; color: var(--muted); padding: 18px; font-size: 14px; }
 
 .demo { background: none; border: 1.5px dashed #B4BAD0; color: var(--muted); border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 500; }
@@ -102,8 +107,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--gold);
 .note { text-align: center; font-size: 11px; color: #8A90A8; }
 
 /* 푸시 배너 */
-.push { position: absolute; left: 10px; right: 10px; top: 52px; z-index: 30; background: rgba(250,250,252,.96); backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(14,18,48,.25); display: flex; gap: 10px; transform: translateY(-140%); transition: transform .45s cubic-bezier(.2,.9,.3,1.2); cursor: pointer; border: 0; text-align: left; width: auto; }
-.push.show { transform: none; }
+.push { position: absolute; left: 10px; right: 10px; top: 52px; z-index: 30; background: rgba(250,250,252,.96); backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(14,18,48,.25); display: flex; gap: 10px; transform: translateY(-220%); visibility: hidden; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), visibility 0s .45s; cursor: pointer; border: 0; text-align: left; width: auto; }
+.push.show { transform: none; visibility: visible; transition: transform .45s cubic-bezier(.2,.9,.3,1.2); }
 .push .appicon { width: 38px; height: 38px; border-radius: 10px; background: var(--navy); display: grid; place-items: center; flex: none; }
 .push .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
 .push .t { font-weight: 700; font-size: 15px; margin-top: 2px; }
@@ -211,7 +216,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--gold);
       <div class="section-h"><span>최근 복구됨</span><span>오늘</span></div>
       <div id="resolvedList" style="display:flex;flex-direction:column;gap:10px"></div>
       <button class="demo" id="demoBtn" type="button">▶ 새 지연 알림 받아보기 (시연)</button>
-      <div class="note">화면의 사고 정보는 디자인 확인용 예시입니다</div>
+      <div class="note">화면의 사고 정보는 디자인 확인용 예시입니다. 출처를 누르면 미리보기에선 검색 결과로, 실제 앱에선 기사 원문으로 이동해요</div>
     </div>
   </section>
 
@@ -344,13 +349,23 @@ function ago(t) {
 }
 function dur(a,b){ const m = Math.round((b-a)/60000); return m < 60 ? `${m}분` : `${Math.floor(m/60)}시간 ${m%60}분`; }
 
+// 미리보기: 예시 사고라 원문이 없어서 해당 플랫폼 검색 결과로 연결. 실제 앱은 기사/게시물 원문 주소로 바로 이동.
+const EXT = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`;
+function srcLink(it, label) {
+  const q = `${L[it.line].name} ${it.station}역 ${it.cause}`;
+  let url, cls = "";
+  if (label.startsWith("뉴스")) url = `https://news.google.com/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR&ceid=KR:ko`;
+  else if (label.startsWith("X")) { url = `https://x.com/search?q=${encodeURIComponent(`${it.station}역 ${it.cause.split(" ")[0]}`)}&f=live`; cls = "x"; }
+  else { url = `https://www.instagram.com/explore/tags/${encodeURIComponent("지하철지연")}/`; cls = "ig"; }
+  return `<a class="${cls}" href="${url}" target="_blank" rel="noopener" aria-label="${label}건 원문 보기">${label}${EXT}</a>`;
+}
 function card(it, fresh) {
   const ok = it.status === "resolved";
   return `<article class="card${ok?" resolved":""}${fresh?" new":""}">
     <div class="row">${badge(it.line)}<span class="where">${L[it.line].name} ${it.station}역</span><span class="when">${ago(ok?it.rt:it.t)}</span></div>
     <div class="state ${ok?"ok":"delay"}"><span class="pill">${ok?"복구":"지연"}</span>${ok?`정상 운행 재개 · ${dur(it.t,it.rt)} 만에`:`${it.cause}`}</div>
     <div class="summary-text">${it.text}</div>
-    <div class="src">출처 ${it.src.map(s=>`<i>${s}</i>`).join("")}</div>
+    <div class="src">출처 ${it.src.map(s=>srcLink(it, s)).join("")}</div>
   </article>`;
 }
 let freshId = null;
