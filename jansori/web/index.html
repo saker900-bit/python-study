@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<title>빠직 잔소리 탐지기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+/* 시장 몸빼 바지 팔레트: 진분홍 + 해바라기 노랑 + 장판 민트, 한 가지 테마로 고정 */
+:root {
+  --ink: #2b2140;
+  --paper: #fff8e6;
+  --mint: #d8f0e3;
+  --magenta: #c2185b;
+  --sun: #ffc93c;
+  --angry: #e53935;
+  --line: #e7d9b8;
+  --muted: #6d6480;
+  --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: only light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--mint);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+header { display: flex; align-items: center; gap: 10px; }
+header h1 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0; text-wrap: balance; }
+header h1 b { color: var(--angry); font-weight: 400; }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+.card { background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 14px; display: grid; gap: 12px; box-shadow: 4px 4px 0 var(--ink); }
+.card h2 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; border: 2px solid var(--ink); background: #fff; border-radius: 999px; padding: 4px 14px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chip.add { border-style: dashed; }
+.chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--magenta); margin-left: 6px; vertical-align: middle; }
+.photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.slot { display: grid; gap: 6px; }
+.slot .label { font-size: 13px; color: var(--muted); }
+.thumb { aspect-ratio: 4 / 3; border: 2px dashed var(--line); border-radius: 10px; background: #fff center / cover no-repeat; display: grid; place-items: center; text-align: center; font-size: 13px; color: var(--muted); padding: 6px; }
+.thumb.has { border-style: solid; border-color: var(--ink); color: transparent; }
+.filebtn { position: relative; overflow: hidden; display: block; text-align: center; font: inherit; font-size: 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--sun); padding: 6px; cursor: pointer; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 3px solid var(--magenta); outline-offset: 2px; }
+.go { font-family: var(--display); font-size: 24px; border: 3px solid var(--ink); border-radius: 14px; background: var(--angry); color: #fff; padding: 12px; cursor: pointer; box-shadow: 4px 4px 0 var(--ink); }
+.go:disabled { background: #bdb5c9; cursor: not-allowed; }
+button:focus-visible, .chip:focus-visible { outline: 3px solid var(--magenta); outline-offset: 2px; }
+
+/* 무대: 오늘 사진 위에 박스와 잔소리꾼 */
+.stage { position: relative; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: #f3ead2; min-height: 340px; }
+.stage img.photo { display: block; width: 100%; height: auto; }
+.stage .empty { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, #f3ead2 0 14px, #efe3c4 14px 28px); }
+.box { position: absolute; border: 3px dashed rgba(255,255,255,.9); border-radius: 8px; box-shadow: 0 0 0 2px rgba(0,0,0,.25); transition: all .2s; }
+.box .tag { position: absolute; left: -3px; top: -26px; background: var(--ink); color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
+.box.on { border: 4px solid var(--angry); box-shadow: 0 0 0 4px rgba(229,57,53,.35), 0 0 24px rgba(229,57,53,.6); animation: pulse .7s ease-in-out infinite alternate; }
+.box.on .tag { background: var(--angry); }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
+.char { position: absolute; bottom: -1%; height: 72%; max-height: 520px; aspect-ratio: 240 / 340; pointer-events: none; transition: left .35s, right .35s; }
+.char.left { left: -3%; }
+.char.right { right: -3%; }
+.char .flip { width: 100%; height: 100%; }
+.char.right .flip { transform: scaleX(-1); }
+.char svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.char #arm { transform-box: view-box; transform-origin: 154px 178px; transition: transform .45s cubic-bezier(.3,1.6,.5,1); }
+.char #anger { transform-box: fill-box; transform-origin: center; }
+.char.mad #anger { animation: pop .45s ease-out; }
+.char.mad { animation: stomp .35s ease-in-out 2; }
+@keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.6); } 100% { transform: scale(1); } }
+@keyframes stomp { 0%,100% { translate: 0 0; } 50% { translate: 0 -5%; } }
+.stage.shake { animation: shake .3s linear; }
+@keyframes shake { 25% { translate: -6px 0; } 50% { translate: 6px 0; } 75% { translate: -4px 0; } }
+.bubble { position: absolute; top: 3%; max-width: 72%; background: #fff; border: 3px solid var(--ink); border-radius: 16px; padding: 8px 12px; font-family: var(--display); font-size: clamp(18px, 5.4vw, 26px); line-height: 1.25; box-shadow: 3px 3px 0 var(--ink); }
+.bubble.left { left: 3%; }
+.bubble.right { right: 3%; }
+.bubble.loading::after { content: ""; display: inline-block; width: 1.2em; animation: dots 1s steps(4) infinite; text-align: left; }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+.controls { display: flex; gap: 8px; }
+.controls button { flex: 1; font: inherit; border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 8px 4px; cursor: pointer; }
+.controls button.primary { background: var(--sun); font-weight: 700; }
+.controls button:disabled { opacity: .4; cursor: not-allowed; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.list li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: #fff; border: 2px solid var(--line); cursor: pointer; }
+.list li.on { border-color: var(--angry); }
+.list li.missed { border-style: dashed; cursor: default; background: transparent; }
+.list li.missed .n { background: var(--muted); }
+.list .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.list .what { font-weight: 700; }
+.list .say { color: var(--muted); font-size: 14px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.mode { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--ink); color: #fff; }
+.personas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.persona { font: inherit; font-size: 13px; border: 2px solid var(--ink); background: #fff; border-radius: 10px; padding: 4px 2px 6px; cursor: pointer; display: grid; justify-items: center; gap: 2px; }
+.persona[aria-pressed="true"] { background: var(--sun); box-shadow: inset 0 0 0 2px var(--ink); }
+.persona svg { width: 100%; height: 120px; overflow: visible; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row label { font-size: 14px; }
+.spice { display: flex; gap: 6px; }
+.facebox { display: flex; align-items: center; gap: 10px; }
+.facebox .face { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--ink); background: #fff center / cover no-repeat; flex: none; }
+.small { font: inherit; font-size: 14px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 6px 10px; cursor: pointer; }
+.err { color: var(--angry); font-size: 14px; margin: 0; }
+.modal { position: fixed; inset: 0; background: rgba(20, 14, 30, .6); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.sheet { background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; padding: 14px; width: min(380px, 100%); display: grid; gap: 10px; box-shadow: 4px 4px 0 var(--ink); }
+.sheet h3 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; }
+.fe-wrap { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: end; }
+#feCanvas { width: 100%; aspect-ratio: 1; touch-action: none; border-radius: 12px; background: #2b2140; cursor: grab; display: block; }
+#fePreview svg { width: 96px; height: 136px; overflow: visible; }
+.zoomrow { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.zoomrow input { flex: 1; accent-color: var(--magenta); }
+.sheet .controls button.primary { background: var(--angry); color: #fff; }
+.score { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; align-content: center; gap: 6px; text-align: center; cursor: pointer;
+  background: radial-gradient(circle at 50% 45%, rgba(43,33,64,.35), rgba(43,33,64,.82)); }
+.score .cap { color: #fff; font-size: 14px; }
+.stage:has(.score:not([hidden])) .bubble { opacity: 0; }
+.score .num { font-family: var(--display); font-size: clamp(76px, 26vw, 170px); line-height: 1; color: var(--sun); font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 6px 6px 0 var(--ink); }
+.score .num small { font-size: .38em; }
+.score .grade { font-family: var(--display); font-size: clamp(20px, 6vw, 32px); color: #fff; background: var(--angry); border: 3px solid var(--ink); border-radius: 12px; padding: 2px 14px; opacity: 0; }
+.score.rolling .num { animation: jitter .09s steps(2) infinite; }
+.score.land .num { animation: slam .65s cubic-bezier(.2,1.8,.4,1); }
+.score.land .grade { animation: rise .4s .5s forwards; }
+@keyframes jitter { 50% { translate: 3px -3px; } }
+@keyframes slam { 0% { transform: scale(3.2) rotate(-10deg); opacity: 0; } 55% { opacity: 1; } 100% { transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.adbody { border: 2px solid var(--ink); border-radius: 12px; background: var(--sun); padding: 18px 14px; text-align: center; display: grid; gap: 6px; }
+.adbody b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.2; }
+.adbody .glove { font-size: 15px; }
+.buyline { font-family: var(--display); font-size: 18px; border: 3px solid var(--ink); border-radius: 12px; background: var(--angry); color: #fff; padding: 10px; cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
+.price { font-family: var(--display); font-size: 36px; line-height: 1; }
+.price small { font-family: var(--body); font-size: 14px; color: var(--muted); }
+.perks { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.linkbtn { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; justify-self: center; padding: 4px; }
+.adrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voicebox { display: grid; gap: 8px; padding: 10px; border: 2px dashed var(--line); border-radius: 12px; }
+.voicebox .filebtn:has(input:disabled) { background: #e4dfd2; color: var(--muted); cursor: not-allowed; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .score .grade { opacity: 1; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><b>빠직!</b> 잔소리 탐지기</h1>
+      <p>평소 사진이랑 오늘 사진을 비교해서, 혼날 만한 걸 먼저 찝어드립니다.</p>
+    </div>
+  </header>
+
+  <section class="card" aria-labelledby="h-room">
+    <h2 id="h-room">1. 어느 방이에요?</h2>
+    <div class="chips" id="rooms"></div>
+    <div class="photos">
+      <div class="slot">
+        <span class="label">평소 사진 (깨끗할 때)</span>
+        <div class="thumb" id="thumbBase">아직 없어요</div>
+        <label class="filebtn">평소 사진 등록<input id="inBase" type="file" accept="image/*"></label>
+      </div>
+      <div class="slot">
+        <span class="label">오늘 사진</span>
+        <div class="thumb" id="thumbToday">같은 자리에서 찍어주세요</div>
+        <label class="filebtn">오늘 사진 찍기<input id="inToday" type="file" accept="image/*"></label>
+      </div>
+    </div>
+    <p class="note">평소 사진과 같은 위치, 같은 방향에서 찍을수록 정확해요.</p>
+    <div class="row">
+      <label>눈썰미</label>
+      <div class="chips" id="modes" role="group" aria-label="눈썰미"></div>
+    </div>
+    <p class="note" id="modeDesc"></p>
+  </section>
+
+  <button class="go" id="go" disabled>빠직 검사하기</button>
+  <p class="err" id="err" hidden></p>
+
+  <section class="card" aria-labelledby="h-stage">
+    <h2 id="h-stage">2. 잔소리 타임 <span class="mode" id="mode" hidden></span></h2>
+    <div class="stage" id="stage">
+      <div class="empty" id="stageEmpty"></div>
+      <img class="photo" id="stagePhoto" alt="오늘 찍은 방 사진" hidden>
+      <div id="boxes"></div>
+      <div class="char left" id="char"><div class="flip" id="charFlip"></div></div>
+      <div class="bubble right" id="bubble">평소 사진부터 올려봐라!</div>
+      <div class="score" id="score" hidden><div class="cap">오늘의 정리 점수</div><div class="num" id="scoreNum">0<small>점</small></div><div class="grade" id="scoreGrade"></div><div class="cap">화면을 누르면 닫혀요</div></div>
+    </div>
+    <div class="controls">
+      <button id="prev" disabled>◀ 이전</button>
+      <button id="replay" class="primary" disabled>▶ 듣기</button>
+      <button id="next" disabled>다음 ▶</button>
+    </div>
+    <ol class="list" id="list"></ol>
+  </section>
+
+  <section class="card" aria-labelledby="h-ads">
+    <h2 id="h-ads">광고 제거</h2>
+    <div class="adrow">
+      <span class="mode" id="adState">광고 있음</span>
+      <span class="note" id="adNote">첫 검사는 무료, 새 사진으로 다시 검사하면 광고가 나와요.</span>
+    </div>
+    <div class="adrow">
+      <button class="buyline" id="openBuy" type="button">2,900원으로 광고 평생 제거</button>
+      <button class="linkbtn" id="restore" type="button">구매 복원</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-set">
+    <h2 id="h-set">3. 잔소리꾼 고르기</h2>
+    <div class="personas" id="looks" role="group" aria-label="생김새"></div>
+    <div class="facebox">
+      <div class="face" id="faceThumb"></div>
+      <label class="filebtn" style="flex:1">얼굴 사진으로 바꾸기<input id="inFace" type="file" accept="image/*"></label>
+      <button class="small" id="faceEdit" hidden>위치 맞추기</button>
+      <button class="small" id="faceClear" hidden>원래대로</button>
+    </div>
+    <p class="note">얼굴 사진을 올리면 위치랑 크기를 직접 맞출 수 있어요. 뽀글머리는 그대로 씌워드립니다.</p>
+    <div class="row">
+      <label>목소리</label>
+      <div class="chips" id="voices" role="group" aria-label="목소리"></div>
+    </div>
+    <div class="row">
+      <label>맵기</label>
+      <div class="spice" id="spice" role="group" aria-label="잔소리 맵기"></div>
+      <button class="small" id="testVoice">목소리 들어보기</button>
+    </div>
+    <div class="voicebox">
+      <div class="row"><label>내 목소리로 잔소리</label><span class="mode" id="cloneState">꺼짐</span></div>
+      <p class="note" id="cloneNote"></p>
+      <label class="check"><input type="checkbox" id="consent"> 제 목소리이거나, 목소리 주인에게 허락받았어요.</label>
+      <label class="filebtn">목소리 샘플 올리기 (조용한 곳에서 30초~1분)<input id="inVoice" type="file" accept="audio/*"></label>
+      <button class="small" id="cloneClear" hidden>기본 목소리로 돌아가기</button>
+    </div>
+  </section>
+</div>
+
+<div class="modal" id="adModal" hidden role="dialog" aria-modal="true" aria-labelledby="adTitle">
+  <div class="sheet">
+    <div class="row" style="justify-content: space-between"><span class="mode" id="adTitle">광고</span><span class="note" id="adCount">5초 뒤에 닫을 수 있어요</span></div>
+    <div class="adbody">
+      <b>잔소리 듣기 전에<br>고무장갑 끼고 3분 정리!</b>
+      <span class="glove">미리 치우면 등짝이 안전합니다</span>
+      <span class="note">테스트 광고예요. 스토어 앱에서는 이 자리에 진짜 광고가 나와요.</span>
+    </div>
+    <button class="buyline" id="adRemove" type="button">2,900원으로 광고 평생 제거</button>
+    <div class="controls"><button id="adClose" type="button" disabled>닫고 검사하기 (5)</button></div>
+  </div>
+</div>
+
+<div class="modal" id="buyModal" hidden role="dialog" aria-modal="true" aria-labelledby="buyTitle">
+  <div class="sheet">
+    <h3 id="buyTitle">광고 평생 제거</h3>
+    <div class="price">2,900원 <small>한 번만 결제</small></div>
+    <ul class="perks">
+      <li>검사할 때 광고가 다시는 안 나와요</li>
+      <li>월 구독 아님, 평생 그대로</li>
+      <li>폰을 바꿔도 '구매 복원'으로 되살릴 수 있어요</li>
+    </ul>
+    <p class="note" id="buyTestNote">테스트 결제예요. 실제로 돈이 나가지 않아요.</p>
+    <div class="controls">
+      <button id="buyCancel" type="button">다음에</button>
+      <button id="buyOk" type="button" class="primary">2,900원 결제하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="faceEditor" hidden role="dialog" aria-modal="true" aria-labelledby="feTitle">
+  <div class="sheet">
+    <h3 id="feTitle">얼굴 위치 맞추기</h3>
+    <p class="note">사진을 손가락으로 끌어서 옮기고, 두 손가락으로 벌리거나 아래 막대로 크기를 맞춰요. 눈·코·입이 점선 안에 들어오게 하세요.</p>
+    <div class="fe-wrap">
+      <canvas id="feCanvas" width="600" height="600"></canvas>
+      <div id="fePreview" aria-label="미리보기"></div>
+    </div>
+    <div class="zoomrow"><label for="feZoom">크기</label><input id="feZoom" type="range" min="1" max="5" step="0.01" value="1"></div>
+    <div class="controls">
+      <button id="feCancel" type="button">취소</button>
+      <button id="feReset" type="button">처음대로</button>
+      <button id="feDone" type="button" class="primary">완료</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- 데이터 ---------- */
+  const PERSONAS = {
+    ajumma:   { name: "아줌마", pitch: 1.15, rate: 1.15, female: true,
+                lines: ["이거 뭐야!", "이거 치워!", "내가 몇 번을 말했니!", "이게 왜 여기 있어?!", "당장 치워라 진짜!"],
+                closers: ["으휴~ 이래서 내가 집을 비울 수가 없어~", "하여간 이 집구석은 내가 없으면 돌아가질 않아~", "어지르는 사람 따로 있고 치우는 사람 따로 있니?", "내가 너 때문에 못 산다 진짜~"] },
+    halmeoni: { name: "할머니", pitch: 0.7, rate: 0.82, female: true,
+                lines: ["아이고 이게 다 뭐꼬!", "이거 얼른 치아라!", "니 이래 살면 못 쓴다!", "할미 속 터진다 속 터져!"],
+                closers: ["아이고~ 할미가 없으면 이 집이 우째 돌아가노~", "어지르는 사람 따로 있고 치우는 사람 따로 있나!", "할미가 오래 살아야 되겠다, 아이고 내 팔자야~"] },
+    ajeossi:  { name: "아저씨", pitch: 0.35, rate: 0.95, female: false,
+                lines: ["어허! 이게 뭐야!", "당장 치워라!", "정리 좀 하고 살자!", "이거 누가 이랬어!"],
+                closers: ["어휴, 내가 집을 비울 수가 없다니까!", "어지르는 사람 따로 있고 치우는 사람 따로 있냐?", "이 집은 내가 없으면 안 돌아가요, 안 돌아가!"] },
+    kid:      { name: "어린아이", pitch: 1.9, rate: 1.1, female: true,
+                lines: ["이거 엄마한테 이를 거야!", "으악 이게 뭐야~", "치워 치워!", "나보다 더 어지르네!"],
+                closers: ["어지른 사람이 치우는 거야! 유치원에서 배웠어!", "으휴~ 내가 없으면 이 집 어떡해~", "나도 이렇게는 안 어질러!"] },
+  };
+  const SPICE = ["순한맛", "보통맛", "매운맛"];
+  // 눈썰미: 얼마나 꼼꼼하게 찾는지 (맵기는 말투, 이건 찾는 강도)
+  const MODES = {
+    obsess: { name: "강박모드", desc: "리모컨 각도, 쿠션 주름, 먼지 한 톨까지 전부 찾아내요.", max: 12,
+              ask: `아주 작은 차이까지 전부 찾아라. 물건이 몇 cm 옮겨진 것, 쿠션·이불 주름이나 각도, 리모컨·슬리퍼 방향, 먼지, 얼룩, 머리카락, 살짝 열린 서랍이나 문, 비뚤어진 액자까지. 사진 각도 차이만 빼고 사소한 것도 빠짐없이. 최대 12개.` },
+    mom:    { name: "엄마모드", desc: "평범한 한국 엄마 눈썰미. 웬만한 건 다 걸려요.", max: 6,
+              ask: `보통 한국 엄마·아내 눈썰미로 찾아라. 잔소리할 만한 것 위주로, 아주 사소한 차이(몇 cm 이동, 미세한 각도)는 무시. 최대 6개.` },
+    dad:    { name: "아빠모드", desc: "큰 건 보는데, 자잘한 건 둘 중 하나는 못 알아채요.", max: 6,
+              ask: `눈에 확 띄는 변화 위주로 찾아라. 최대 6개.` },
+  };
+  const DEFAULT_ROOMS = ["거실", "안방", "작은방", "주방", "현관"];
+
+  /* ---------- 저장 (IndexedDB, 실패하면 메모리) ---------- */
+  const mem = new Map();
+  let dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise((res) => {
+      setTimeout(() => res(null), 1500);
+      try {
+        const r = indexedDB.open("jansori", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => res(null);
+      } catch { res(null); }
+    });
+    return dbp;
+  }
+  async function kvGet(k) {
+    const d = await db();
+    if (!d) return mem.get(k);
+    return new Promise((res) => {
+      try {
+        const q = d.transaction("kv").objectStore("kv").get(k);
+        q.onsuccess = () => res(q.result);
+        q.onerror = () => res(mem.get(k));
+      } catch { res(mem.get(k)); }
+    });
+  }
+  async function kvSet(k, v) {
+    mem.set(k, v);
+    const d = await db();
+    if (!d) return;
+    try { d.transaction("kv", "readwrite").objectStore("kv").put(v, k); } catch {}
+  }
+
+  /* ---------- 상태 ---------- */
+  const S = {
+    rooms: DEFAULT_ROOMS.slice(),
+    room: "거실",
+    base: {},          // room -> Blob
+    today: null,       // Blob
+    look: "ajumma",
+    voice: "ajumma",
+    spice: 2,
+    mode: "mom",
+    cloneVoice: null,  // ElevenLabs voice_id
+    premium: false,    // 광고 평생 제거 구매함
+    runs: 0,           // 검사한 횟수
+    photoId: 0,        // 오늘 사진 올릴 때마다 +1
+    lastRunPhotoId: -1,
+    server: { tts: false, clone: false },
+    face: null,        // 잘라낸 얼굴 dataURL
+    faceSrc: null,     // 원본 (다시 맞추기용)
+    faceView: null,    // {zoom, ox, oy}
+    items: [],
+    idx: -1,
+    playing: false,
+  };
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- 캐릭터 SVG ---------- */
+  // 머리 큰 2.5등신. viewBox 240x340, 얼굴 타원 (120,108) rx46 ry50
+  // 팔 회전축(어깨) = (154,178). pointAt() 과 CSS #arm 이 이 숫자를 씀
+  const FACE = { cx: 120, cy: 108, rx: 46, ry: 50 };
+  const LOOKS = {
+    ajumma:   { hair: ["#5a3346", "#2e1622"], skin: ["#fbd7bb", "#eeb48f"], top: "#ff6f9f", topDot: "#fff1a8", topLeaf: "#3fae6b",
+                pants: "#6b3fa8", pantsDot: "#ffb3d1", pantsLeaf: "#9be37a", toshi: "#3aa0d8", shoe: "#ffffff", lip: "#d6334f" },
+    halmeoni: { hair: ["#ecebf0", "#a9a6b3"], skin: ["#f6cfb0", "#e2a885"], top: "#7cc9a0", topDot: "#ffffff", topLeaf: "#2f7d55",
+                pants: "#b23a62", pantsDot: "#ffe38a", pantsLeaf: "#7fd39b", toshi: "#f2a03d", shoe: "#ffffff", lip: "#b8576a", vest: "#7a4b8f" },
+    ajeossi:  { hair: ["#3a3a3a", "#151515"], skin: ["#f3c7a0", "#d99a6f"], top: "#fbfbf7", topDot: "#fbfbf7", topLeaf: "#fbfbf7",
+                pants: "#8b6a46", pantsDot: "#8b6a46", pantsLeaf: "#8b6a46", toshi: "#fbfbf7", shoe: "#3b3b46", lip: "#a8505a" },
+    kid:      { hair: ["#6a3d25", "#3a1f10"], skin: ["#ffe0c8", "#f4b994"], top: "#ffd447", topDot: "#ff8a3d", topLeaf: "#ff8a3d",
+                pants: "#3d8fd6", pantsDot: "#ffffff", pantsLeaf: "#ffffff", toshi: "#ffd447", shoe: "#ff5a5a", lip: "#d9506a" },
+  };
+  const INK = "#2b2140";
+
+  function curl(cx, cy, r, u) {
+    // 뽀글이 한 개: 입체감 그라데이션 + 안쪽 말린 선
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>` +
+      `<path d="M${(cx - r * 0.45).toFixed(1)} ${(cy + r * 0.1).toFixed(1)} a${(r * 0.42).toFixed(1)} ${(r * 0.42).toFixed(1)} 0 1 1 ${(r * 0.55).toFixed(1)} ${(r * 0.45).toFixed(1)}" fill="none" stroke="${INK}" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round"/>`;
+  }
+
+  function charSVG(look, face, uid) {
+    const C = LOOKS[look], u = uid;
+    const isPerm = look === "ajumma" || look === "halmeoni";
+    const F = FACE;
+
+    /* 머리카락 (뒤) */
+    let hairBack = "", hairFront = "";
+    if (isPerm) {
+      for (let i = 0; i <= 16; i++) {           // 바깥 테두리
+        const a = Math.PI * (0.86 + (i / 16) * 1.28);
+        hairBack += curl(120 + Math.cos(a) * 54, 104 + Math.sin(a) * 54, 15, u);
+      }
+      for (let i = 0; i <= 9; i++) {            // 안쪽 볼륨
+        const a = Math.PI * (1.08 + (i / 9) * 0.84);
+        hairBack += curl(120 + Math.cos(a) * 36, 98 + Math.sin(a) * 36, 15, u);
+      }
+      hairBack += curl(120, 52, 17, u);
+      for (let i = 0; i < 7; i++) {             // 앞머리 (이마 위만 살짝)
+        const x = 84 + i * 12, y = 63 + Math.pow(i - 3, 2) * 1.3;
+        hairFront += curl(x, y, 9.5, u);
+      }
+    } else if (look === "ajeossi") {
+      hairBack = `<path d="M72 120 Q66 78 84 66 L92 70 Q80 90 82 122 Z M168 120 Q174 78 156 66 L148 70 Q160 90 158 122 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>`;
+      hairFront = `<path d="M96 66 Q120 58 144 66" fill="none" stroke="${C.hair[1]}" stroke-width="2" stroke-dasharray="2 3"/>
+        <ellipse cx="106" cy="66" rx="12" ry="5" fill="#fff" opacity=".5" transform="rotate(-18 106 66)"/>`;
+    } else {
+      hairBack = `<path d="M70 118 Q62 56 120 52 Q178 56 170 118 Q160 80 120 78 Q80 80 70 118 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>
+        ${curl(64, 72, 16, u)}${curl(176, 72, 16, u)}
+        <path d="M52 62 l-10 -8 l2 14 Z M76 62 l10 -8 l-2 14 Z" fill="#ff5a8a" stroke="${INK}" stroke-width="1.8" transform="translate(0 0)"/>
+        <path d="M164 62 l-10 -8 l2 14 Z M188 62 l10 -8 l-2 14 Z" fill="#ff5a8a" stroke="${INK}" stroke-width="1.8"/>`;
+      hairFront = `<path d="M76 92 Q80 60 120 58 Q160 60 164 92 Q150 76 136 80 Q128 70 118 80 Q104 72 96 82 Q86 78 76 92 Z" fill="url(#hg${u})" stroke="${INK}" stroke-width="2"/>`;
+    }
+
+    /* 얼굴 */
+    const faceShape = `<ellipse cx="${F.cx}" cy="${F.cy}" rx="${F.rx}" ry="${F.ry}"`;
+    let faceArt;
+    if (face) {
+      faceArt = `<image href="${face}" x="${F.cx - F.rx}" y="${F.cy - F.ry}" width="${F.rx * 2}" height="${F.ry * 2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#fc${u})"/>
+        ${faceShape} fill="none" stroke="${INK}" stroke-width="3"/>`;
+    } else {
+      const eyeY = 104, browTilt = look === "kid" ? 4 : 7;
+      faceArt = `${faceShape} fill="url(#sk${u})" stroke="${INK}" stroke-width="3"/>
+        <ellipse cx="94" cy="124" rx="8" ry="5" fill="#ff7b8a" opacity=".38"/><ellipse cx="146" cy="124" rx="8" ry="5" fill="#ff7b8a" opacity=".38"/>
+        <!-- 눈 (화나서 눈꼬리 올라감) -->
+        <g>
+          <ellipse cx="102" cy="${eyeY}" rx="8" ry="${look === "kid" ? 8 : 6.5}" fill="#fff" stroke="${INK}" stroke-width="2"/>
+          <ellipse cx="138" cy="${eyeY}" rx="8" ry="${look === "kid" ? 8 : 6.5}" fill="#fff" stroke="${INK}" stroke-width="2"/>
+          <circle cx="104" cy="${eyeY + 1}" r="${look === "kid" ? 4.8 : 3.8}" fill="${INK}"/><circle cx="136" cy="${eyeY + 1}" r="${look === "kid" ? 4.8 : 3.8}" fill="${INK}"/>
+          <circle cx="105.5" cy="${eyeY - 0.6}" r="1.4" fill="#fff"/><circle cx="137.5" cy="${eyeY - 0.6}" r="1.4" fill="#fff"/>
+          <path d="M92 ${eyeY - 4} L112 ${eyeY - 1}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M148 ${eyeY - 4} L128 ${eyeY - 1}" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+        </g>
+        <!-- 눈썹 -->
+        <path d="M88 ${88 - browTilt / 2} Q100 ${86 - browTilt / 2} 113 ${93 + browTilt / 2} L111 ${97 + browTilt / 2} Q99 ${92 - browTilt / 3} 89 ${93 - browTilt / 2} Z" fill="${look === "halmeoni" ? "#9a96a3" : INK}"/>
+        <path d="M152 ${88 - browTilt / 2} Q140 ${86 - browTilt / 2} 127 ${93 + browTilt / 2} L129 ${97 + browTilt / 2} Q141 ${92 - browTilt / 3} 151 ${93 - browTilt / 2} Z" fill="${look === "halmeoni" ? "#9a96a3" : INK}"/>
+        <path d="M116 96 L118 92 M124 96 L122 92" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+        <!-- 코 -->
+        <path d="M118 110 Q114 118 118 120 Q121 121 124 119" fill="none" stroke="#c98463" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- 소리치는 입 -->
+        <path d="M104 128 Q120 122 136 128 Q134 146 120 147 Q106 146 104 128 Z" fill="#7a1f2b" stroke="${look === "ajumma" ? C.lip : INK}" stroke-width="${look === "ajumma" ? 3 : 2.2}"/>
+        <path d="M107 129 Q120 125 133 129 L132 133 Q120 130 108 133 Z" fill="#fff"/>
+        <ellipse cx="120" cy="141" rx="7" ry="3.6" fill="#ff8a9a"/>
+        ${look === "halmeoni" ? `<path d="M92 84 Q100 80 108 83 M132 83 Q140 80 148 84 M88 116 q3 4 6 3 M152 116 q-3 4 -6 3 M100 150 q20 6 40 0" stroke="#b07a5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <g fill="none" stroke="#8a6a2a" stroke-width="2"><circle cx="102" cy="104" r="12"/><circle cx="138" cy="104" r="12"/><path d="M114 103 Q120 99 126 103"/></g>` : ""}
+        ${look === "ajeossi" ? `<path d="M102 124 Q111 117 120 122 Q129 117 138 124 Q129 128 120 125 Q111 128 102 124 Z" fill="${C.hair[1]}"/>
+          <g fill="${C.hair[1]}" opacity=".35"><circle cx="104" cy="140" r=".9"/><circle cx="110" cy="145" r=".9"/><circle cx="130" cy="145" r=".9"/><circle cx="136" cy="140" r=".9"/><circle cx="120" cy="150" r=".9"/></g>` : ""}`;
+    }
+
+    /* 옷 */
+    const isTank = look === "ajeossi";
+    const torso = isTank
+      ? `<path d="M88 168 Q120 160 152 168 Q166 198 160 222 L80 222 Q74 198 88 168 Z" fill="${C.top}" stroke="${INK}" stroke-width="2.6"/>
+         <path d="M96 166 Q100 186 92 196 M144 166 Q140 186 148 196" fill="none" stroke="${INK}" stroke-width="2"/>
+         <path d="M104 164 Q120 182 136 164" fill="${C.skin[0]}" stroke="${INK}" stroke-width="2"/>
+         <ellipse cx="120" cy="206" rx="30" ry="16" fill="#000" opacity=".05"/>`
+      : `<path d="M86 170 Q120 158 154 170 Q166 196 162 222 L78 222 Q74 196 86 170 Z" fill="url(#fl${u})" stroke="${INK}" stroke-width="2.6"/>
+         ${look === "halmeoni" ? `<path d="M86 170 Q96 166 104 166 L112 222 L78 222 Q74 196 86 170 Z M154 170 Q144 166 136 166 L128 222 L162 222 Q166 196 154 170 Z" fill="${C.vest}" stroke="${INK}" stroke-width="2.4"/>` : ""}
+         <path d="M106 162 L120 180 L106 184 Z M134 162 L120 180 L134 184 Z" fill="#fff" stroke="${INK}" stroke-width="2"/>
+         <circle cx="120" cy="192" r="2.4" fill="#fff" stroke="${INK}" stroke-width="1.4"/><circle cx="120" cy="206" r="2.4" fill="#fff" stroke="${INK}" stroke-width="1.4"/>
+         <path d="M86 190 Q92 204 88 220" fill="none" stroke="${INK}" stroke-opacity=".2" stroke-width="3"/>`;
+    const waistY = isTank ? 204 : 214;
+    const pants = `<path d="M78 ${waistY} C72 256 70 292 80 318 Q96 326 112 318 L116 262 L124 262 L128 318 Q144 326 160 318 C170 292 168 256 162 ${waistY} Z" fill="${look === "ajeossi" || look === "kid" ? C.pants : `url(#pt${u})`}" stroke="${INK}" stroke-width="2.6"/>
+      <path d="M96 240 Q92 280 98 312 M144 240 Q148 280 142 312" fill="none" stroke="${INK}" stroke-opacity=".18" stroke-width="3"/>
+      ${isPerm ? `<path d="M80 312 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 M128 312 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0 q4 -6 8 0" fill="none" stroke="${INK}" stroke-width="1.6"/>` : ""}
+      <rect x="74" y="${waistY - 6}" width="92" height="14" rx="6" fill="${isTank ? "#3a2a1a" : C.pants}" stroke="${INK}" stroke-width="2.4"/>
+      ${isTank ? `<rect x="112" y="${waistY - 5}" width="16" height="12" rx="2.5" fill="#e6c35c" stroke="${INK}" stroke-width="1.8"/>`
+               : `<path d="M78 ${waistY + 1} ${Array.from({ length: 21 }, (_, i) => `l4 ${i % 2 ? 3 : -3}`).join(" ")}" fill="none" stroke="${INK}" stroke-opacity=".6" stroke-width="1.2"/>`}
+      ${look === "kid" ? `<rect x="98" y="${waistY + 8}" width="44" height="26" rx="5" fill="${C.pants}" stroke="${INK}" stroke-width="2"/><path d="M98 ${waistY + 8} L92 168 M142 ${waistY + 8} L148 168" stroke="${C.pants}" stroke-width="7"/>` : ""}`;
+    const shoes = `<g stroke="${INK}" stroke-width="2.4">
+        <path d="M80 322 Q78 334 96 336 L112 336 Q118 334 114 324 Q106 316 80 322 Z" fill="${C.shoe}"/>
+        <path d="M160 322 Q162 334 144 336 L128 336 Q122 334 126 324 Q134 316 160 322 Z" fill="${C.shoe}"/>
+      </g>
+      <path d="M86 326 Q98 322 108 326 M154 326 Q142 322 132 326" stroke="${INK}" stroke-opacity=".3" stroke-width="2" fill="none"/>`;
+
+    const sleeve = isTank ? `url(#sk${u})` : `url(#fl${u})`;
+    const akimbo = `
+      <path d="M90 178 L62 204 L84 220" stroke="${INK}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M90 178 L62 204 L84 220" stroke="${isTank ? C.skin[0] : C.top}" stroke-width="16.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      ${isPerm ? `<path d="M66 198 L60 206 L74 216 L80 208 Z" fill="${C.toshi}" stroke="${INK}" stroke-width="2"/>` : ""}
+      <ellipse cx="86" cy="220" rx="10" ry="9" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.4"/>`;
+
+    const arm = `
+    <g id="arm">
+      <path d="M152 178 L204 178" stroke="${INK}" stroke-width="22" stroke-linecap="round"/>
+      <path d="M152 178 L204 178" stroke="${isTank ? C.skin[0] : C.top}" stroke-width="16.5" stroke-linecap="round"/>
+      ${isTank ? "" : `<path d="M152 172 Q160 168 166 172 L166 184 Q160 188 152 184 Z" fill="${sleeve}" opacity=".9"/>`}
+      ${isPerm ? `<rect x="176" y="167" width="26" height="22" rx="6" fill="${C.toshi}" stroke="${INK}" stroke-width="2"/>
+                  <path d="M180 168 v20 M198 168 v20" stroke="${INK}" stroke-opacity=".4" stroke-width="1.4"/>` : ""}
+      <!-- 손: 주먹 쥐고 검지만 쭉 -->
+      <ellipse cx="214" cy="180" rx="12" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.4"/>
+      <path d="M206 189 q4 4 8 0 q4 4 8 0" fill="none" stroke="${INK}" stroke-width="1.6"/>
+      <ellipse cx="212" cy="170" rx="7" ry="4.5" fill="url(#sk${u})" stroke="${INK}" stroke-width="2" transform="rotate(-12 212 170)"/>
+      <rect x="220" y="173.5" width="24" height="9.5" rx="4.75" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+      <rect x="236" y="175" width="5.5" height="6" rx="2" fill="#fff" opacity=".7"/>
+    </g>`;
+
+    const earrings = look === "ajumma" ? `<circle cx="73" cy="124" r="4" fill="#fff" stroke="${INK}" stroke-width="1.5"/><circle cx="167" cy="124" r="4" fill="#fff" stroke="${INK}" stroke-width="1.5"/>` : "";
+
+    return `
+<svg viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <radialGradient id="hg${u}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${C.hair[0]}"/><stop offset="1" stop-color="${C.hair[1]}"/></radialGradient>
+    <radialGradient id="sk${u}" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="${C.skin[0]}"/><stop offset="1" stop-color="${C.skin[1]}"/></radialGradient>
+    <pattern id="fl${u}" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="${C.top}"/>
+      <ellipse cx="15" cy="9" rx="3" ry="1.5" fill="${C.topLeaf}" transform="rotate(-30 15 9)"/>
+      <g fill="${C.topDot}"><circle cx="7" cy="4.4" r="2.3"/><circle cx="9.5" cy="6.3" r="2.3"/><circle cx="8.6" cy="9.2" r="2.3"/><circle cx="5.4" cy="9.2" r="2.3"/><circle cx="4.5" cy="6.3" r="2.3"/></g>
+      <circle cx="7" cy="7" r="1.5" fill="#ffcf33"/>
+      <circle cx="17" cy="17" r="1.8" fill="${C.topDot}"/><circle cx="17" cy="17" r=".8" fill="#ffcf33"/>
+    </pattern>
+    <pattern id="pt${u}" width="30" height="30" patternUnits="userSpaceOnUse">
+      <rect width="30" height="30" fill="${C.pants}"/>
+      <path d="M16 12 q6 -6 10 -2 q-4 6 -10 2 Z" fill="${C.pantsLeaf}"/>
+      <g fill="${C.pantsDot}"><circle cx="9" cy="5.6" r="3.2"/><circle cx="12.4" cy="8.2" r="3.2"/><circle cx="11.1" cy="12.2" r="3.2"/><circle cx="6.9" cy="12.2" r="3.2"/><circle cx="5.6" cy="8.2" r="3.2"/></g>
+      <circle cx="9" cy="9.2" r="2.2" fill="#ffd84d"/>
+      <circle cx="24" cy="24" r="2.4" fill="#ffd84d"/>
+    </pattern>
+    <clipPath id="fc${u}"><ellipse cx="${F.cx}" cy="${F.cy}" rx="${F.rx - 1}" ry="${F.ry - 1}"/></clipPath>
+  </defs>
+  <ellipse cx="120" cy="336" rx="56" ry="6" fill="#000" opacity=".15"/>
+  ${shoes}
+  ${pants}
+  ${torso}
+  ${akimbo}
+  <rect x="110" y="146" width="20" height="20" rx="6" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  <g>${hairBack}</g>
+  <ellipse cx="74" cy="112" rx="8" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  <ellipse cx="166" cy="112" rx="8" ry="11" fill="url(#sk${u})" stroke="${INK}" stroke-width="2.2"/>
+  ${earrings}
+  ${faceArt}
+  <g>${hairFront}</g>
+  ${arm}
+  <g id="anger" transform="translate(160 66)">
+    <circle r="15" fill="#fff" opacity=".85"/>
+    <g stroke="#e53935" stroke-width="4.5" stroke-linecap="round" fill="none">
+      <path d="M-11 -3 Q-3 -3 -3 -11"/><path d="M3 -11 Q3 -3 11 -3"/><path d="M11 3 Q3 3 3 11"/><path d="M-3 11 Q-3 3 -11 3"/>
+    </g>
+  </g>
+</svg>`;
+  }
+
+  /* ---------- 이미지 처리 ---------- */
+  // 사진 열기: createImageBitmap 이 안 되는 폰은 <img> 로
+  async function loadImage(file) {
+    try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch {}
+    try { return await createImageBitmap(file); } catch {}
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => { res(img); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+      img.onerror = () => rej(new Error("이미지를 열 수 없음"));
+      img.src = url;
+    });
+  }
+  async function toJpeg(file, max = 1280) {
+    const bmp = await loadImage(file);
+    const W = bmp.naturalWidth || bmp.width, H = bmp.naturalHeight || bmp.height;
+    const s = Math.min(1, max / Math.max(W, H));
+    const c = document.createElement("canvas");
+    c.width = Math.round(W * s); c.height = Math.round(H * s);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const out = await new Promise((res) => { try { c.toBlob(res, "image/jpeg", 0.85); } catch { res(null); } });
+    return out || file;
+  }
+
+  /* ---------- AI 프롬프트 (server/main.py 와 같은 내용) ---------- */
+  function buildPrompt(voice, spice, mode) {
+    const p = PERSONAS[voice], m = MODES[mode] || MODES.mom;
+    return `너는 "잔소리 탐지기" 앱의 눈이다. 사진 두 장이 주어진다.
+첫 번째 사진: 이 방의 평소(깨끗한) 모습. 두 번째 사진: 오늘 모습.
+두 사진을 비교해서 평소와 달라진 것, 특히 엄마나 아내가 잔소리할 만한 것을 찾아라.
+예: 새로 생긴 물건, 바닥/소파/식탁에 널린 것, 쌓인 빨래나 설거지, 쓰레기, 열린 문이나 서랍, 사라지거나 자리가 바뀐 물건.
+조명 차이, 사진 각도 차이, 그림자 차이는 무시해라.
+${m.ask}
+중요도 높은 순서로.
+
+각 항목마다:
+- label: 무엇인지 짧게 (예: "소파 위 빨래")
+- line: ${p.name} 말투로 그 물건을 손가락으로 찝으며 하는 잔소리 한두 마디. 맵기 ${spice}단계(1 순한맛, 2 보통, 3 매운맛). 욕설·비하 금지, 웃기게.
+  ${p.name} 말투 예시: ${p.lines.slice(0, 3).map((s) => `"${s}"`).join(", ")}
+- kind: "new"(새로 생김) | "moved"(자리 바뀜) | "missing"(없어짐) | "messy"(어질러짐)
+- size: "big"(방에 들어서자마자 눈에 띄는 큰 변화) | "small"(자세히 봐야 보이는 변화)
+- x, y, w, h: 두 번째(오늘) 사진 기준 위치. 0~1 비율 (왼쪽 위가 0,0). 없어진 물건은 원래 있던 자리.
+
+summary: 전체 총평 한 줄 (${p.name} 말투). 달라진 게 없으면 items는 빈 배열, summary는 칭찬.
+closing: 다 찝고 나서 마지막에 한숨 쉬며 하는 마무리 잔소리 한 줄 (${p.name} 말투, 맵기 ${spice}단계). 이런 느낌: ${p.closers.map((s) => `"${s}"`).join(", ")}. 깨끗하면 칭찬 한 줄.
+score: 정리 상태 점수 0~100 정수. 평소 사진 상태가 100점. 많이 어질러질수록 낮게.
+
+JSON만 출력: {"summary": string, "closing": string, "score": number, "items": [{"label": string, "line": string, "kind": string, "size": string, "x": number, "y": number, "w": number, "h": number}]}`;
+  }
+
+  function cleanResult(r) {
+    const n = (v) => Math.min(1, Math.max(0, Number(v) || 0));
+    const max = (MODES[S.mode] || MODES.mom).max;
+    const items = (Array.isArray(r && r.items) ? r.items : []).slice(0, max).map((it) => {
+      let x = n(it.x), y = n(it.y), w = n(it.w), h = n(it.h);
+      if (w < 0.04) w = 0.08; if (h < 0.04) h = 0.08;
+      if (x + w > 1) w = 1 - x; if (y + h > 1) h = 1 - y;
+      return { label: String(it.label || "이거"), line: String(it.line || "이거 뭐야!"), kind: String(it.kind || "new"), size: it.size === "small" ? "small" : "big", x, y, w, h };
+    });
+    const sc = Number(r && r.score);
+    return { summary: String((r && r.summary) || ""), closing: String((r && r.closing) || ""), score: Number.isFinite(sc) ? Math.round(Math.min(100, Math.max(0, sc))) : null, items };
+  }
+
+  /* ---------- 분석: 1) Claude 2) 내 서버 3) 간단 픽셀 비교 ---------- */
+  let samplePromise = null;
+  function getSample() {
+    if (!samplePromise) {
+      samplePromise = (async () => {
+        try {
+          if (!window.claude || !window.claude.use) return null;
+          const s = await window.claude.use("sample");
+          if (!s) return null;
+          const lim = await s.limits();
+          return lim && lim.images ? s : null;
+        } catch { return null; }
+      })();
+    }
+    return samplePromise;
+  }
+
+  // 아빠모드: 큰 건 다 보고, 작은 건 반반 확률로 못 봄
+  function applyMode(r) {
+    if (S.mode !== "dad") return { ...r, missed: 0 };
+    const kept = r.items.filter((it) => it.size === "big" || Math.random() < 0.5);
+    return { ...r, items: kept, missed: r.items.length - kept.length };
+  }
+  async function analyze(baseBlob, todayBlob) {
+    return applyMode(await analyzeRaw(baseBlob, todayBlob));
+  }
+  async function analyzeRaw(baseBlob, todayBlob) {
+    const prompt = buildPrompt(S.voice, S.spice, S.mode);
+    const sample = await getSample();
+    if (sample) {
+      try {
+        const r = await sample.json(prompt, { images: [baseBlob, todayBlob], modelTier: "default" });
+        return { mode: "AI", ...cleanResult(r) };
+      } catch (e) {
+        console.warn("sample failed", e);
+      }
+    }
+    const api = window.JANSORI_API; // 스토어 앱에서는 내 서버 주소를 넣음
+    if (api) {
+      try {
+        const fd = new FormData();
+        fd.append("baseline", baseBlob, "base.jpg");
+        fd.append("today", todayBlob, "today.jpg");
+        fd.append("voice", S.voice);
+        fd.append("spice", String(S.spice));
+        fd.append("mode", S.mode);
+        const res = await fetch(api.replace(/\/$/, "") + "/api/inspect", { method: "POST", body: fd });
+        if (res.ok) return { mode: "AI", ...cleanResult(await res.json()) };
+      } catch (e) { console.warn("server failed", e); }
+    }
+    return { mode: "간단 비교", ...(await pixelDiff(baseBlob, todayBlob)) };
+  }
+
+  async function pixelDiff(aBlob, bBlob) {
+    const fine = S.mode === "obsess";
+    const GW = fine ? 96 : 48, GH = fine ? 72 : 36;
+    async function grid(blob) {
+      const bmp = await loadImage(blob);
+      const c = document.createElement("canvas");
+      c.width = GW; c.height = GH;
+      const g = c.getContext("2d");
+      g.filter = "blur(1px)";
+      g.drawImage(bmp, 0, 0, GW, GH);
+      const d = g.getImageData(0, 0, GW, GH).data;
+      const out = new Float32Array(GW * GH * 3);
+      for (let i = 0; i < GW * GH; i++) { out[i * 3] = d[i * 4]; out[i * 3 + 1] = d[i * 4 + 1]; out[i * 3 + 2] = d[i * 4 + 2]; }
+      return out;
+    }
+    const A = await grid(aBlob), B = await grid(bBlob);
+    // 밝기 차이 보정
+    let ma = 0, mb = 0;
+    for (let i = 0; i < A.length; i++) { ma += A[i]; mb += B[i]; }
+    const shift = (mb - ma) / A.length;
+    const diff = new Float32Array(GW * GH);
+    let sum = 0, sq = 0;
+    for (let i = 0; i < GW * GH; i++) {
+      const v = (Math.abs(B[i * 3] - A[i * 3] - shift) + Math.abs(B[i * 3 + 1] - A[i * 3 + 1] - shift) + Math.abs(B[i * 3 + 2] - A[i * 3 + 2] - shift)) / 3;
+      diff[i] = v; sum += v; sq += v * v;
+    }
+    const mean = sum / diff.length, sd = Math.sqrt(Math.max(0, sq / diff.length - mean * mean));
+    const T = { obsess: [14, 0.8, 2, 10], mom: [28, 1.6, 6, 5], dad: [40, 2.2, 12, 4] }[S.mode] || [28, 1.6, 6, 5];
+    const th = Math.max(T[0], mean + T[1] * sd);
+    const seen = new Uint8Array(diff.length), blobs = [];
+    for (let i = 0; i < diff.length; i++) {
+      if (seen[i] || diff[i] < th) continue;
+      const q = [i]; seen[i] = 1;
+      let x0 = GW, y0 = GH, x1 = 0, y1 = 0, cnt = 0;
+      while (q.length) {
+        const k = q.pop(), x = k % GW, y = (k / GW) | 0; cnt++;
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          const nx = x + dx, ny = y + dy, nk = ny * GW + nx;
+          if (nx >= 0 && ny >= 0 && nx < GW && ny < GH && !seen[nk] && diff[nk] >= th * 0.8) { seen[nk] = 1; q.push(nk); }
+        }
+      }
+      if (cnt >= T[2]) blobs.push({ x0, y0, x1, y1, cnt });
+    }
+    blobs.sort((a, b) => b.cnt - a.cnt);
+    const lines = PERSONAS[S.voice].lines;
+    const items = blobs.slice(0, T[3]).map((b, i) => ({
+      label: `달라진 곳 ${i + 1}`, line: lines[i % lines.length], kind: "new", size: (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1) / (GW * GH) >= 0.015 ? "big" : "small",
+      x: b.x0 / GW, y: b.y0 / GH, w: (b.x1 - b.x0 + 1) / GW, h: (b.y1 - b.y0 + 1) / GH,
+    }));
+    return {
+      summary: items.length ? "뭐가 이렇게 많이 바뀌었어!" : "오~ 웬일로 깨끗하네?",
+      items: cleanResult({ items }).items,
+    };
+  }
+
+  /* ---------- 소리 ---------- */
+  let actx = null;
+  function unlockAudio() {
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+    } catch {}
+    try {
+      if ("speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(" ");
+        u.volume = 0; speechSynthesis.speak(u);
+      }
+    } catch {}
+  }
+  function zap() {
+    if (!actx) return;
+    try {
+      const t = actx.currentTime;
+      // 빠직: 짧은 지직 소리 + 툭 떨어지는 음
+      const len = 0.18, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length) * (i % 400 < 200 ? 1 : 0.3);
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2400; bp.Q.value = 2;
+      const g1 = actx.createGain(); g1.gain.value = 0.5;
+      src.connect(bp).connect(g1).connect(actx.destination); src.start(t);
+      const o = actx.createOscillator(); o.type = "square";
+      o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(120, t + 0.22);
+      const g2 = actx.createGain(); g2.gain.setValueAtTime(0.18, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      o.connect(g2).connect(actx.destination); o.start(t); o.stop(t + 0.26);
+    } catch {}
+  }
+  function drumroll(sec) {
+    if (!actx) return;
+    try {
+      const t0 = actx.currentTime, hit = actx.createBuffer(1, actx.sampleRate * 0.05, actx.sampleRate), d = hit.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+      for (let t = 0; t < sec; t += 0.045) {
+        const s = actx.createBufferSource(); s.buffer = hit;
+        const f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 900;
+        const g = actx.createGain(); g.gain.value = 0.12 + 0.5 * (t / sec);
+        s.connect(f).connect(g).connect(actx.destination); s.start(t0 + t);
+      }
+    } catch {}
+  }
+  function boom() {
+    if (!actx) return;
+    try {
+      const t = actx.currentTime;
+      const o = actx.createOscillator(); o.type = "sine";
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.5);
+      const g = actx.createGain(); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.9);
+      const len = 1.2, buf = actx.createBuffer(1, actx.sampleRate * len, actx.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+      const s = actx.createBufferSource(); s.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 5000;
+      const g2 = actx.createGain(); g2.gain.value = 0.25;
+      s.connect(f).connect(g2).connect(actx.destination); s.start(t);
+    } catch {}
+  }
+  function pickVoice(female) {
+    try {
+      const vs = speechSynthesis.getVoices().filter((v) => /^ko/i.test(v.lang));
+      if (!vs.length) return null;
+      const fem = /yuna|sora|heami|sunhi|female|여/i, mal = /minsu|injoon|jian|male|남|hyunsu|bongjin/i;
+      return vs.find((v) => (female ? fem : mal).test(v.name)) || vs[0];
+    } catch { return null; }
+  }
+  function useServerVoice() { return S.server.tts || (S.server.clone && !!S.cloneVoice); }
+  // 서버(ElevenLabs) 음성. 안 되면 null
+  async function serverVoice(text) {
+    const api = window.JANSORI_API;
+    if (!api || !useServerVoice() || !actx) return null;
+    try {
+      const fd = new FormData();
+      fd.append("text", text); fd.append("persona", S.voice);
+      if (S.cloneVoice) fd.append("voice_id", S.cloneVoice);
+      const res = await fetch(api.replace(/\/$/, "") + "/api/tts", { method: "POST", body: fd });
+      if (!res.ok) return null;
+      return await actx.decodeAudioData(await res.arrayBuffer());
+    } catch (e) { console.warn("tts failed", e); return null; }
+  }
+  let curSrc = null;
+  function speak(text, done) {
+    if (window.JANSORI_API && useServerVoice()) {
+      serverVoice(text).then((buf) => {
+        if (!buf) return speakLocal(text, done);
+        try { if (curSrc) curSrc.stop(); } catch {}
+        const src = actx.createBufferSource(); src.buffer = buf; src.connect(actx.destination);
+        src.onended = () => { if (curSrc === src) curSrc = null; done(); };
+        curSrc = src; src.start();
+      });
+      return;
+    }
+    speakLocal(text, done);
+  }
+  function speakLocal(text, done) {
+    const p = PERSONAS[S.voice];
+    if (window.JANSORI_NATIVE_TTS) { // 안드로이드 앱
+      let fin = false; const end = () => { if (!fin) { fin = true; done(); } };
+      window.JANSORI_NATIVE_TTS(text, p.pitch, p.rate).then(end, end);
+      setTimeout(end, 4000 + text.length * 200);
+      return;
+    }
+    if (!("speechSynthesis" in window)) { setTimeout(done, 900 + text.length * 90); return; }
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR"; u.pitch = p.pitch; u.rate = p.rate;
+      const v = pickVoice(p.female); if (v) u.voice = v;
+      let fin = false;
+      const end = () => { if (!fin) { fin = true; done(); } };
+      u.onend = end; u.onerror = end;
+      setTimeout(end, 2500 + text.length * 160); // 일부 브라우저는 onend 안 줌
+      speechSynthesis.speak(u);
+    } catch { setTimeout(done, 900 + text.length * 90); }
+  }
+  try { speechSynthesis.onvoiceschanged = () => {}; } catch {}
+
+  /* ---------- 화면 그리기 ---------- */
+  let uidN = 0;
+  function renderChar() {
+    $("charFlip").innerHTML = charSVG(S.look, S.face, "main");
+  }
+  function renderLooks() {
+    $("looks").innerHTML = "";
+    for (const k of Object.keys(PERSONAS)) {
+      const b = document.createElement("button");
+      b.className = "persona"; b.type = "button";
+      b.setAttribute("aria-pressed", String(S.look === k));
+      b.innerHTML = charSVG(k, S.face, "p" + (uidN++)) + `<span>${PERSONAS[k].name}</span>`;
+      b.onclick = () => {
+        S.look = k; S.voice = k; save();
+        renderLooks(); renderVoices(); renderChar();
+        say(PERSONAS[k].lines[0], true);
+      };
+      $("looks").appendChild(b);
+    }
+  }
+  function renderModes() {
+    const box = $("modes"); box.innerHTML = "";
+    for (const k of Object.keys(MODES)) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = MODES[k].name;
+      b.setAttribute("aria-pressed", String(S.mode === k));
+      b.onclick = () => { S.mode = k; save(); renderModes(); };
+      box.appendChild(b);
+    }
+    $("modeDesc").textContent = MODES[S.mode].desc;
+  }
+  function renderVoices() {
+    $("voices").innerHTML = "";
+    for (const k of Object.keys(PERSONAS)) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = PERSONAS[k].name;
+      b.setAttribute("aria-pressed", String(S.voice === k));
+      b.onclick = () => { S.voice = k; save(); renderVoices(); };
+      $("voices").appendChild(b);
+    }
+    $("spice").innerHTML = "";
+    SPICE.forEach((name, i) => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = name;
+      b.setAttribute("aria-pressed", String(S.spice === i + 1));
+      b.onclick = () => { S.spice = i + 1; save(); renderVoices(); };
+      $("spice").appendChild(b);
+    });
+  }
+  function renderRooms() {
+    const box = $("rooms"); box.innerHTML = "";
+    for (const r of S.rooms) {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.setAttribute("aria-pressed", String(S.room === r));
+      b.innerHTML = r + (S.base[r] ? '<span class="dot" title="평소 사진 있음"></span>' : "");
+      b.onclick = () => { S.room = r; save(); renderRooms(); renderThumbs(); };
+      box.appendChild(b);
+    }
+    const add = document.createElement("button");
+    add.className = "chip add"; add.type = "button"; add.textContent = "+ 방 추가";
+    add.onclick = () => {
+      const inp = document.createElement("input");
+      inp.className = "chip"; inp.placeholder = "방 이름"; inp.id = "newRoom"; inp.style.width = "8em";
+      add.replaceWith(inp); inp.focus();
+      const done = () => {
+        const v = inp.value.trim();
+        if (v && !S.rooms.includes(v)) { S.rooms.push(v); S.room = v; save(); }
+        renderRooms(); renderThumbs();
+      };
+      inp.onkeydown = (e) => { if (e.key === "Enter") done(); if (e.key === "Escape") renderRooms(); };
+      inp.onblur = done;
+    };
+    box.appendChild(add);
+  }
+  const urls = {};
+  function blobUrl(key, blob) {
+    if (urls[key]) URL.revokeObjectURL(urls[key]);
+    urls[key] = blob ? URL.createObjectURL(blob) : null;
+    return urls[key];
+  }
+  function renderThumbs() {
+    const b = S.base[S.room];
+    const tb = $("thumbBase");
+    tb.classList.toggle("has", !!b);
+    tb.style.backgroundImage = b ? `url(${blobUrl("base", b)})` : "";
+    tb.textContent = b ? "" : "아직 없어요";
+    const tt = $("thumbToday");
+    tt.classList.toggle("has", !!S.today);
+    tt.style.backgroundImage = S.today ? `url(${blobUrl("today", S.today)})` : "";
+    tt.textContent = S.today ? "" : "같은 자리에서 찍어주세요";
+    $("go").disabled = !(b && S.today);
+    if (!b) say("평소 사진부터 올려봐라!");
+    else if (!S.today) say("오늘 사진도 찍어 와 봐!");
+    else if (S.idx < 0) say("어디 한번 보자. 검사 눌러!");
+  }
+  function say(text, withVoice) {
+    const bub = $("bubble");
+    bub.classList.remove("loading");
+    bub.textContent = text;
+    if (withVoice) { unlockAudio(); speak(text, () => {}); }
+  }
+  function placeChar(side) {
+    const ch = $("char"), bub = $("bubble");
+    ch.classList.toggle("left", side === "left"); ch.classList.toggle("right", side === "right");
+    bub.classList.toggle("right", side === "left"); bub.classList.toggle("left", side === "right");
+  }
+  function pointAt(item) {
+    const arm = document.querySelector("#charFlip #arm");
+    if (!arm) return;
+    if (!item) { arm.style.transform = "rotate(-20deg)"; return; }
+    const cx = item.x + item.w / 2;
+    placeChar(cx < 0.5 ? "right" : "left");
+    // 위치 바뀐 뒤 좌표 계산
+    requestAnimationFrame(() => setTimeout(() => {
+      const st = $("stage").getBoundingClientRect();
+      const svg = document.querySelector("#charFlip svg").getBoundingClientRect();
+      const flipped = $("char").classList.contains("right");
+      const k = svg.height / 340;
+      const sx = flipped ? svg.right - 154 * k : svg.left + 154 * k;
+      const sy = svg.top + 178 * k;
+      const tx = st.left + cx * st.width, ty = st.top + (item.y + item.h / 2) * st.height;
+      let dx = tx - sx; const dy = ty - sy;
+      if (flipped) dx = -dx;
+      let a = Math.atan2(dy, dx) * 180 / Math.PI;
+      a = Math.max(-80, Math.min(85, a));
+      arm.style.transform = `rotate(${a.toFixed(1)}deg)`;
+    }, 360));
+  }
+  function renderBoxes() {
+    const box = $("boxes"); box.innerHTML = "";
+    S.items.forEach((it, i) => {
+      const d = document.createElement("div");
+      d.className = "box" + (i === S.idx ? " on" : "");
+      d.style.left = it.x * 100 + "%"; d.style.top = it.y * 100 + "%";
+      d.style.width = it.w * 100 + "%"; d.style.height = it.h * 100 + "%";
+      d.innerHTML = `<span class="tag">${i + 1}. ${escapeHtml(it.label)}</span>`;
+      box.appendChild(d);
+    });
+    const list = $("list"); list.innerHTML = "";
+    S.items.forEach((it, i) => {
+      const li = document.createElement("li");
+      if (i === S.idx) li.className = "on";
+      li.innerHTML = `<span class="n">${i + 1}</span><div><div class="what">${escapeHtml(it.label)}</div><div class="say">“${escapeHtml(it.line)}”</div></div>`;
+      li.onclick = () => { stopPlay(); unlockAudio(); show(i, false); };
+      list.appendChild(li);
+    });
+    if (S.missed) {
+      const li = document.createElement("li");
+      li.className = "missed";
+      li.innerHTML = `<span class="n">?</span><div><div class="what">아빠가 못 본 게 ${S.missed}개 더 있어요</div><div class="say">엄마한테 걸리기 전에 엄마모드로 다시 검사해보세요.</div></div>`;
+      list.appendChild(li);
+    }
+    $("prev").disabled = S.idx <= 0;
+    $("next").disabled = !S.items.length || S.idx >= S.items.length;
+    $("replay").disabled = S.idx < -1 || S.score == null;
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  function show(i, chain) {
+    S.idx = i;
+    const it = S.items[i];
+    renderBoxes();
+    pointAt(it);
+    const ch = $("char"), st = $("stage");
+    ch.classList.remove("mad"); st.classList.remove("shake");
+    void ch.offsetWidth;
+    ch.classList.add("mad"); st.classList.add("shake");
+    zap();
+    say(it.line);
+    setTimeout(() => speak(it.line, () => {
+      if (chain && S.playing && i < S.items.length - 1) setTimeout(() => S.playing && show(i + 1, true), 500);
+      else if (chain && S.playing) setTimeout(() => S.playing && finale(true), 700);
+      else S.playing = false;
+    }), 280);
+  }
+  function play(from) {
+    hideScore();
+    S.playing = true;
+    if (!S.items.length || from >= S.items.length) finale(true); else show(from, true);
+  }
+  const GRADES = [[95, "완벽! 용돈 인상 각"], [80, "이 정도면 봐준다"], [60, "등짝 스매싱 주의"], [40, "오늘 저녁밥 없다"], [0, "집 나가!"]];
+  function grade(sc) { return GRADES.find(([g]) => sc >= g)[1]; }
+  // 다 찝은 뒤: 한숨 섞인 마무리 잔소리 → 두둥 점수
+  function finale(chain) {
+    S.idx = S.items.length; renderBoxes();
+    const ch = $("char");
+    pointAt(null);
+    ch.classList.remove("mad"); void ch.offsetWidth; ch.classList.add("mad");
+    const line = S.closer || PERSONAS[S.voice].closers[0];
+    say(line);
+    speak(line, () => { if (!chain || S.playing) showScore(); });
+  }
+  function hideScore() { const el = $("score"); el.hidden = true; el.classList.remove("rolling", "land"); clearInterval(S.rollT); }
+  function showScore() {
+    const el = $("score"), num = $("scoreNum"), sc = S.score == null ? 100 : S.score;
+    el.hidden = false; el.classList.remove("land"); el.classList.add("rolling");
+    $("scoreGrade").textContent = grade(sc);
+    drumroll(1.5);
+    clearInterval(S.rollT);
+    S.rollT = setInterval(() => { num.innerHTML = Math.floor(Math.random() * 100) + "<small>점</small>"; }, 60);
+    setTimeout(() => {
+      clearInterval(S.rollT);
+      num.innerHTML = sc + "<small>점</small>";
+      el.classList.remove("rolling"); void el.offsetWidth; el.classList.add("land");
+      boom();
+      setTimeout(() => speak(`${sc}점! ${grade(sc)}`, () => { S.playing = false; }), 450);
+    }, 1550);
+  }
+  $("score").onclick = () => { stopPlay(); hideScore(); };
+  // 점수: AI가 준 것, 없으면 걸린 개수로 계산. 아빠모드는 놓친 만큼 후하게
+  function computeScore(r) {
+    let sc = r.score;
+    if (sc == null) sc = 100 - r.items.reduce((a, it) => a + (it.size === "small" ? 6 : 14), 0);
+    if (S.mode === "dad") sc += (r.missed || 0) * 6;
+    return Math.round(Math.min(100, Math.max(5, sc)));
+  }
+  function stopPlay() { S.playing = false; if (window.JANSORI_NATIVE_TTS_STOP) window.JANSORI_NATIVE_TTS_STOP(); try { speechSynthesis.cancel(); } catch {} try { if (curSrc) { const c = curSrc; curSrc = null; c.stop(); } } catch {} }
+
+  /* ---------- 이벤트 ---------- */
+  function showErr(msg) { const el = $("err"); el.hidden = !msg; el.textContent = msg || ""; }
+  function onPick(input, thumbId, handle) {
+    const run = async () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      const th = thumbId && $(thumbId);
+      if (th) { th.classList.remove("has"); th.style.backgroundImage = ""; th.textContent = "불러오는 중..."; }
+      showErr("");
+      try { await handle(f); }
+      catch (err) {
+        console.error(err);
+        showErr("사진을 못 열었어요. 다른 사진으로 해보거나, 사진 앱에서 JPG로 저장한 걸 올려주세요.");
+        renderThumbs();
+      }
+      input.value = "";
+    };
+    input.addEventListener("change", run);
+  }
+  onPick($("inBase"), "thumbBase", async (f) => {
+    S.base[S.room] = await toJpeg(f);
+    renderRooms(); renderThumbs();
+    kvSet("base:" + S.room, S.base[S.room]);
+  });
+  onPick($("inToday"), "thumbToday", async (f) => {
+    S.today = await toJpeg(f);
+    S.photoId++;
+    S.items = []; S.idx = -1; S.missed = 0; S.score = null; hideScore(); renderBoxes();
+    const img = $("stagePhoto");
+    img.src = blobUrl("stage", S.today); img.hidden = false; $("stageEmpty").hidden = true;
+    renderThumbs();
+  });
+  onPick($("inFace"), null, async (f) => {
+    const img = await loadImage(f);
+    // 원본은 900px로 줄여서 보관 (다시 맞추기용)
+    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, k = Math.min(1, 900 / Math.max(W, H));
+    const c = document.createElement("canvas"); c.width = Math.round(W * k); c.height = Math.round(H * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    openFaceEditor(c.toDataURL("image/jpeg", 0.88), null);
+  });
+  $("faceEdit").onclick = () => { if (S.faceSrc) openFaceEditor(S.faceSrc, S.faceView); };
+  $("faceClear").onclick = () => { S.face = null; S.faceSrc = null; S.faceView = null; save(); renderFace(); renderLooks(); renderChar(); };
+
+  /* ---------- 얼굴 위치 맞추기 ---------- */
+  const FE = { img: null, src: null, zoom: 1, ox: 0, oy: 0, base: 1, ptrs: new Map(), last: null };
+  const EL = { cx: 300, cy: 300, rx: 200, ry: 200 * FACE.ry / FACE.rx }; // 캐릭터 얼굴과 같은 비율
+  function feDraw() {
+    const cv = $("feCanvas"), g = cv.getContext("2d");
+    g.clearRect(0, 0, 600, 600);
+    if (!FE.img) return;
+    const dw = FE.img.width * FE.base * FE.zoom, dh = FE.img.height * FE.base * FE.zoom;
+    g.drawImage(FE.img, EL.cx + FE.ox - dw / 2, EL.cy + FE.oy - dh / 2, dw, dh);
+    g.save();
+    g.fillStyle = "rgba(43,33,64,.62)";
+    g.beginPath(); g.rect(0, 0, 600, 600);
+    g.ellipse(EL.cx, EL.cy, EL.rx, EL.ry, 0, 0, Math.PI * 2);
+    g.fill("evenodd");
+    g.setLineDash([14, 10]); g.lineWidth = 5; g.strokeStyle = "#fff";
+    g.beginPath(); g.ellipse(EL.cx, EL.cy, EL.rx, EL.ry, 0, 0, Math.PI * 2); g.stroke();
+    // 눈·입 자리 안내
+    g.setLineDash([]); g.lineWidth = 3; g.strokeStyle = "rgba(255,255,255,.45)";
+    g.beginPath(); g.moveTo(EL.cx - 120, EL.cy - 20); g.lineTo(EL.cx + 120, EL.cy - 20); g.stroke();
+    g.beginPath(); g.moveTo(EL.cx - 50, EL.cy + 110); g.lineTo(EL.cx + 50, EL.cy + 110); g.stroke();
+    g.restore();
+  }
+  function feCrop() {
+    const ow = 368, oh = Math.round(368 * EL.ry / EL.rx);
+    const c = document.createElement("canvas"); c.width = ow; c.height = oh;
+    const k = ow / (EL.rx * 2);
+    const dw = FE.img.width * FE.base * FE.zoom, dh = FE.img.height * FE.base * FE.zoom;
+    const x = EL.cx + FE.ox - dw / 2 - (EL.cx - EL.rx), y = EL.cy + FE.oy - dh / 2 - (EL.cy - EL.ry);
+    const g = c.getContext("2d");
+    g.fillStyle = "#f3c39d"; g.fillRect(0, 0, ow, oh);
+    g.drawImage(FE.img, x * k, y * k, dw * k, dh * k);
+    return c.toDataURL("image/jpeg", 0.9);
+  }
+  let fePrevT = 0;
+  function fePreview() {
+    clearTimeout(fePrevT);
+    fePrevT = setTimeout(() => { if (FE.img) $("fePreview").innerHTML = charSVG(S.look, feCrop(), "fe"); }, 120);
+  }
+  function openFaceEditor(src, view) {
+    const img = new Image();
+    img.onload = () => {
+      FE.img = img; FE.src = src;
+      FE.base = Math.max((EL.rx * 2) / img.width, (EL.ry * 2) / img.height);
+      FE.zoom = view ? view.zoom : 1; FE.ox = view ? view.ox : 0; FE.oy = view ? view.oy : 0;
+      $("feZoom").value = FE.zoom;
+      $("faceEditor").hidden = false;
+      feDraw(); fePreview();
+    };
+    img.onerror = () => showErr("얼굴 사진을 못 열었어요. 다른 사진으로 해주세요.");
+    img.src = src;
+  }
+  function closeFaceEditor() { $("faceEditor").hidden = true; FE.ptrs.clear(); }
+  function feScale() { return 600 / $("feCanvas").getBoundingClientRect().width; }
+  function feSetZoom(z) { FE.zoom = Math.max(1, Math.min(5, z)); $("feZoom").value = FE.zoom; feDraw(); fePreview(); }
+  const cvs = $("feCanvas");
+  cvs.addEventListener("pointerdown", (e) => { cvs.setPointerCapture(e.pointerId); FE.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); FE.last = null; });
+  cvs.addEventListener("pointermove", (e) => {
+    if (!FE.ptrs.has(e.pointerId)) return;
+    const prev = FE.ptrs.get(e.pointerId);
+    FE.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const k = feScale();
+    if (FE.ptrs.size === 1) {
+      FE.ox += (e.clientX - prev.x) * k; FE.oy += (e.clientY - prev.y) * k; feDraw();
+    } else if (FE.ptrs.size === 2) {
+      const [a, b] = [...FE.ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (FE.last) feSetZoom(FE.zoom * d / FE.last);
+      FE.last = d;
+    }
+  });
+  const feUp = (e) => { FE.ptrs.delete(e.pointerId); FE.last = null; fePreview(); };
+  cvs.addEventListener("pointerup", feUp); cvs.addEventListener("pointercancel", feUp);
+  cvs.addEventListener("wheel", (e) => { e.preventDefault(); feSetZoom(FE.zoom * (e.deltaY < 0 ? 1.06 : 0.94)); }, { passive: false });
+  $("feZoom").addEventListener("input", (e) => feSetZoom(Number(e.target.value)));
+  $("feReset").onclick = () => { FE.ox = 0; FE.oy = 0; feSetZoom(1); };
+  $("feCancel").onclick = closeFaceEditor;
+  $("feDone").onclick = () => {
+    S.face = feCrop(); S.faceSrc = FE.src; S.faceView = { zoom: FE.zoom, ox: FE.ox, oy: FE.oy };
+    save(); closeFaceEditor(); renderFace(); renderLooks(); renderChar(); pointAt(S.items[S.idx] || null);
+  };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("faceEditor").hidden) closeFaceEditor(); });
+  function renderFace() {
+    $("faceThumb").style.backgroundImage = S.face ? `url(${S.face})` : "";
+    $("faceClear").hidden = !S.face;
+    $("faceEdit").hidden = !S.faceSrc;
+  }
+  $("testVoice").onclick = () => {
+    unlockAudio(); zap();
+    const ch = $("char"); ch.classList.remove("mad"); void ch.offsetWidth; ch.classList.add("mad");
+    say(PERSONAS[S.voice].lines[S.spice - 1] || PERSONAS[S.voice].lines[0], true);
+  };
+  async function runInspect() {
+    const base = S.base[S.room];
+    if (!base || !S.today) return;
+    unlockAudio(); stopPlay();
+    $("err").hidden = true;
+    $("go").disabled = true; $("go").textContent = "보는 중...";
+    const bub = $("bubble"); bub.textContent = "어디 보자"; bub.classList.add("loading");
+    pointAt(null);
+    try {
+      const r = await analyze(base, S.today);
+      S.items = r.items; S.idx = -1; S.missed = r.missed || 0;
+      S.runs++; S.lastRunPhotoId = S.photoId; save();
+      S.score = computeScore(r);
+      const cl = PERSONAS[S.voice].closers;
+      S.closer = r.closing || (S.items.length ? cl[Math.floor(Math.random() * cl.length)] : "오늘은 봐준다~ 계속 이렇게만 해!");
+      hideScore();
+      $("mode").hidden = false; $("mode").textContent = r.mode === "AI" ? "AI 검사" : "간단 비교 모드";
+      renderBoxes();
+      if (!S.items.length) {
+        const praise = S.missed ? "음? 뭐 바뀐 거 있나? 괜찮은데?" : (r.summary || "오~ 웬일로 깨끗하네?");
+        say(praise); S.playing = true;
+        speak(praise, () => S.playing && showScore());
+      } else {
+        const intro = r.summary || `${S.items.length}개나 걸렸어!`;
+        say(intro);
+        S.playing = true;
+        speak(intro, () => S.playing && play(0));
+      }
+      $("h-stage").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      console.error(e);
+      $("err").hidden = false;
+      $("err").textContent = "사진을 비교하지 못했어요. 잠시 뒤에 다시 눌러주세요.";
+      say("이게 왜 안 되노...");
+    } finally {
+      $("go").disabled = false; $("go").textContent = "빠직 검사하기";
+    }
+  }
+  $("go").onclick = async () => {
+    if (!S.base[S.room] || !S.today) return;
+    unlockAudio();
+    if (needAd()) await showAd();
+    runInspect();
+  };
+  $("replay").onclick = () => { unlockAudio(); stopPlay(); play(S.idx >= S.items.length ? 0 : Math.max(0, S.idx)); };
+  $("prev").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx > 0) show(Math.min(S.idx, S.items.length) - 1, false); };
+  $("next").onclick = () => { unlockAudio(); stopPlay(); hideScore(); if (S.idx < S.items.length - 1) show(S.idx + 1, false); else if (S.idx === S.items.length - 1) finale(false); };
+
+  /* ---------- 광고 + 광고 제거 결제 ----------
+     웹에서는 테스트 광고/테스트 결제. 스토어 앱에서는 아래 두 군데에 진짜를 연결:
+     - 광고: Capacitor AdMob 플러그인 (window.Capacitor.Plugins.AdMob, 광고 ID는 window.JANSORI_ADMOB_ID)
+     - 결제: window.JANSORI_STORE = { buy(): Promise<boolean>, restore(): Promise<boolean> }
+       (구글 플레이 결제 / 애플 인앱결제. 상품 ID "remove_ads_forever", 비소모성, 2,900원) */
+  const PRODUCT_ID = "remove_ads_forever";
+  function nativeStore() { return window.JANSORI_STORE || null; }
+  function nativeAdMob() { try { return window.Capacitor.Plugins.AdMob || null; } catch { return null; } }
+  // 첫 검사는 무료. 그 뒤로 새 사진으로 검사하면 광고 (같은 사진으로 모드만 바꿔 다시 보는 건 광고 없음)
+  function needAd() { return !S.premium && S.runs >= 1 && S.photoId !== S.lastRunPhotoId; }
+
+  function showAd() {
+    const admob = nativeAdMob();
+    if (admob && window.JANSORI_ADMOB_ID) {
+      return admob.prepareInterstitial({ adId: window.JANSORI_ADMOB_ID, isTesting: !!window.JANSORI_ADMOB_TESTING })
+        .then(() => admob.showInterstitial())
+        .catch((e) => { console.warn("admob failed", e); });
+    }
+    return new Promise((resolve) => {
+      const m = $("adModal"), btn = $("adClose");
+      let left = 5;
+      btn.disabled = true; btn.textContent = `닫고 검사하기 (${left})`;
+      $("adCount").textContent = `${left}초 뒤에 닫을 수 있어요`;
+      m.hidden = false;
+      const t = setInterval(() => {
+        left--;
+        if (left > 0) { btn.textContent = `닫고 검사하기 (${left})`; $("adCount").textContent = `${left}초 뒤에 닫을 수 있어요`; return; }
+        clearInterval(t); btn.disabled = false; btn.textContent = "닫고 검사하기"; $("adCount").textContent = "";
+      }, 1000);
+      const done = () => { clearInterval(t); m.hidden = true; resolve(); };
+      btn.onclick = () => { unlockAudio(); done(); };
+      $("adRemove").onclick = async () => { if (await buyRemoveAds()) done(); };
+    });
+  }
+
+  function buyRemoveAds() {
+    const store = nativeStore();
+    if (store) {
+      return store.buy(PRODUCT_ID).then((ok) => { if (ok) setPremium(); return !!ok; })
+        .catch((e) => { console.warn("buy failed", e); return false; });
+    }
+    // 앱인데 결제가 아직 연결 안 됨: 공짜로 풀리면 안 되니까 막기
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      $("adNote").textContent = "결제 준비 중이에요. 잠시 뒤에 다시 해주세요.";
+      return Promise.resolve(false);
+    }
+    // 웹: 테스트 결제
+    return new Promise((resolve) => {
+      const m = $("buyModal");
+      $("buyTestNote").hidden = false;
+      m.hidden = false;
+      $("buyOk").onclick = () => { m.hidden = true; setPremium(); resolve(true); };
+      $("buyCancel").onclick = () => { m.hidden = true; resolve(false); };
+    });
+  }
+  function setPremium() {
+    S.premium = true; save(); renderAds();
+    say("광고 없어졌다! 고맙다~ 이제 마음껏 혼나라!");
+  }
+  function renderAds() {
+    $("adState").textContent = S.premium ? "광고 제거됨" : "광고 있음";
+    $("adNote").textContent = S.premium ? "평생 광고 없이 쓰세요. 고마워요!" : "첫 검사는 무료, 새 사진으로 다시 검사하면 광고가 나와요.";
+    $("openBuy").hidden = S.premium;
+  }
+  $("openBuy").onclick = () => buyRemoveAds();
+  $("restore").onclick = async () => {
+    const store = nativeStore();
+    if (store) {
+      const ok = await store.restore(PRODUCT_ID).catch(() => false);
+      if (ok) setPremium(); else $("adNote").textContent = "복원할 구매가 없어요. 구매한 계정으로 로그인했는지 확인해주세요.";
+      return;
+    }
+    $("adNote").textContent = S.premium ? "이미 광고가 제거돼 있어요." : "테스트 버전이라 복원할 구매가 없어요. 스토어 앱에서는 구매한 계정으로 되살릴 수 있어요.";
+  };
+
+  /* ---------- 내 목소리 (ElevenLabs, 서버 필요) ---------- */
+  function renderClone(msg) {
+    const on = !!(window.JANSORI_API && S.server.clone);
+    $("inVoice").disabled = !on; $("consent").disabled = !on;
+    $("cloneState").textContent = S.cloneVoice ? "켜짐" : "꺼짐";
+    $("cloneClear").hidden = !S.cloneVoice;
+    $("cloneNote").textContent = msg || (on
+      ? "목소리 샘플을 올리면 잔소리를 그 목소리로 해요. 다른 소리 없이 또박또박 말한 녹음이 좋아요."
+      : window.JANSORI_API
+        ? "곧 열릴 기능이에요. 지금은 기본 음성으로 말해요."
+        : "ElevenLabs 서버를 연결한 스토어 앱 버전에서 켜져요. 지금은 폰 기본 음성으로 말해요.");
+  }
+  $("inVoice").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!$("consent").checked) { renderClone("먼저 허락받은 목소리라는 칸에 체크해주세요."); return; }
+    renderClone("목소리 만드는 중... (10초쯤 걸려요)");
+    try {
+      const fd = new FormData();
+      fd.append("sample", f, f.name || "voice.m4a"); fd.append("consent", "true");
+      const res = await fetch(window.JANSORI_API.replace(/\/$/, "") + "/api/voice-clone", { method: "POST", body: fd });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.voice_id) throw new Error(j.detail || res.status);
+      S.cloneVoice = j.voice_id; save();
+      renderClone("완료! 이제 이 목소리로 잔소리해요. '목소리 들어보기'로 확인해보세요.");
+    } catch (err) {
+      console.error(err);
+      renderClone("목소리를 만들지 못했어요. 30초 이상, 조용한 곳에서 녹음한 파일로 다시 해주세요.");
+    }
+  });
+  $("cloneClear").onclick = () => { S.cloneVoice = null; save(); renderClone(); };
+  async function checkServer() {
+    const api = window.JANSORI_API;
+    if (!api) return;
+    try {
+      const j = await (await fetch(api.replace(/\/$/, "") + "/health")).json();
+      S.server = { tts: !!j.tts, clone: !!j.clone };
+    } catch {}
+    renderClone();
+  }
+
+  function save() {
+    kvSet("settings", { rooms: S.rooms, room: S.room, look: S.look, voice: S.voice, spice: S.spice, mode: S.mode, cloneVoice: S.cloneVoice, premium: S.premium, runs: S.runs, face: S.face, faceSrc: S.faceSrc, faceView: S.faceView });
+  }
+
+  /* ---------- 시작 ---------- */
+  async function init() {
+    renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    const st = await kvGet("settings");
+    if (st) Object.assign(S, st);
+    for (const r of S.rooms) { const b = await kvGet("base:" + r); if (b) S.base[r] = b; }
+    renderChar(); renderLooks(); renderVoices(); renderModes(); renderRooms(); renderFace(); renderThumbs(); pointAt(null);
+    renderClone(); renderAds(); checkServer();
+    // 앱: 스토어에 구매 기록이 있는지 확인 (폰을 바꿨거나 앱을 다시 깔았을 때)
+    const store = nativeStore();
+    if (store && store.check) store.check().then((ok) => { if (ok && !S.premium) { S.premium = true; save(); renderAds(); } }).catch(() => {});
+    getSample();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

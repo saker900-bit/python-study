@@ -1,0 +1,22 @@
+{
+  "name": "jansori-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "빠직 잔소리 탐지기 안드로이드 앱 (Capacitor)",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "sync": "npm run build && npx cap sync android",
+    "open": "npx cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.3.0",
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@revenuecat/purchases-capacitor": "^14.1.0"
+  }
+}
