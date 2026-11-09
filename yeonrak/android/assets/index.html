@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>연락각</title>
+<style>
+  :root { --main:#ff7a59; --bg:#fff7f2; --card:#fff; --text:#2b2b2b; --muted:#8a8a8a; --danger:#e5484d; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:20px 16px 4px; max-width:520px; margin:0 auto; }
+  h1 { margin:0; font-size:26px; } h1 span { color:var(--main); }
+  main { padding:4px 16px 60px; max-width:520px; margin:0 auto; }
+  .card { background:var(--card); border-radius:16px; padding:16px; margin:12px 0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+  .row { display:flex; gap:8px; align-items:center; }
+  .grow { flex:1; }
+  .muted { color:var(--muted); font-size:13px; }
+  input, select { width:100%; padding:12px; border:1px solid #eee; border-radius:10px; font-size:16px; margin:4px 0; background:#fff; }
+  button { border:0; border-radius:10px; padding:12px; font-size:15px; font-weight:600; }
+  button:active { opacity:.7; }
+  .primary { background:var(--main); color:#fff; } .ghost { background:#f3f3f3; color:var(--text); }
+  .danger { background:#fff0f0; color:var(--danger); } .small { padding:8px 10px; font-size:13px; }
+  .bar { height:10px; background:#f1f1f1; border-radius:5px; overflow:hidden; margin:10px 0 4px; }
+  .bar > div { height:100%; background:var(--main); }
+  .overdue .bar > div { background:var(--danger); }
+  .name { font-size:19px; font-weight:700; }
+  .tag { font-size:12px; background:#ffeee8; color:var(--main); border-radius:6px; padding:2px 6px; font-weight:600; }
+  .ai { background:#f6f3ff; border-radius:10px; padding:10px 12px; margin-top:10px; font-size:15px; line-height:1.5; }
+  .edit { margin-top:10px; border-top:1px dashed #eee; padding-top:10px; }
+  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#333; color:#fff; padding:12px 16px;
+           border-radius:12px; font-size:14px; opacity:0; transition:opacity .3s; max-width:90%; pointer-events:none; }
+  #toast.show { opacity:1; }
+  details summary { font-weight:700; padding:2px 0; }
+</style>
+</head>
+<body>
+<header><h1>연락<span>각</span></h1><div class="muted">이쯤 되면 연락할 각</div></header>
+<main>
+  <div id="list"></div>
+
+  <div class="card">
+    <details id="add-box">
+      <summary>➕ 챙길 사람 추가</summary>
+      <input id="f-name" placeholder="부르는 이름 (예: 엄마, 자기, 여보)">
+      <select id="f-rel">
+        <option value="dating">연인 · 6시간마다</option>
+        <option value="spouse">배우자 · 4시간마다</option>
+        <option value="parent">부모님 · 3일마다</option>
+        <option value="friend">친구 · 1주마다</option>
+      </select>
+      <input id="f-hours" type="number" inputmode="decimal" placeholder="연락 텀 직접 입력 (시간, 비우면 위 기본값)">
+      <button class="primary" style="width:100%;margin-top:6px" onclick="addPerson()">추가하기</button>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="grow muted">알림이 잘 오는지 확인해보세요. 앱을 닫아도 10초 뒤에 알림이 와요.</div>
+      <button class="ghost small" onclick="testNoti()">🔔 알림 테스트</button>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const HOUR = 3600e3;
+const DEFAULT_H = { dating: 6, spouse: 4, parent: 72, friend: 168 };
+const REL_KO = { dating: "연인", spouse: "배우자", parent: "부모님", friend: "친구" };
+const WD = ["일", "월", "화", "수", "목", "금", "토"];
+const native = window.Android || null;
+let openAi = {}, openEdit = {};
+
+function load() { try { return JSON.parse(localStorage.getItem("people") || "[]"); } catch (e) { return []; } }
+function save(p) { localStorage.setItem("people", JSON.stringify(p)); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2500); }
+function fmt(h) { h = Math.max(h, 0); if (h < 1) return `${Math.max(1, Math.round(h * 60))}분`; if (h < 48) return `${Math.floor(h)}시간`; return `${Math.floor(h / 24)}일`; }
+
+// 연락 텀이 끝나는 시각에 안드로이드 알림 예약
+function arm(p) {
+  if (!native) return;
+  native.schedule("p" + p.id, p.last + p.hours * HOUR, `${p.name}한테 연락할 각 ⏰`,
+    `마지막 연락 후 ${fmt(p.hours)} 지났어요. 이쯤 되면 연락 한번 해줘야죠!`);
+}
+
+function render() {
+  const people = load(), now = Date.now();
+  people.sort((a, b) => (now - b.last) / b.hours - (now - a.last) / a.hours);
+  $("list").innerHTML = people.length ? people.map((p) => card(p, now)).join("") :
+    `<div class="card"><div class="name">반가워요 👋</div><p class="muted">아래 <b>챙길 사람 추가</b>에서 엄마, 애인, 와이프를 등록해보세요.
+     연락 텀이 지나면 알림으로 알려드려요.</p></div>`;
+  if (!people.length) $("add-box").open = true;
+}
+
+function card(p, now) {
+  const h = (now - p.last) / HOUR, left = p.hours - h, over = left <= 0;
+  return `<div class="card ${over ? "overdue" : ""}">
+    <div class="row"><div class="name grow">${esc(p.name)} <span class="tag">${REL_KO[p.rel]}</span></div>
+      <div class="muted">${over ? `⏰ 연락할 각! (${fmt(-left)} 지남)` : `${fmt(left)} 남음`}</div></div>
+    <div class="bar"><div style="width:${Math.min(h / p.hours, 1) * 100}%"></div></div>
+    <div class="muted">마지막 연락 ${fmt(h)} 전 · ${fmt(p.hours)}마다${p.status ? ` · 일정: ${esc(p.status)}` : ""}</div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary grow" onclick="contact(${p.id})">📞 연락했어요</button>
+      <button class="danger grow" onclick="nudge(${p.id})">📢 야 연락 안 하냐?</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost grow" onclick="reassure(${p.id})">🤔 왜 연락이 없지?</button>
+      <button class="ghost" onclick="toggleEdit(${p.id})">⚙️</button>
+    </div>
+    ${openAi[p.id] ? `<div class="ai">${esc(openAi[p.id])}</div>` : ""}
+    ${openEdit[p.id] ? `<div class="edit">
+      <div class="muted">상대가 말한 일정 (예: 오늘 회식, 운동 간대) — 안심 멘트에 반영돼요</div>
+      <input id="st-${p.id}" value="${esc(p.status || "")}" placeholder="비워두면 없음">
+      <div class="muted">연락 텀 (시간)</div>
+      <input id="hr-${p.id}" type="number" inputmode="decimal" value="${p.hours}">
+      <div class="row"><button class="primary grow small" onclick="saveEdit(${p.id})">저장</button>
+        <button class="danger small" onclick="removePerson(${p.id})">삭제</button></div></div>` : ""}
+  </div>`;
+}
+
+function update(id, fn) { const ps = load(); const p = ps.find((x) => x.id === id); if (p) { fn(p); save(ps); } return p; }
+
+function addPerson() {
+  const name = $("f-name").value.trim(); if (!name) return toast("이름을 적어주세요");
+  const rel = $("f-rel").value, hours = Number($("f-hours").value) > 0 ? Number($("f-hours").value) : DEFAULT_H[rel];
+  const p = { id: Date.now(), name, rel, hours, last: Date.now(), status: "", log: [] };
+  const ps = load(); ps.push(p); save(ps); arm(p);
+  $("f-name").value = ""; $("f-hours").value = ""; $("add-box").open = false;
+  toast(`${name} 등록! ${fmt(hours)} 뒤에 알려드릴게요`); render();
+}
+
+function contact(id) {
+  const p = update(id, (p) => { p.last = Date.now(); p.log = [...(p.log || []), p.last].slice(-100); });
+  arm(p); delete openAi[id]; toast("연락 완료! 타이머 초기화 ✅"); render();
+}
+
+function nudge(id) {
+  const p = load().find((x) => x.id === id);
+  const msg = ["야 연락 안 하냐? 📢", "살아있냐? 연락 좀 해라 📢", "보고 싶은데 연락이 없네… 📢"][Math.floor(Math.random() * 3)];
+  if (native) native.share(msg); else toast(`(앱에서는 카톡으로 보내져요) ${msg}`);
+}
+
+function toggleEdit(id) { openEdit[id] = !openEdit[id]; render(); }
+function saveEdit(id) {
+  const hrs = Number($(`hr-${id}`).value);
+  const p = update(id, (p) => { p.status = $(`st-${id}`).value.trim(); p.statusAt = Date.now(); if (hrs > 0) p.hours = hrs; });
+  arm(p); openEdit[id] = false; delete openAi[id]; toast("저장했어요"); render();
+}
+function removePerson(id) {
+  if (!confirm("정말 삭제할까요?")) return;
+  save(load().filter((x) => x.id !== id)); if (native) native.cancel("p" + id); render();
+}
+
+function testNoti() {
+  if (native) { native.schedule("test", Date.now() + 10000, "연락각 알림 테스트 🔔", "알림이 잘 와요! 이제 연락할 각이 되면 이렇게 알려드릴게요."); toast("10초 뒤에 알림이 와요. 앱을 닫아봐도 돼요"); }
+  else toast("앱(APK)에서만 동작해요");
+}
+
+// ---- 안심 멘트 ----
+function reassure(id) {
+  const p = load().find((x) => x.id === id); if (!p) return;
+  openAi[id] = "💭 " + guess(p, new Date()); render();
+}
+
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+function guess(p, d) {
+  const h = d.getHours(), wd = d.getDay(), n = p.name;   // wd: 0=일 ... 5=금 6=토
+  const since = (d - p.last) / HOUR;
+  const status = p.status && p.statusAt && d - p.statusAt < 12 * HOUR ? p.status : "";
+  const weekendNight = (wd === 5 && h >= 20) || (wd === 6 && (h >= 20 || h < 1)) || (wd === 0 && h < 1);
+  let m;
+  if (status) {
+    const has = (ks) => ks.some((k) => status.includes(k));
+    if (has(["회식", "술", "모임", "파티", "친구"])) m = pick([`${n} '${status}'라고 했잖아요. 아마 떠드느라 정신이 없나 봐요 🍻`, `'${status}' 중이라 폰 볼 틈이 없나 봐요. 한 잔 했을지도요 🍺`]);
+    else if (has(["운동", "헬스", "러닝", "수영", "필라테스"])) m = `${n} '${status}' 간다고 했죠. 땀 흘리느라 폰은 사물함에 있을 거예요 💪`;
+    else if (has(["회의", "일", "근무", "야근", "수업", "출장"])) m = `${n} '${status}' 중이에요. 끝나면 연락 올 거예요.`;
+    else if (has(["잠", "자", "취침"])) m = `${n} 잔다고 했잖아요. 푹 자고 일어나면 연락 올 거예요 😴`;
+    else m = `${n} '${status}' 한다고 했죠. 그거 하느라 바쁜가 봐요.`;
+  } else if (h >= 1 && h < 7) {
+    m = pick([`새벽 ${h}시예요. ${n} 아마 꿀잠 자는 중일 거예요 😴`, `지금 새벽이라 ${n} 자고 있을 확률 99%예요.`]);
+  } else if (weekendNight) {
+    m = pick([`${WD[wd]}요일 밤 ${h}시예요. 아마 술을 많이 마셨을 것 같은 시간이에요 🍻`, `주말 밤이잖아요. ${n} 떠드느라 정신이 없나 봐요.`]);
+  } else if (wd >= 1 && wd <= 5 && h === 12) {
+    m = `점심시간이에요. ${n} 밥 먹으면서 수다 떠는 중인가 봐요 🍚`;
+  } else if (wd >= 1 && wd <= 5 && h >= 9 && h < 18) {
+    m = pick([`평일 ${h}시, 한창 일할 시간이에요. ${n} 바빠서 그런가 봐요.`, `지금 업무 시간이라 ${n} 폰 볼 여유가 없나 봐요 💼`]);
+  } else if (h >= 18 && h < 20) {
+    m = `퇴근길이거나 저녁 먹을 시간이에요. ${n} 곧 연락 올 거예요.`;
+  } else if (h >= 20 || h < 1) {
+    m = pick([`저녁 시간이라 ${n} 씻거나 쉬는 중인가 봐요. 조금만 기다려봐요.`, `드라마 보느라 폰을 못 봤을 수도 있어요 📺`]);
+  } else {
+    m = `${n} 아침 준비하느라 정신없나 봐요 ☀️`;
+  }
+  // 평소 연락하던 시간대
+  const log = p.log || [];
+  if (!status && log.length >= 3) {
+    const cnt = {}; log.forEach((t) => { const hh = new Date(t).getHours(); cnt[hh] = (cnt[hh] || 0) + 1; });
+    const top = Object.keys(cnt).map(Number).sort((a, b) => cnt[b] - cnt[a]).slice(0, 3);
+    const next = top.sort((a, b) => ((a - h + 24) % 24) - ((b - h + 24) % 24))[0];
+    if (next !== undefined && next !== h) m += ` 보통 ${next}시쯤 연락하더라고요.`;
+  }
+  if (since >= 48) m += " 그래도 꽤 됐으니 먼저 가볍게 연락해봐요.";
+  return m;
+}
+
+render();
+setInterval(() => { if (!Object.values(openEdit).some(Boolean)) render(); }, 60000);
+</script>
+</body>
+</html>
