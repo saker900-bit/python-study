@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>티켓팅 도우미</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --line:#2a2f3a; --fg:#e8eaf0; --mut:#9aa1b0; --acc:#4f8cff; --warn:#ff6b5b; --ok:#3ccf91; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f5f6f8; --card:#fff; --line:#dde1e8; --fg:#15181e; --mut:#5d6575; --acc:#2563eb; --warn:#dc3b2b; --ok:#16935f; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:4px 0 12px; }
+  h2 { font-size:16px; margin:0 0 10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+  .clock { font-variant-numeric:tabular-nums; font-size:40px; font-weight:700; text-align:center; letter-spacing:1px; }
+  .ms { font-size:24px; color:var(--mut); }
+  .sub { color:var(--mut); font-size:13px; text-align:center; }
+  .count { font-variant-numeric:tabular-nums; font-size:34px; font-weight:700; text-align:center; margin:6px 0; }
+  .count.hot { color:var(--warn); }
+  .count.go { color:var(--ok); }
+  label { display:block; font-size:13px; color:var(--mut); margin:8px 0 4px; }
+  input, textarea, select { width:100%; padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--fg); font:inherit; }
+  textarea { min-height:70px; resize:vertical; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; }
+  button { padding:11px 14px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--fg); font:inherit; font-weight:600; cursor:pointer; }
+  button.pri { background:var(--acc); border-color:var(--acc); color:#fff; }
+  button.del { color:var(--warn); }
+  .ev { border-top:1px solid var(--line); padding:10px 0; }
+  .ev:first-child { border-top:0; }
+  .ev .t { font-weight:600; }
+  .ev .m { color:var(--mut); font-size:13px; }
+  .ev.sel .t::before { content:"▶ "; color:var(--acc); }
+  .chk label { display:flex; gap:8px; align-items:center; color:var(--fg); font-size:15px; margin:6px 0; }
+  .chk input { width:auto; }
+  a { color:var(--acc); }
+  .note { font-size:13px; color:var(--mut); }
+  ul.tips { padding-left:18px; margin:0; }
+  ul.tips li { margin:4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎫 티켓팅 도우미</h1>
+
+  <section class="card">
+    <div class="clock" id="clock">--:--:--<span class="ms">.---</span></div>
+    <div class="sub" id="offInfo">보정 0.000초 (내 기기 시각 기준)</div>
+    <div class="count" id="count">일정을 선택하세요</div>
+    <div class="sub" id="target"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="pri" id="armBtn">🔔 알림 켜기</button>
+      <button id="testBtn">소리 테스트</button>
+    </div>
+    <p class="note">알림을 켜면 60초·30초·10초 전과 마지막 5초에 소리가 납니다. 이 화면을 켜 두세요.</p>
+  </section>
+
+  <section class="card">
+    <h2>⏱ 서버 시각 보정</h2>
+    <p class="note">예매 사이트의 서버 시각은 내 기기 시각과 다를 수 있습니다. 서버 시각을 확인해 주는 사이트(예: <a href="https://time.navyism.com" target="_blank" rel="noopener">time.navyism.com</a>)에 예매 사이트 주소를 넣거나, PC에서 <code>ticket_helper/server_time.py</code>를 실행해 차이를 잰 다음 아래에 입력하세요.</p>
+    <label>서버가 내 기기보다 몇 초 빠른가요? (느리면 음수)</label>
+    <div class="row">
+      <input id="offset" type="number" step="0.001" value="0">
+      <button id="offSave">적용</button>
+    </div>
+    <label>몇 초 일찍 누를까요? (네트워크 지연 감안, 보통 0.1~0.3초)</label>
+    <input id="lead" type="number" step="0.05" value="0.2">
+  </section>
+
+  <section class="card">
+    <h2>📅 내 예매 일정</h2>
+    <div id="list"><p class="note">아직 일정이 없습니다.</p></div>
+  </section>
+
+  <section class="card">
+    <h2 id="formTitle">➕ 일정 추가</h2>
+    <form id="form">
+      <label>이름</label>
+      <input id="f_name" placeholder="예: OO 콘서트 1회차 / 설 KTX 서울→부산" required>
+      <div class="row">
+        <div><label>종류</label>
+          <select id="f_kind"><option>콘서트</option><option>기차</option><option>스포츠</option><option>기타</option></select></div>
+        <div><label>오픈 시각</label><input id="f_time" type="datetime-local" step="1" required></div>
+      </div>
+      <label>예매 페이지 주소</label>
+      <input id="f_url" type="url" placeholder="https://...">
+      <label>원하는 좌석·열차 (우선순위 순)</label>
+      <textarea id="f_pref" placeholder="1순위: VIP석 A구역 앞열&#10;2순위: R석 아무 데나&#10;3순위: S석"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="pri" type="submit" id="saveBtn">저장</button>
+        <button type="button" id="cancelEdit" hidden>취소</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card chk" id="chkCard" hidden>
+    <h2>✅ 오픈 전 체크리스트 <span class="note" id="chkFor"></span></h2>
+    <div id="chk"></div>
+  </section>
+
+  <section class="card">
+    <h2>💡 정시 예매 팁</h2>
+    <ul class="tips">
+      <li>10분 전에 로그인하고, 예매 페이지를 미리 열어 두세요. 오래 켜 둔 탭은 로그인이 풀릴 수 있으니 5분 전쯤 한 번 확인하세요.</li>
+      <li>결제수단(간편결제 등)과 예매자 정보는 미리 등록해 두세요.</li>
+      <li>대기열이 있는 사이트는 새로고침하면 순번이 뒤로 밀릴 수 있습니다.</li>
+      <li>1순위 좌석이 막히면 고민하지 말고 바로 2순위로 넘어가세요. 망설이는 사이에 좌석이 사라집니다.</li>
+      <li>기차는 코레일·SRT 앱의 <b>예약대기</b>와 취소표 알림 같은 공식 기능을 함께 신청해 두세요.</li>
+      <li>Wi-Fi가 불안하면 데이터(LTE/5G)로 바꾸고, 공유기와 가까운 곳에서 하세요.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  const KEY = "ticketHelper.v1";
+  let state = { events: [], offset: 0, lead: 0.2, sel: null };
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.assign(state, s); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  const $ = (id) => document.getElementById(id);
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+  const esc = (s) => String(s || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const now = () => Date.now() + state.offset * 1000; // 보정된 서버 기준 시각
+
+  const CHECKS = {
+    "콘서트": ["예매 사이트 로그인", "본인인증·예매자 정보 확인", "결제수단 미리 등록", "좌석 우선순위 정해 두기", "예매 페이지 미리 열기", "서버 시각 보정"],
+    "기차":   ["코레일/SRT 로그인", "출발·도착역, 날짜, 인원 미리 입력", "원하는 열차 2~3개 골라 두기", "결제수단 확인", "예약대기 신청 검토", "서버 시각 보정"],
+    "스포츠": ["예매 사이트 로그인", "멤버십·선예매 자격 확인", "결제수단 미리 등록", "좌석 구역 우선순위", "서버 시각 보정"],
+    "기타":   ["로그인", "결제수단 확인", "예매 페이지 미리 열기", "서버 시각 보정"],
+  };
+
+  $("offset").value = state.offset;
+  $("lead").value = state.lead;
+  const showOff = () => { $("offInfo").textContent = "보정 " + (state.offset >= 0 ? "+" : "") + Number(state.offset).toFixed(3) + "초 · " + state.lead + "초 일찍 알림"; };
+  showOff();
+  $("offSave").onclick = () => { state.offset = parseFloat($("offset").value) || 0; save(); showOff(); };
+  $("lead").onchange = () => { state.lead = parseFloat($("lead").value) || 0; save(); showOff(); };
+
+  // ---- 일정 목록 ----
+  let editing = null;
+  function render() {
+    state.events.sort((a, b) => a.time.localeCompare(b.time));
+    const list = $("list");
+    if (!state.events.length) { list.innerHTML = '<p class="note">아직 일정이 없습니다.</p>'; }
+    else list.innerHTML = state.events.map((e) => `
+      <div class="ev ${e.id === state.sel ? "sel" : ""}" data-id="${e.id}">
+        <div class="t">${esc(e.name)}</div>
+        <div class="m">${esc(e.kind)} · ${esc(e.time.replace("T", " "))}</div>
+        ${e.pref ? `<div class="m" style="white-space:pre-wrap">${esc(e.pref)}</div>` : ""}
+        <div class="row" style="margin-top:6px">
+          <button data-a="sel">선택</button>
+          ${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener"><button style="width:100%">열기</button></a>` : ""}
+          <button data-a="edit">수정</button>
+          <button data-a="del" class="del">삭제</button>
+        </div>
+      </div>`).join("");
+    renderChecks();
+  }
+  $("list").onclick = (ev) => {
+    const b = ev.target.closest("button[data-a]"); if (!b) return;
+    const id = b.closest(".ev").dataset.id;
+    const e = state.events.find((x) => x.id === id);
+    if (b.dataset.a === "sel") { state.sel = id; resetAlerts(); }
+    if (b.dataset.a === "del") { state.events = state.events.filter((x) => x.id !== id); if (state.sel === id) state.sel = null; }
+    if (b.dataset.a === "edit") {
+      editing = id;
+      $("f_name").value = e.name; $("f_kind").value = e.kind; $("f_time").value = e.time;
+      $("f_url").value = e.url || ""; $("f_pref").value = e.pref || "";
+      $("formTitle").textContent = "✏️ 일정 수정"; $("cancelEdit").hidden = false;
+      $("form").scrollIntoView({ behavior: "smooth" });
+    }
+    save(); render();
+  };
+  function clearForm() { editing = null; $("form").reset(); $("formTitle").textContent = "➕ 일정 추가"; $("cancelEdit").hidden = true; }
+  $("cancelEdit").onclick = clearForm;
+  $("form").onsubmit = (ev) => {
+    ev.preventDefault();
+    let t = $("f_time").value; if (t.length === 16) t += ":00";
+    const data = { name: $("f_name").value.trim(), kind: $("f_kind").value, time: t, url: $("f_url").value.trim(), pref: $("f_pref").value.trim() };
+    if (editing) Object.assign(state.events.find((x) => x.id === editing), data);
+    else { const id = "e" + Date.now(); state.events.push(Object.assign({ id, checks: {} }, data)); state.sel = id; }
+    resetAlerts(); clearForm(); save(); render();
+  };
+
+  // ---- 체크리스트 ----
+  function renderChecks() {
+    const e = state.events.find((x) => x.id === state.sel);
+    $("chkCard").hidden = !e; if (!e) return;
+    e.checks = e.checks || {};
+    $("chkFor").textContent = "· " + e.name;
+    $("chk").innerHTML = (CHECKS[e.kind] || CHECKS["기타"]).map((c, i) =>
+      `<label><input type="checkbox" data-i="${i}" ${e.checks[i] ? "checked" : ""}> ${esc(c)}</label>`).join("");
+  }
+  $("chk").onchange = (ev) => {
+    const e = state.events.find((x) => x.id === state.sel);
+    if (e) { e.checks[ev.target.dataset.i] = ev.target.checked; save(); }
+  };
+
+  // ---- 소리 알림 ----
+  let ctx = null, armed = false, fired = new Set();
+  function beep(freq = 880, dur = 0.12, vol = 0.3) {
+    if (!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + dur);
+    try { navigator.vibrate && navigator.vibrate(dur * 1000); } catch (e) {}
+  }
+  function ensureAudio() {
+    try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); return true; }
+    catch (e) { return false; }
+  }
+  function resetAlerts() { fired = new Set(); }
+  $("armBtn").onclick = () => {
+    if (!armed) { if (!ensureAudio()) { $("armBtn").textContent = "이 기기에서 소리 불가"; return; } armed = true; beep(660); }
+    else armed = false;
+    $("armBtn").textContent = armed ? "🔔 알림 켜짐 (끄기)" : "🔔 알림 켜기";
+  };
+  $("testBtn").onclick = () => { if (ensureAudio()) { beep(880); setTimeout(() => beep(1320, 0.4), 250); } };
+
+  // ---- 시계 루프 ----
+  function tick() {
+    const n = now(), d = new Date(n);
+    $("clock").innerHTML = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}<span class="ms">.${pad(d.getMilliseconds(), 3)}</span>`;
+
+    const e = state.events.find((x) => x.id === state.sel);
+    const cEl = $("count");
+    if (!e) { cEl.textContent = "일정을 선택하세요"; cEl.className = "count"; $("target").textContent = ""; }
+    else {
+      const target = new Date(e.time).getTime() - state.lead * 1000;
+      const left = target - n;
+      $("target").textContent = e.name + " · " + e.time.replace("T", " ") + " 오픈";
+      if (left > 0) {
+        const s = left / 1000, h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+        cEl.textContent = (h ? h + "시간 " : "") + (h || m ? m + "분 " : "") + sec.toFixed(left < 60000 ? 1 : 0) + "초 남음";
+        cEl.className = "count" + (left < 10000 ? " hot" : "");
+      } else if (left > -60000) { cEl.textContent = "지금 누르세요! 🚀"; cEl.className = "count go"; }
+      else { cEl.textContent = "오픈 시각이 지났습니다"; cEl.className = "count"; }
+
+      if (armed) {
+        const sLeft = Math.ceil(left / 1000);
+        const marks = { 60: [660, 0.15], 30: [660, 0.15], 10: [880, 0.15], 5: [880, 0.1], 4: [880, 0.1], 3: [880, 0.1], 2: [880, 0.1], 1: [880, 0.1] };
+        if (marks[sLeft] && !fired.has(sLeft)) { fired.add(sLeft); beep(...marks[sLeft]); }
+        if (left <= 0 && left > -2000 && !fired.has(0)) { fired.add(0); beep(1320, 0.6, 0.4); }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
