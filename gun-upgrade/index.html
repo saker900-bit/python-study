@@ -5,53 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>총 강화하기</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
     font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    background: #12141a; color: #e8e8e8; min-height: 100vh;
-    display: flex; justify-content: center; padding: 12px;
+    background: #0d0f14; color: #e8e8e8; min-height: 100vh;
+    display: flex; justify-content: center; padding: 12px; user-select: none;
   }
   .wrap { width: 100%; max-width: 480px; }
-  h1 { text-align: center; font-size: 22px; margin: 6px 0 12px; letter-spacing: 2px; }
+  .top { display: flex; align-items: center; justify-content: center; position: relative; margin: 4px 0 12px; }
+  h1 { font-size: 22px; letter-spacing: 2px; }
+  .mute { position: absolute; right: 0; background: #1d2029; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
   .bar {
     display: flex; justify-content: space-between; gap: 8px;
-    background: #1d2029; border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    background: #1a1d25; border-radius: 10px; padding: 10px 12px; font-size: 14px;
   }
   .bar b { color: #ffd54a; }
+
   .stage {
-    margin-top: 12px; background: radial-gradient(circle at 50% 45%, #2a2f3d, #171a22 70%);
-    border-radius: 14px; padding: 18px 10px 14px; text-align: center; position: relative; overflow: hidden;
+    margin-top: 12px; background: radial-gradient(circle at 50% 50%, #252a37, #12141b 72%);
+    border-radius: 14px; padding: 16px 6px 12px; text-align: center; position: relative; overflow: hidden;
   }
-  .lvl { font-size: 40px; font-weight: 800; }
-  .gname { font-size: 18px; margin-top: 2px; font-weight: 700; }
-  .gun-box { height: 150px; display: flex; align-items: center; justify-content: center; margin: 8px 0; }
-  .gun-box svg { width: 92%; max-width: 360px; transition: filter .3s; }
-  .shake { animation: shake .5s; }
-  @keyframes shake {
-    0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px) rotate(-2deg); }
-    40% { transform: translateX(8px) rotate(2deg); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
+  .stage.quake { animation: quake .45s; }
+  @keyframes quake {
+    0%,100% { transform: translate(0,0); } 15% { transform: translate(-10px,4px); } 30% { transform: translate(9px,-5px); }
+    45% { transform: translate(-7px,-3px); } 60% { transform: translate(6px,4px); } 80% { transform: translate(-3px,1px); }
   }
-  .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
-  .flash.go { animation: flash .7s; }
-  @keyframes flash { 0% { opacity: .85; } 100% { opacity: 0; } }
-  .msg { min-height: 24px; font-size: 16px; font-weight: 700; margin-top: 4px; }
+  .lvl { font-size: 42px; font-weight: 900; position: relative; z-index: 2; text-shadow: 0 0 14px currentColor; }
+  .lvl.pop { animation: pop .3s; }
+  @keyframes pop { 0% { transform: scale(1.6); } 100% { transform: scale(1); } }
+  .gname { font-size: 18px; margin-top: 2px; font-weight: 800; position: relative; z-index: 2; }
+
+  .gun-box { height: 190px; position: relative; display: flex; align-items: center; justify-content: center; }
+  .aura {
+    position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; border-radius: 50%;
+    transform: translate(-50%,-50%); pointer-events: none;
+  }
+  .rays {
+    position: absolute; left: 50%; top: 50%; width: 520px; height: 520px; pointer-events: none;
+    -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 62%); mask-image: radial-gradient(circle, #000 10%, transparent 62%);
+    animation: spin 16s linear infinite;
+  }
+  @keyframes spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .gun-wrap { position: relative; width: 100%; z-index: 1; }
+  .gun-wrap.recoil { animation: recoil .25s ease-out; }
+  @keyframes recoil { 0% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-18px) rotate(-5deg); } 100% { transform: translateX(0) rotate(0); } }
+  .gun-wrap.shake { animation: shake .3s; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 50% { transform: translateX(7px); } 75% { transform: translateX(-4px); } }
+  .gun-wrap.appear { animation: appear .35s ease-out; }
+  @keyframes appear { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+  .float { position: relative; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .float svg { width: 100%; display: block; }
+  .sheen {
+    position: absolute; left: 0; top: 0; filter: brightness(0) invert(1); opacity: .5; pointer-events: none;
+    -webkit-mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
+    mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
+    -webkit-mask-size: 250% 100%; mask-size: 250% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    animation: sheen 3.2s ease-in-out infinite;
+  }
+  @keyframes sheen {
+    0% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+    55%,100% { -webkit-mask-position: 0% 0; mask-position: 0% 0; }
+  }
+  .wreck { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 3; pointer-events: none; animation: wreck .6s ease-out forwards; }
+  .wreck svg { width: 100%; }
+  @keyframes wreck {
+    0% { transform: translateY(-50%) scale(1); filter: brightness(1); opacity: 1; }
+    30% { transform: translateY(-50%) scale(1.15) rotate(-4deg); filter: brightness(3) sepia(1) hue-rotate(-30deg) saturate(5); opacity: 1; }
+    100% { transform: translateY(-40%) scale(1.5) rotate(10deg); filter: brightness(4); opacity: 0; }
+  }
+  .boom {
+    position: absolute; left: 50%; top: 50%; width: 60px; height: 60px; border-radius: 50%; z-index: 4; pointer-events: none;
+    background: radial-gradient(circle, #fff 0%, #ffd23a 25%, #ff5a1a 50%, rgba(255,40,0,0) 70%);
+    transform: translate(-50%,-50%) scale(0); animation: boom .6s ease-out forwards;
+  }
+  @keyframes boom { 0% { transform: translate(-50%,-50%) scale(0); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(9); opacity: 0; } }
+  .spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; pointer-events: none; z-index: 2; animation: rise linear infinite; }
+  @keyframes rise { 0% { transform: translateY(0) scale(1); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-150px) scale(.2); opacity: 0; } }
+  .burst { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 50%; z-index: 3; pointer-events: none; animation: burst .55s ease-out forwards; }
+  @keyframes burst { from { transform: translate(-50%,-50%); opacity: 1; } to { transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))); opacity: 0; } }
+
+  .pulse { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+  .zap { animation: zap .18s steps(2) infinite; }
+  @keyframes zap { 0% { opacity: 1; } 50% { opacity: .2; } }
+  .rgb { animation: rgb 2.5s linear infinite; }
+  @keyframes rgb { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+  .ring { transform-box: fill-box; transform-origin: center; animation: ringspin 4s linear infinite; }
+  @keyframes ringspin { to { transform: rotate(360deg); } }
+
+  .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 5; }
+  .flash.go { animation: flash .45s; }
+  @keyframes flash { 0% { opacity: .7; } 100% { opacity: 0; } }
+  .msg { min-height: 24px; font-size: 16px; font-weight: 800; margin-top: 4px; position: relative; z-index: 2; }
+
   .info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; font-size: 13px; }
-  .info div { background: #1d2029; border-radius: 8px; padding: 8px; text-align: center; }
+  .info div { background: #1a1d25; border-radius: 8px; padding: 8px; text-align: center; }
   .info span { display: block; font-size: 16px; font-weight: 700; margin-top: 2px; }
   .btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 12px; }
   button {
     border: 0; border-radius: 10px; padding: 14px 8px; font-size: 16px; font-weight: 800;
-    color: #fff; cursor: pointer; font-family: inherit;
+    color: #fff; cursor: pointer; font-family: inherit; touch-action: manipulation;
   }
   button:disabled { opacity: .45; cursor: default; }
-  .up { background: linear-gradient(#ff7a2f, #e04a10); font-size: 20px; }
-  .sell { background: linear-gradient(#3aa76d, #23794c); }
-  .row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
-  .row button { flex: 1; background: #2e3442; font-size: 14px; padding: 10px; }
-  .chk { display: flex; align-items: center; gap: 6px; font-size: 14px; background: #1d2029; padding: 10px; border-radius: 10px; flex: 1.3; }
+  button:active:not(:disabled) { transform: scale(.97); }
+  .up { background: linear-gradient(#ff7a2f, #d9400c); font-size: 20px; box-shadow: 0 4px 0 #8a2706; }
+  .sell { background: linear-gradient(#3aa76d, #23794c); box-shadow: 0 4px 0 #134a2d; }
+  .row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .row button { flex: 1; background: #2a303d; font-size: 14px; padding: 10px; }
+  .chk { display: flex; align-items: center; gap: 6px; font-size: 14px; background: #1a1d25; padding: 10px; border-radius: 10px; flex: 1.3; }
   .chk input { width: 18px; height: 18px; }
-  .log { margin-top: 12px; background: #1d2029; border-radius: 10px; padding: 10px; font-size: 13px; max-height: 170px; overflow-y: auto; }
-  .log p { padding: 3px 0; border-bottom: 1px solid #262a35; }
+  .log { margin-top: 12px; background: #1a1d25; border-radius: 10px; padding: 10px; font-size: 13px; max-height: 170px; overflow-y: auto; }
+  .log p { padding: 3px 0; border-bottom: 1px solid #252935; }
   .ok { color: #6be38f; } .bad { color: #ff6b6b; } .keep { color: #aab; } .gold { color: #ffd54a; }
   .foot { text-align: center; font-size: 12px; color: #778; margin: 12px 0; }
   .foot a { color: #889; cursor: pointer; text-decoration: underline; }
@@ -59,7 +124,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🔫 총 강화하기</h1>
+  <div class="top">
+    <h1>🔫 총 강화하기</h1>
+    <button class="mute" id="mute">🔊</button>
+  </div>
   <div class="bar">
     <div>💰 <b id="gold">0</b> G</div>
     <div>🛡️ 보험 <b id="prot">0</b>개</div>
@@ -70,7 +138,12 @@
     <div class="flash" id="flash"></div>
     <div class="lvl" id="lvl">+0</div>
     <div class="gname" id="gname"></div>
-    <div class="gun-box"><div id="gun"></div></div>
+    <div class="gun-box" id="gunBox">
+      <div class="aura" id="aura"></div>
+      <div class="rays" id="rays"></div>
+      <div class="gun-wrap" id="gunWrap"><div class="float" id="gun"></div></div>
+      <div id="sparks"></div>
+    </div>
     <div class="msg" id="msg">강화 버튼을 눌러보세요!</div>
   </div>
 
@@ -97,106 +170,342 @@
 <script>
 const MAX = 30;
 
-// 단계별 총 이름
 const NAMES = [
-  "녹슨 새총", "나무 고무줄총", "장난감 물총", "BB탄 권총", "낡은 리볼버",
-  "경찰용 권총", "개조 권총", "더블 배럴 산탄총", "펌프 액션 샷건", "기관단총",
-  "돌격 소총", "정밀 카빈", "전투 소총", "저격 소총", "대물 저격총",
-  "경기관총", "미니건", "레일건 시제품", "플라즈마 라이플", "전자기 레일건",
-  "양자 저격총", "중력 붕괴포", "블랙홀 캐논", "항성 파괴포", "은하 절단기",
-  "차원 관통총", "시간 역행 리볼버", "운명 결정자", "창조주의 방아쇠", "무한의 총구",
-  "★ 전설의 총 ★"
+  "녹슨 권총", "낡은 리볼버", "경찰용 권총", "개조 권총", "황야의 매그넘",
+  "더블 배럴 산탄총", "펌프 액션 샷건", "전술 샷건", "자동 샷건", "드래곤 브레스",
+  "돌격 소총", "정밀 카빈", "전투 소총", "특수부대 소총", "황금 독수리",
+  "저격 소총", "대물 저격총", "유령 저격총", "극지 저격총", "절대영도",
+  "플라즈마 라이플", "이온 캐논", "중력 붕괴포", "블랙홀 캐논", "공허의 집행자",
+  "항성 파괴포", "은하 절단기", "차원 관통총", "시간 역행포", "창조주의 방아쇠",
+  "★ 무한의 총구 ★"
 ];
 
-// 성공 확률(%) — 인덱스 = 현재 단계
 const RATE = [100,95,90,85,80,75,70,65,60,55, 50,47,44,41,38,35,32,29,26,23, 20,17,15,13,11,9,7,6,5,4];
-// 실패 시 파괴 확률(%) — 실패했을 때 중 몇 %가 파괴인지
 const DESTROY = (l) => l < 5 ? 0 : Math.min(85, (l - 4) * 4 + 10);
 const COST  = (l) => Math.floor(100 * Math.pow(1.35, l) / 10) * 10;
 const PRICE = (l) => l === 0 ? 0 : Math.floor(60 * Math.pow(1.62, l) / 10) * 10;
 const PROT_PRICE = (l) => Math.max(5000, Math.floor(PRICE(l) * 0.25 / 100) * 100);
 
-const DEFAULT = { gold: 20000, level: 0, prot: 0, best: 0, tries: 0, broke: 0 };
+const DEFAULT = { gold: 20000, level: 0, prot: 0, best: 0, tries: 0, broke: 0, mute: false };
 let S = load();
-let busy = false;
 
 function load() {
   try { return Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem("gunUpgrade") || "{}")); }
   catch { return { ...DEFAULT }; }
 }
 function save() { try { localStorage.setItem("gunUpgrade", JSON.stringify(S)); } catch {} }
-
-// 팝업 대신 "한 번 더 누르면 실행" 확인
-let armed = null, armTimer = null;
-function confirmTap(btn, label) {
-  if (armed === btn) { disarm(); return true; }
-  disarm();
-  armed = btn; btn.dataset.orig = btn.textContent; btn.textContent = label;
-  armTimer = setTimeout(() => { disarm(); render(); }, 2500);
-  return false;
-}
-function disarm() {
-  if (armed) { armed.textContent = armed.dataset.orig; armed = null; }
-  clearTimeout(armTimer);
-}
 const fmt = (n) => n.toLocaleString("ko-KR");
 const $ = (id) => document.getElementById(id);
 
-// 단계별 색상
-function tierColor(l) {
-  if (l >= 30) return ["#ffef7a", "#ff4df0"];
-  if (l >= 25) return ["#ff4d6d", "#ffb84d"];
-  if (l >= 20) return ["#c070ff", "#ff70d0"];
-  if (l >= 15) return ["#4dd2ff", "#a07dff"];
-  if (l >= 10) return ["#ffcc33", "#ff8c1a"];
-  if (l >= 5)  return ["#c8d0dc", "#7d8796"];
-  return ["#8a6d4e", "#5a4632"];
+/* ================= 사운드 (Web Audio로 직접 합성) ================= */
+let AC = null, MASTER = null;
+function ac() {
+  if (!AC) {
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      MASTER = AC.createGain(); MASTER.gain.value = 0.7; MASTER.connect(AC.destination);
+    } catch { return null; }
+  }
+  if (AC.state === "suspended") AC.resume();
+  return AC;
+}
+function tone(f, d, o = {}) {
+  const a = ac(); if (!a || S.mute) return;
+  const t = a.currentTime + (o.at || 0);
+  const osc = a.createOscillator(), g = a.createGain();
+  osc.type = o.type || "sine";
+  osc.frequency.setValueAtTime(f, t);
+  if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(o.vol || 0.2, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  osc.connect(g).connect(MASTER);
+  osc.start(t); osc.stop(t + d + 0.05);
+}
+function noise(d, o = {}) {
+  const a = ac(); if (!a || S.mute) return;
+  const t = a.currentTime + (o.at || 0);
+  const buf = a.createBuffer(1, Math.floor(a.sampleRate * d), a.sampleRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource(); src.buffer = buf;
+  const flt = a.createBiquadFilter(); flt.type = o.type || "lowpass"; flt.frequency.value = o.freq || 1000; flt.Q.value = o.q || 1;
+  const g = a.createGain();
+  g.gain.setValueAtTime(o.vol || 0.3, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  src.connect(flt).connect(g).connect(MASTER);
+  src.start(t);
+}
+const SFX = {
+  hit() { // 망치로 내려치는 금속음
+    noise(0.07, { vol: 0.5, freq: 3200, type: "bandpass", q: 3 });
+    tone(1800, 0.12, { type: "square", vol: 0.05, to: 900 });
+    tone(150, 0.09, { type: "triangle", vol: 0.3, to: 50 });
+  },
+  success(l) {
+    const base = 523 * Math.pow(2, Math.min(l, 24) / 24);
+    let notes = [0, 4, 7, 12];
+    if (l >= 10) notes = [0, 4, 7, 12, 16];
+    if (l >= 20) notes = [0, 4, 7, 12, 16, 19, 24];
+    notes.forEach((n, i) => tone(base * Math.pow(2, n / 12), 0.25, { type: "triangle", vol: 0.16, at: 0.03 + i * 0.045 }));
+    if (l >= 10) tone(base * 4, 0.6, { vol: 0.05, at: 0.05 + notes.length * 0.045 });
+    if (l >= MAX) [0, 4, 7, 12].forEach((n, i) => tone(base * Math.pow(2, n / 12) / 2, 1.2, { type: "sawtooth", vol: 0.06, at: 0.4 + i * 0.12 }));
+  },
+  fail() {
+    tone(330, 0.35, { type: "sawtooth", vol: 0.07, to: 110, at: 0.03 });
+    tone(220, 0.35, { type: "square", vol: 0.04, to: 90, at: 0.03 });
+  },
+  boom() {
+    noise(1.1, { vol: 0.9, freq: 700 });
+    noise(0.25, { vol: 0.4, freq: 3000, type: "highpass" });
+    tone(110, 0.8, { vol: 0.6, to: 28 });
+  },
+  shield() {
+    tone(1046, 0.4, { vol: 0.12, at: 0.03 });
+    tone(1568, 0.5, { vol: 0.1, at: 0.08 });
+    tone(2093, 0.6, { vol: 0.06, at: 0.13 });
+  },
+  coin() {
+    tone(988, 0.09, { type: "square", vol: 0.07 });
+    tone(1319, 0.35, { type: "square", vol: 0.07, at: 0.08 });
+  },
+};
+
+/* ================= 총 그래픽 ================= */
+// 5단계마다 재질/색 변경
+const PAL = [
+  { hi: "#c9c2b6", mid: "#6e665c", lo: "#2b2723", g1: "#b0743f", g2: "#5a341a", acc: "#e0b060", glow: null },          // 0~4  고철+나무
+  { hi: "#eef3f8", mid: "#6f7a89", lo: "#1d2229", g1: "#3a3f48", g2: "#121418", acc: "#7fd0ff", glow: null },          // 5~9  건메탈
+  { hi: "#fff6c4", mid: "#d6a42a", lo: "#5c3d06", g1: "#2f2318", g2: "#120c06", acc: "#fff3a0", glow: "#ffc93a" },    // 10~14 황금
+  { hi: "#f0fdff", mid: "#62bfdc", lo: "#0b3346", g1: "#1c2c39", g2: "#081118", acc: "#4df3ff", glow: "#3fd0ff" },    // 15~19 절대영도
+  { hi: "#f5e2ff", mid: "#8b43d6", lo: "#230844", g1: "#251536", g2: "#0d0617", acc: "#ff5cf0", glow: "#c070ff" },    // 20~24 플라즈마
+  { hi: "#ffd9cc", mid: "#c92430", lo: "#330407", g1: "#2a0d0d", g2: "#100303", acc: "#ffb02e", glow: "#ff4d3a" },    // 25~29 지옥불
+  { hi: "#ffffff", mid: "#ffd44a", lo: "#7a4300", g1: "#1a1030", g2: "#07040f", acc: "#7affff", glow: "#fff07a" },    // 30   전설
+];
+const OL = 'stroke="#06070b" stroke-width="2.2" stroke-linejoin="round"';
+const HL = (d) => `<path d="${d}" stroke="#fff" stroke-opacity=".45" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+const range = (a, b, s) => { const r = []; for (let x = a; x <= b; x += s) r.push(x); return r; };
+
+// 각 모델: svg + 부착물 위치(rail 위/under 아래/muzzle 총구/stripe 각인)
+const MODELS = [
+  // 권총
+  () => ({ svg: `
+    <path d="M126 58 L112 50 L114 63 L126 68 Z" fill="url(#gm)" ${OL}/>
+    <path d="M146 90 L204 90 L190 152 Q188 160 180 160 H144 Q134 160 136 150 Z" fill="url(#gg)" ${OL}/>
+    <path d="M150 98 L198 98 L186 150 H146 Z" fill="url(#knurl)"/>
+    <path d="M204 94 Q204 124 234 122 Q246 120 246 94" fill="none" stroke="#06070b" stroke-width="8"/>
+    <path d="M204 94 Q204 124 234 122 Q246 120 246 94" fill="none" stroke="url(#gm)" stroke-width="4"/>
+    <path d="M222 96 Q216 108 226 116" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M136 80 H316 V96 H136 Z" fill="url(#gm)" ${OL}/>
+    <path d="M132 48 H318 Q326 48 326 56 V82 H132 Q124 82 124 74 V56 Q124 48 132 48 Z" fill="url(#gm)" ${OL}/>
+    ${range(138, 168, 6).map(x => `<line x1="${x}" y1="53" x2="${x}" y2="77" stroke="#000" stroke-opacity=".4" stroke-width="2"/>`).join("")}
+    <rect x="232" y="54" width="44" height="11" rx="2" fill="#07080c" opacity=".85"/>
+    ${HL("M136 52 H316")}
+    <rect x="140" y="41" width="12" height="8" fill="#14161b" ${OL}/>
+    <rect x="306" y="42" width="7" height="7" fill="#14161b"/>
+    <rect x="326" y="58" width="6" height="16" rx="2" fill="#0d0f13"/>`,
+    a: { rail: [232, 48], under: [282, 96], muzzle: [332, 66], stripe: "M184 72 H312" } }),
+  // 샷건
+  () => ({ svg: `
+    <path d="M14 72 Q16 60 32 60 L122 58 L126 98 L52 120 Q22 128 14 110 Z" fill="url(#gg)" ${OL}/>
+    <path d="M14 74 L16 112" stroke="#111" stroke-width="8" stroke-linecap="round"/>
+    ${HL("M34 64 L118 62")}
+    <rect x="120" y="54" width="96" height="46" rx="5" fill="url(#gm)" ${OL}/>
+    <rect x="150" y="66" width="50" height="12" rx="2" fill="#07080c" opacity=".85"/>
+    <path d="M150 100 Q150 124 176 122 Q192 120 192 100" fill="none" stroke="#06070b" stroke-width="8"/>
+    <path d="M150 100 Q150 124 176 122 Q192 120 192 100" fill="none" stroke="url(#gm)" stroke-width="4"/>
+    <path d="M168 102 Q162 112 170 118" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+    <rect x="212" y="58" width="202" height="15" rx="3" fill="url(#gm)" ${OL}/>
+    ${HL("M216 61 H408")}
+    <rect x="212" y="75" width="172" height="12" rx="3" fill="url(#gm)" ${OL}/>
+    <rect x="240" y="70" width="86" height="28" rx="7" fill="url(#gg)" ${OL}/>
+    ${range(250, 316, 8).map(x => `<line x1="${x}" y1="74" x2="${x}" y2="94" stroke="#000" stroke-opacity=".45" stroke-width="2.5"/>`).join("")}
+    ${HL("M126 58 H210")}
+    <circle cx="407" cy="55" r="3.5" fill="#e8e8e8" ${OL}/>`,
+    a: { rail: [168, 54], under: [362, 88], muzzle: [414, 66], stripe: "M126 92 H208" } }),
+  // 돌격소총
+  () => ({ svg: `
+    <path d="M14 56 H42 L98 62 V92 L42 98 H14 Q8 98 8 92 V62 Q8 56 14 56 Z" fill="url(#gg)" ${OL}/>
+    <path d="M40 70 L82 72 V82 L40 85 Z" fill="#07080c" opacity=".9"/>
+    <rect x="96" y="66" width="22" height="16" fill="url(#gm)" ${OL}/>
+    <path d="M132 98 H158 L148 140 Q146 145 140 145 H124 Z" fill="url(#gg)" ${OL}/>
+    <path d="M136 104 H154 L146 138 H130 Z" fill="url(#knurl)"/>
+    <path d="M176 96 H206 L218 142 Q202 150 186 148 Z" fill="url(#gm)" ${OL}/>
+    ${[110, 120, 130].map(y => `<line x1="${180 + (y - 96) * 0.15}" y1="${y}" x2="${206 + (y - 96) * 0.25}" y2="${y}" stroke="#000" stroke-opacity=".35" stroke-width="2"/>`).join("")}
+    <path d="M156 100 Q158 116 178 114" fill="none" stroke="#06070b" stroke-width="7"/>
+    <path d="M156 100 Q158 116 178 114" fill="none" stroke="url(#gm)" stroke-width="3"/>
+    <path d="M114 74 H238 V98 H212 L202 104 H130 L114 98 Z" fill="url(#gm)" ${OL}/>
+    <rect x="112" y="52" width="130" height="24" rx="3" fill="url(#gm)" ${OL}/>
+    <rect x="172" y="59" width="36" height="9" rx="1" fill="#07080c" opacity=".85"/>
+    <rect x="104" y="55" width="10" height="9" fill="#14161b" ${OL}/>
+    <rect x="112" y="45" width="232" height="8" fill="#16181e" ${OL}/>
+    ${range(118, 338, 8).map(x => `<rect x="${x}" y="45" width="4" height="3" fill="#2c303a"/>`).join("")}
+    <path d="M240 54 H346 Q352 54 352 60 V84 Q352 90 346 90 H240 Z" fill="url(#gg)" ${OL}/>
+    ${range(256, 330, 18).map(x => `<rect x="${x}" y="63" width="10" height="16" rx="5" fill="#07080c" opacity=".85"/>`).join("")}
+    <path d="M330 45 L334 33 H342 L346 45" fill="#16181e" ${OL}/>
+    <rect x="352" y="64" width="50" height="10" fill="url(#gm)" ${OL}/>
+    <rect x="400" y="59" width="18" height="20" rx="2" fill="url(#gm)" ${OL}/>
+    <line x1="406" y1="62" x2="406" y2="76" stroke="#000" stroke-width="2"/><line x1="412" y1="62" x2="412" y2="76" stroke="#000" stroke-width="2"/>
+    ${HL("M116 56 H240")}`,
+    a: { rail: [204, 45], under: [300, 90], muzzle: [418, 69], stripe: "M120 70 H236" } }),
+  // 저격총
+  () => ({ svg: `
+    <path d="M10 62 Q10 56 18 56 L70 58 Q96 52 120 60 L122 92 L92 94 Q72 98 62 112 Q50 126 26 124 H16 Q10 124 10 118 Z" fill="url(#gg)" ${OL}/>
+    <path d="M74 76 Q88 69 102 76 Q98 89 82 89 Q72 87 74 76 Z" fill="#07080c"/>
+    <path d="M10 60 L10 122" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+    <path d="M128 88 H152 L144 128 Q142 134 136 134 H122 Z" fill="url(#gg)" ${OL}/>
+    <path d="M152 90 Q154 108 172 106 Q180 104 180 90" fill="none" stroke="#06070b" stroke-width="7"/>
+    <path d="M152 90 Q154 108 172 106 Q180 104 180 90" fill="none" stroke="url(#gm)" stroke-width="3"/>
+    <rect x="186" y="86" width="22" height="20" rx="2" fill="url(#gm)" ${OL}/>
+    <path d="M226 60 L410 63 V72 L226 77 Z" fill="url(#gm)" ${OL}/>
+    ${HL("M230 63 L404 65")}
+    <rect x="118" y="58" width="110" height="30" rx="4" fill="url(#gm)" ${OL}/>
+    ${HL("M122 62 H224")}
+    <path d="M216 86 L224 102" stroke="#14161b" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="226" cy="105" r="6" fill="url(#gm)" ${OL}/>
+    <rect x="404" y="58" width="20" height="19" rx="2" fill="url(#gm)" ${OL}/>
+    ${range(409, 419, 5).map(x => `<line x1="${x}" y1="61" x2="${x}" y2="74" stroke="#000" stroke-width="2"/>`).join("")}
+    <path d="M332 74 L312 132 M338 74 L356 132" stroke="#16181e" stroke-width="5" stroke-linecap="round"/>
+    <rect x="140" y="44" width="12" height="16" fill="#16181e" ${OL}/><rect x="200" y="44" width="12" height="16" fill="#16181e" ${OL}/>
+    <path d="M112 26 Q100 26 98 38 Q100 50 112 50 Z" fill="#14161b" ${OL}/>
+    <rect x="110" y="30" width="146" height="16" rx="8" fill="#1a1d24" ${OL}/>
+    <path d="M250 24 H278 Q286 24 286 38 Q286 52 278 52 H250 Z" fill="#14161b" ${OL}/>
+    <ellipse cx="286" cy="38" rx="3.5" ry="12" fill="url(#lens)"/>
+    <rect x="170" y="21" width="16" height="10" rx="2" fill="url(#gm)" ${OL}/>
+    <path d="M114 33 H250" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>`,
+    a: { rail: null, under: [374, 72], muzzle: [424, 67], stripe: "M124 76 H222" } }),
+  // 플라즈마 라이플
+  () => ({ svg: `
+    <path d="M42 58 L16 52 Q6 52 6 62 V96 Q6 106 16 104 L42 96 Z" fill="url(#gg)" ${OL}/>
+    <path d="M120 46 L142 26 H204 L214 46 Z" fill="url(#gm)" ${OL}/>
+    <path d="M40 66 Q40 46 66 46 H270 Q300 46 318 60 H384 Q398 60 398 72 Q398 84 384 84 H318 Q300 100 270 100 H184 L166 134 Q160 144 148 141 L132 137 Q124 135 128 126 L140 100 H66 Q40 100 40 80 Z" fill="url(#gm)" ${OL}/>
+    ${HL("M66 50 H270 Q296 50 314 62")}
+    <rect x="76" y="62" width="182" height="22" rx="11" fill="#05060a" ${OL}/>
+    <rect x="82" y="67" width="170" height="12" rx="6" fill="url(#ga)" class="pulse en" filter="url(#glow)"/>
+    ${range(326, 378, 13).map(x => `<rect x="${x}" y="54" width="7" height="36" rx="3" fill="url(#gm)" ${OL}/>`).join("")}
+    <rect x="318" y="69" width="80" height="6" fill="url(#ga)" class="pulse en" filter="url(#glow)"/>
+    <circle cx="400" cy="72" r="8" fill="url(#gcore)" class="pulse en" filter="url(#glow)"/>
+    ${[150, 166, 182].map(x => `<line x1="${x}" y1="33" x2="${x + 6}" y2="42" stroke="#000" stroke-opacity=".4" stroke-width="2"/>`).join("")}`,
+    a: { rail: [172, 26], under: [240, 100], muzzle: null, stripe: "M66 94 H262" } }),
+  // 레일건
+  () => ({ svg: `
+    <path d="M60 40 L82 18 H150 L162 40 Z" fill="url(#gm)" ${OL}/>
+    <path d="M20 60 Q20 40 44 40 H182 L202 50 V96 L182 106 H122 L106 138 Q100 146 90 144 L74 140 Q66 138 70 128 L82 106 H44 Q20 106 20 86 Z" fill="url(#gm)" ${OL}/>
+    ${HL("M44 44 H180")}
+    ${[232, 302, 372].map(x => `<rect x="${x}" y="40" width="9" height="66" rx="2" fill="url(#gm)" ${OL}/>`).join("")}
+    <rect x="200" y="58" width="222" height="30" fill="url(#gbeam)" class="pulse en" filter="url(#glow)"/>
+    <path d="M200 73 L230 63 L258 82 L288 62 L318 84 L348 63 L378 81 L420 73" fill="none" stroke="#fff" stroke-width="2" class="zap"/>
+    <path d="M196 40 H406 L424 49 L406 57 H196 Z" fill="url(#gm)" ${OL}/>
+    <path d="M196 89 H406 L424 97 L406 106 H196 Z" fill="url(#gm)" ${OL}/>
+    ${HL("M200 43 H404")}
+    <circle cx="120" cy="73" r="22" fill="#05060a" ${OL}/>
+    <circle cx="120" cy="73" r="15" fill="url(#gcore)" class="pulse en" filter="url(#glow)"/>
+    <circle cx="120" cy="73" r="27" fill="none" stroke="url(#ga)" stroke-width="2.5" stroke-dasharray="10 7" class="ring en"/>`,
+    a: { rail: [120, 18], under: [150, 106], muzzle: null, stripe: "M36 98 H176" } }),
+];
+
+function attachments(a, s, energy) {
+  let out = "";
+  if (s >= 1 && a.under) { // 레이저 사이트
+    const [x, y] = a.under;
+    out += `<g><rect x="${x - 20}" y="${y}" width="40" height="12" rx="3" fill="#1a1d24" ${OL}/>
+      <rect x="${x + 20}" y="${y + 5}" width="${460 - x}" height="2" fill="url(#laser)"/>
+      <circle cx="${x + 20}" cy="${y + 6}" r="3" fill="#ff3a3a" filter="url(#glow)"/></g>`;
+  }
+  if (s >= 2 && a.muzzle) { // 소음기 / 컴펜세이터
+    const [x, y] = a.muzzle;
+    out += `<rect x="${x}" y="${y - 10}" width="34" height="20" rx="4" fill="url(#gm)" ${OL}/>` +
+      range(x + 7, x + 27, 7).map(v => `<line x1="${v}" y1="${y - 7}" x2="${v}" y2="${y + 7}" stroke="#000" stroke-opacity=".4" stroke-width="2"/>`).join("") +
+      HL(`M${x + 3} ${y - 6} H${x + 31}`);
+  }
+  if (s >= 2 && energy) { // 에너지 총은 총구에 에너지 구체
+    out += `<circle cx="428" cy="73" r="${8 + s * 2}" fill="url(#gcore)" opacity=".85" class="pulse en" filter="url(#glow)"/>`;
+  }
+  if (s >= 3 && a.rail) { // 조준경
+    const [x, y] = a.rail;
+    out += `<g><rect x="${x - 16}" y="${y - 6}" width="8" height="7" fill="#14161b"/><rect x="${x + 8}" y="${y - 6}" width="8" height="7" fill="#14161b"/>
+      <rect x="${x - 34}" y="${y - 22}" width="68" height="16" rx="8" fill="#1a1d24" ${OL}/>
+      <circle cx="${x + 34}" cy="${y - 14}" r="7" fill="url(#lens)" ${OL}/>
+      <path d="M${x - 28} ${y - 19} H${x + 26}" stroke="#fff" stroke-opacity=".3" stroke-width="2"/></g>`;
+  }
+  if (s >= 4) { // 빛나는 각인
+    out += `<path d="${a.stripe}" stroke="url(#ga)" stroke-width="3" stroke-linecap="round" fill="none" class="pulse en" filter="url(#glow)"/>`;
+  }
+  return out;
 }
 
-// 레벨에 따라 길어지고 화려해지는 총 SVG
 function gunSVG(l) {
-  const [c1, c2] = tierColor(l);
-  const len = 120 + Math.min(l, 30) * 6;         // 총열 길이
-  const scope = l >= 12;
-  const mag = l >= 9;
-  const glow = l >= 10 ? `drop-shadow(0 0 ${4 + (l - 10)}px ${c1})` : "none";
-  const w = 140 + len;
-  return `
-  <svg viewBox="0 0 ${w} 120" style="filter:${glow}">
+  const g = Math.floor(l / 5);
+  const P = PAL[g];
+  const m = MODELS[Math.min(g, 5)]();
+  const s = l >= MAX ? 4 : l % 5;
+  const svg = `
+  <svg viewBox="0 -4 460 168" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/>
+      <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${P.hi}"/><stop offset=".45" stop-color="${P.mid}"/><stop offset="1" stop-color="${P.lo}"/>
       </linearGradient>
+      <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.g1}"/><stop offset="1" stop-color="${P.g2}"/></linearGradient>
+      <linearGradient id="ga" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="${P.acc}"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="${P.acc}"/>
+      </linearGradient>
+      <radialGradient id="gcore"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${P.acc}"/><stop offset="1" stop-color="${P.acc}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gbeam" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${P.acc}" stop-opacity="0"/><stop offset=".35" stop-color="${P.acc}" stop-opacity=".8"/>
+        <stop offset=".5" stop-color="#fff"/><stop offset=".65" stop-color="${P.acc}" stop-opacity=".8"/><stop offset="1" stop-color="${P.acc}" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="lens" cx=".35" cy=".35"><stop offset="0" stop-color="#d8ffff"/><stop offset=".4" stop-color="#2aa6c8"/><stop offset="1" stop-color="#021822"/></radialGradient>
+      <linearGradient id="laser" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff3030"/><stop offset="1" stop-color="#ff3030" stop-opacity="0"/></linearGradient>
+      <pattern id="knurl" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="5" fill="#000" opacity=".3"/></pattern>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
-    <!-- 개머리판 -->
-    <path d="M10 40 L60 38 L60 62 L22 80 L10 78 Z" fill="${c2}" stroke="#111" stroke-width="2"/>
-    <!-- 몸체 -->
-    <rect x="55" y="30" width="90" height="32" rx="5" fill="url(#g)" stroke="#111" stroke-width="2"/>
-    <!-- 총열 -->
-    <rect x="140" y="36" width="${len}" height="12" rx="3" fill="url(#g)" stroke="#111" stroke-width="2"/>
-    <rect x="${130 + len}" y="33" width="10" height="18" rx="2" fill="${c2}" stroke="#111" stroke-width="2"/>
-    <!-- 손잡이 -->
-    <path d="M85 60 L110 60 L102 100 L78 100 Z" fill="${c2}" stroke="#111" stroke-width="2"/>
-    <!-- 방아쇠 -->
-    <path d="M112 62 q6 14 -6 18" fill="none" stroke="#111" stroke-width="3"/>
-    ${mag ? `<rect x="118" y="60" width="16" height="34" rx="3" fill="${c1}" stroke="#111" stroke-width="2"/>` : ""}
-    ${scope ? `<rect x="80" y="14" width="60" height="14" rx="7" fill="#222" stroke="${c1}" stroke-width="2"/>
-               <circle cx="140" cy="21" r="6" fill="${c1}"/>` : ""}
-    ${l >= 20 ? `<circle cx="100" cy="46" r="7" fill="#fff" opacity=".85"/>` : ""}
+    <g class="${l >= MAX ? "legend" : ""}">${m.svg}${attachments(m.a, s, g >= 4)}</g>
   </svg>`;
+  return { svg, P, g };
 }
 
+let drawnLevel = -1;
+function drawGun(l) {
+  const { svg, P, g } = gunSVG(l);
+  const glow = P.glow ? `drop-shadow(0 0 ${6 + (l % 5) * 2 + (g - 2) * 3}px ${P.glow})` : "drop-shadow(0 6px 6px rgba(0,0,0,.6))";
+  $("gun").innerHTML = svg.replace("<svg ", `<svg style="filter:${glow}" `) + svg.replace("<svg ", `<svg class="sheen" `);
+  if (l >= MAX) $("gun").querySelectorAll(".en").forEach(e => e.classList.add("rgb"));
+
+  // 배경 오라 / 회전 광선 / 불꽃 입자
+  const gl = P.glow || "#000";
+  $("aura").style.background = P.glow ? `radial-gradient(circle, ${gl}55 0%, ${gl}18 40%, transparent 68%)` : "none";
+  $("rays").style.display = g >= 3 ? "block" : "none";
+  $("rays").style.background = `repeating-conic-gradient(from 0deg, ${gl}33 0 5deg, transparent 5deg 22deg)`;
+  const sp = $("sparks"); sp.innerHTML = "";
+  const n = g >= 4 ? 10 + (g - 4) * 8 : g >= 2 ? 5 : 0;
+  for (let i = 0; i < n; i++) {
+    const e = document.createElement("span");
+    e.className = "spark";
+    e.style.left = (5 + Math.random() * 90) + "%";
+    e.style.top = (60 + Math.random() * 40) + "%";
+    e.style.background = i % 3 ? P.acc : "#fff";
+    e.style.boxShadow = `0 0 8px ${P.acc}`;
+    e.style.animationDuration = (1.6 + Math.random() * 2) + "s";
+    e.style.animationDelay = (-Math.random() * 3) + "s";
+    if (l >= MAX) e.classList.add("rgb");
+    sp.appendChild(e);
+  }
+  drawnLevel = l;
+}
+
+/* ================= 화면 ================= */
 function render() {
   const l = S.level;
   $("gold").textContent = fmt(S.gold);
   $("prot").textContent = S.prot;
   $("best").textContent = "+" + S.best;
   $("lvl").textContent = "+" + l;
-  $("lvl").style.color = tierColor(l)[0];
+  $("lvl").style.color = l >= MAX ? "#fff07a" : (PAL[Math.floor(l / 5)].glow || PAL[Math.floor(l / 5)].hi);
   $("gname").textContent = NAMES[l];
-  $("gun").innerHTML = gunSVG(l);
+  if (drawnLevel !== l) drawGun(l);
   $("price").textContent = l === 0 ? "-" : fmt(PRICE(l)) + " G";
   $("buyProt").textContent = `보험 구매 (${fmt(PROT_PRICE(l))} G)`;
+  $("mute").textContent = S.mute ? "🔇" : "🔊";
   if (l >= MAX) {
     $("rate").textContent = "MAX"; $("destroy").textContent = "-"; $("cost").textContent = "-";
     $("upBtn").disabled = true; $("upBtn").textContent = "🏆 최대 강화!";
@@ -204,11 +513,11 @@ function render() {
     $("rate").textContent = RATE[l] + "%";
     $("destroy").textContent = (DESTROY(l) * (100 - RATE[l]) / 100).toFixed(1) + "%";
     $("cost").textContent = fmt(COST(l)) + " G";
-    $("upBtn").disabled = busy || S.gold < COST(l);
+    $("upBtn").disabled = S.gold < COST(l);
     $("upBtn").textContent = "⚒️ 강화하기";
   }
-  $("sellBtn").disabled = busy || l === 0;
-  $("buyProt").disabled = busy || S.gold < PROT_PRICE(l);
+  $("sellBtn").disabled = l === 0;
+  $("buyProt").disabled = S.gold < PROT_PRICE(l);
   checkBankrupt();
 }
 
@@ -219,71 +528,115 @@ function log(text, cls) {
   while ($("log").children.length > 50) $("log").lastChild.remove();
 }
 function msg(text, cls) { $("msg").className = "msg " + cls; $("msg").textContent = text; }
-function flash(color) {
-  const f = $("flash"); f.style.background = color;
-  f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+function anim(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function flash(color) { $("flash").style.background = color; anim($("flash"), "go"); }
+function burst(color, count) {
+  for (let i = 0; i < count; i++) {
+    const e = document.createElement("span");
+    e.className = "burst";
+    const ang = Math.random() * Math.PI * 2, d = 60 + Math.random() * 120;
+    e.style.setProperty("--x", Math.cos(ang) * d + "px");
+    e.style.setProperty("--y", Math.sin(ang) * d * 0.6 + "px");
+    e.style.background = i % 2 ? color : "#fff";
+    e.style.boxShadow = `0 0 10px ${color}`;
+    $("gunBox").appendChild(e);
+    setTimeout(() => e.remove(), 600);
+  }
+}
+
+// 팝업 대신 "한 번 더 누르면 실행" 확인
+let armed = null, armTimer = null;
+function confirmTap(btn, label) {
+  if (armed === btn) { disarm(); return true; }
+  disarm();
+  armed = btn; btn.dataset.orig = btn.textContent; btn.textContent = label;
+  armTimer = setTimeout(disarm, 2500);
+  return false;
+}
+function disarm() {
+  if (armed) { armed.textContent = armed.dataset.orig; armed = null; }
+  clearTimeout(armTimer);
 }
 
 function upgrade() {
   disarm();
   const l = S.level, cost = COST(l);
-  if (busy || l >= MAX || S.gold < cost) return;
-  busy = true; S.gold -= cost; S.tries++;
-  msg("강화 중...", "keep");
-  $("gun").classList.add("shake");
-  render();
+  if (l >= MAX || S.gold < cost) return;
+  S.gold -= cost; S.tries++;
+  SFX.hit();
 
-  setTimeout(() => {
-    $("gun").classList.remove("shake");
-    const r = Math.random() * 100;
-    if (r < RATE[l]) {
-      S.level++;
-      if (S.level > S.best) S.best = S.level;
-      msg(`성공! +${S.level} ${NAMES[S.level]}`, "ok");
-      log(`✅ +${l} → +${S.level} 강화 성공`, "ok");
-      flash(S.level >= 20 ? "#ffe066" : "#6be38f");
-    } else if (Math.random() * 100 < DESTROY(l)) {
-      if ($("useProt").checked && S.prot > 0) {
-        S.prot--;
-        msg("파괴될 뻔! 보험으로 지켜냈다", "keep");
-        log(`🛡️ +${l} 파괴 → 보험 사용으로 유지`, "keep");
-        flash("#4da3ff");
-      } else {
-        S.level = 0; S.broke++;
-        msg(`💥 펑! +${l} 총이 박살났습니다...`, "bad");
-        log(`💥 +${l} ${NAMES[l]} 파괴`, "bad");
-        flash("#ff3030");
-      }
+  if (Math.random() * 100 < RATE[l]) {
+    S.level++;
+    if (S.level > S.best) S.best = S.level;
+    const P = PAL[Math.floor(S.level / 5)];
+    msg(`성공! +${S.level} ${NAMES[S.level]}`, "ok");
+    log(`✅ +${l} → +${S.level} 강화 성공`, "ok");
+    SFX.success(S.level);
+    render();
+    if (S.level % 5 === 0) anim($("gunWrap"), "appear"); else anim($("gunWrap"), "recoil");
+    anim($("lvl"), "pop");
+    flash(S.level >= 20 ? "#fff3a0" : "#7dffb0");
+    burst(P.glow || P.acc, S.level >= 20 ? 26 : 14);
+  } else if (Math.random() * 100 < DESTROY(l)) {
+    if ($("useProt").checked && S.prot > 0) {
+      S.prot--;
+      msg("파괴될 뻔! 보험으로 지켜냈다", "keep");
+      log(`🛡️ +${l} 파괴 → 보험 사용으로 유지`, "keep");
+      SFX.shield();
+      render();
+      anim($("gunWrap"), "shake");
+      flash("#4da3ff");
     } else {
-      msg("실패... 단계는 유지됩니다", "keep");
-      log(`❌ +${l} 강화 실패 (유지)`, "keep");
-      flash("#555");
+      const old = $("gun").firstElementChild.outerHTML;
+      S.level = 0; S.broke++;
+      msg(`💥 펑! +${l} 총이 박살났습니다...`, "bad");
+      log(`💥 +${l} ${NAMES[l]} 파괴`, "bad");
+      SFX.boom();
+      render();
+      const w = document.createElement("div"); w.className = "wreck"; w.innerHTML = old;
+      const b = document.createElement("div"); b.className = "boom";
+      $("gunBox").append(w, b);
+      setTimeout(() => { w.remove(); b.remove(); }, 650);
+      anim($("gunWrap"), "appear");
+      anim($("stage"), "quake");
+      flash("#ff3a1a");
+      burst("#ff7a1a", 30);
     }
-    busy = false; save(); render();
-  }, 700);
+  } else {
+    msg("실패... 단계는 유지됩니다", "keep");
+    log(`❌ +${l} 강화 실패 (유지)`, "keep");
+    SFX.fail();
+    render();
+    anim($("gunWrap"), "shake");
+    flash("#444");
+  }
+  save();
 }
 
 function sell() {
-  if (busy || S.level === 0) return;
-  const p = PRICE(S.level);
+  if (S.level === 0) return;
   if (!confirmTap($("sellBtn"), "한번 더 눌러 판매")) return;
+  const p = PRICE(S.level);
   S.gold += p;
   log(`💰 +${S.level} 판매 → ${fmt(p)} G`, "gold");
   msg(`${fmt(p)} G 획득! 새 총으로 다시 시작`, "gold");
+  SFX.coin();
   S.level = 0; save(); render();
+  anim($("gunWrap"), "appear");
 }
 
 function buyProt() {
+  disarm();
   const p = PROT_PRICE(S.level);
-  if (busy || S.gold < p) return;
+  if (S.gold < p) return;
   S.gold -= p; S.prot++;
   log(`🛡️ 파괴 보험 구매 (-${fmt(p)} G)`, "keep");
+  SFX.coin();
   save(); render();
 }
 
-// 돈이 없고 팔 총도 없으면 지원금
 function checkBankrupt() {
-  if (!busy && S.level === 0 && S.gold < COST(0)) {
+  if (S.level === 0 && S.gold < COST(0)) {
     S.gold += 5000;
     log("🆘 파산! 정부 지원금 5,000 G 지급", "gold");
     msg("파산... 지원금을 받았습니다", "gold");
@@ -294,12 +647,16 @@ function checkBankrupt() {
 $("upBtn").onclick = upgrade;
 $("sellBtn").onclick = sell;
 $("buyProt").onclick = buyProt;
+$("mute").onclick = () => { S.mute = !S.mute; save(); render(); if (!S.mute) SFX.coin(); };
 $("reset").onclick = () => {
   if (!confirmTap($("reset"), "정말 초기화하려면 한번 더 누르세요")) return;
-  S = { ...DEFAULT }; $("log").innerHTML = ""; save(); render();
+  const mute = S.mute;
+  S = { ...DEFAULT, mute }; $("log").innerHTML = ""; drawnLevel = -1; save(); render();
   msg("강화 버튼을 눌러보세요!", "keep");
 };
-document.addEventListener("keydown", (e) => { if (e.code === "Space") { e.preventDefault(); upgrade(); } });
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") { e.preventDefault(); if (!e.repeat) upgrade(); }
+});
 
 render();
 </script>
