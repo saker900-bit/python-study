@@ -124,7 +124,21 @@ function load() {
   try { return Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem("gunUpgrade") || "{}")); }
   catch { return { ...DEFAULT }; }
 }
-function save() { localStorage.setItem("gunUpgrade", JSON.stringify(S)); }
+function save() { try { localStorage.setItem("gunUpgrade", JSON.stringify(S)); } catch {} }
+
+// 팝업 대신 "한 번 더 누르면 실행" 확인
+let armed = null, armTimer = null;
+function confirmTap(btn, label) {
+  if (armed === btn) { disarm(); return true; }
+  disarm();
+  armed = btn; btn.dataset.orig = btn.textContent; btn.textContent = label;
+  armTimer = setTimeout(() => { disarm(); render(); }, 2500);
+  return false;
+}
+function disarm() {
+  if (armed) { armed.textContent = armed.dataset.orig; armed = null; }
+  clearTimeout(armTimer);
+}
 const fmt = (n) => n.toLocaleString("ko-KR");
 const $ = (id) => document.getElementById(id);
 
@@ -211,6 +225,7 @@ function flash(color) {
 }
 
 function upgrade() {
+  disarm();
   const l = S.level, cost = COST(l);
   if (busy || l >= MAX || S.gold < cost) return;
   busy = true; S.gold -= cost; S.tries++;
@@ -251,7 +266,7 @@ function upgrade() {
 function sell() {
   if (busy || S.level === 0) return;
   const p = PRICE(S.level);
-  if (!confirm(`+${S.level} ${NAMES[S.level]}을(를) ${fmt(p)} G에 판매할까요?`)) return;
+  if (!confirmTap($("sellBtn"), "한번 더 눌러 판매")) return;
   S.gold += p;
   log(`💰 +${S.level} 판매 → ${fmt(p)} G`, "gold");
   msg(`${fmt(p)} G 획득! 새 총으로 다시 시작`, "gold");
@@ -280,7 +295,7 @@ $("upBtn").onclick = upgrade;
 $("sellBtn").onclick = sell;
 $("buyProt").onclick = buyProt;
 $("reset").onclick = () => {
-  if (!confirm("정말 처음부터 다시 할까요? 모든 기록이 사라집니다.")) return;
+  if (!confirmTap($("reset"), "정말 초기화하려면 한번 더 누르세요")) return;
   S = { ...DEFAULT }; $("log").innerHTML = ""; save(); render();
   msg("강화 버튼을 눌러보세요!", "keep");
 };
