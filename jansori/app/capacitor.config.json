@@ -1,0 +1,8 @@
+{
+  "appId": "com.bbajik.jansori",
+  "appName": "빠직 잔소리",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#d8f0e3"
+  }
+}

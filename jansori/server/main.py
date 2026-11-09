@@ -20,13 +20,16 @@ API 키는 앱에 넣으면 털리기 때문에 반드시 이 서버에만 둔�
 """
 
 import base64
+import datetime
+import hashlib
 import json
 import os
+from pathlib import Path
 
 import httpx
 
 import anthropic
-from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 MODEL = "claude-opus-5-5"
@@ -153,12 +156,35 @@ def inspect(baseline: bytes, base_type: str, today: bytes, today_type: str, voic
 app = FastAPI(title="잔소리 탐지기")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+# ---------- 하루 사용 횟수 제한 (서버 주소가 알려져도 요금 폭탄 방지) ----------
+# 서버 한 대 메모리에만 기록. 서버가 재시작되면 초기화됨 (작은 앱엔 충분)
+DAILY_LIMITS = {
+    "inspect": int(os.environ.get("LIMIT_INSPECT", "30")),
+    "tts": int(os.environ.get("LIMIT_TTS", "400")),
+    "clone": int(os.environ.get("LIMIT_CLONE", "3")),
+}
+_usage: dict[tuple[str, str, str], int] = {}
+
+
+def check_limit(request: Request, kind: str) -> None:
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "?")
+    today = datetime.date.today().isoformat()
+    key = (today, kind, ip)
+    if len(_usage) > 50000:  # 오래된 날짜 정리
+        for k in [k for k in _usage if k[0] != today]:
+            del _usage[k]
+    _usage[key] = _usage.get(key, 0) + 1
+    if _usage[key] > DAILY_LIMITS[kind]:
+        raise HTTPException(429, "오늘 사용량을 다 썼어요. 내일 다시 해주세요.")
+
+
 ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_BYTES = 5 * 1024 * 1024
 
 
 @app.post("/api/inspect")
 async def api_inspect(
+    request: Request,
     baseline: UploadFile = File(...),
     today: UploadFile = File(...),
     voice: str = Form("ajumma"),
@@ -167,6 +193,7 @@ async def api_inspect(
 ):
     """mode: obsess(강박) / mom(엄마) / dad(아빠).
     아빠모드에서 작은 변화 절반을 놓치는 건 앱(web/index.html applyMode)에서 처리."""
+    check_limit(request, "inspect")
     files = []
     for f in (baseline, today):
         data = await f.read()
@@ -212,8 +239,11 @@ VOICE_SETTINGS = {
 }
 
 
+_tts_cache: dict[str, bytes] = {}
+
+
 @app.post("/api/tts")
-async def api_tts(text: str = Form(...), persona: str = Form("ajumma"), voice_id: str = Form("")):
+async def api_tts(request: Request, text: str = Form(...), persona: str = Form("ajumma"), voice_id: str = Form("")):
     """잔소리 한 줄을 mp3로. voice_id(복제한 목소리)가 있으면 그걸, 없으면 캐릭터 기본 목소리."""
     key = eleven_key()
     vid = voice_id or persona_voice(persona)
@@ -221,6 +251,11 @@ async def api_tts(text: str = Form(...), persona: str = Form("ajumma"), voice_id
         raise HTTPException(503, "목소리 서버가 설정되지 않았어요.")
     if len(text) > 300:
         raise HTTPException(400, "문장이 너무 길어요.")
+    # 같은 문장·같은 목소리는 다시 만들지 않음 (ElevenLabs 요금 절약)
+    cache_key = hashlib.sha256(f"{vid}|{persona}|{text}".encode()).hexdigest()
+    if cache_key in _tts_cache:
+        return Response(content=_tts_cache[cache_key], media_type="audio/mpeg")
+    check_limit(request, "tts")
     async with httpx.AsyncClient(timeout=30) as http:
         r = await http.post(
             f"{ELEVEN_URL}/text-to-speech/{vid}",
@@ -231,11 +266,14 @@ async def api_tts(text: str = Form(...), persona: str = Form("ajumma"), voice_id
         )
     if r.status_code != 200:
         raise HTTPException(502, f"목소리 생성 실패 ({r.status_code})")
+    if len(_tts_cache) > 500:
+        _tts_cache.pop(next(iter(_tts_cache)))
+    _tts_cache[cache_key] = r.content
     return Response(content=r.content, media_type="audio/mpeg")
 
 
 @app.post("/api/voice-clone")
-async def api_voice_clone(sample: UploadFile = File(...), consent: bool = Form(False), name: str = Form("잔소리 목소리")):
+async def api_voice_clone(request: Request, sample: UploadFile = File(...), consent: bool = Form(False), name: str = Form("잔소리 목소리")):
     """목소리 샘플(30초~1분)로 ElevenLabs 목소리를 만들고 voice_id를 돌려준다.
     본인이거나 허락받은 목소리만 (consent 필수)."""
     key = eleven_key()
@@ -243,6 +281,7 @@ async def api_voice_clone(sample: UploadFile = File(...), consent: bool = Form(F
         raise HTTPException(503, "목소리 서버가 설정되지 않았어요.")
     if not consent:
         raise HTTPException(400, "목소리 주인의 허락이 필요해요.")
+    check_limit(request, "clone")
     data = await sample.read()
     media_type = sample.content_type or "audio/mpeg"
     if media_type not in AUDIO_TYPES:
@@ -259,6 +298,14 @@ async def api_voice_clone(sample: UploadFile = File(...), consent: bool = Form(F
     if r.status_code != 200:
         raise HTTPException(502, f"목소리 만들기 실패 ({r.status_code})")
     return {"voice_id": r.json().get("voice_id")}
+
+
+@app.get("/privacy", response_class=Response)
+def privacy():
+    """플레이스토어에 적는 개인정보처리방침 주소: https://<서버주소>/privacy"""
+    html = (Path(__file__).parent / "privacy.html").read_text(encoding="utf-8")
+    html = html.replace("CONTACT_EMAIL", os.environ.get("CONTACT_EMAIL", "문의 이메일 준비 중"))
+    return Response(content=html, media_type="text/html; charset=utf-8")
 
 
 @app.get("/health")

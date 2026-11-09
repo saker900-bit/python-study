@@ -1,0 +1,25 @@
+# Render.com 배포 설정 (Blueprint). 키 값은 Render 화면에서 직접 입력 (sync: false)
+services:
+  - type: web
+    name: jansori-server
+    runtime: python
+    rootDir: jansori/server
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_AJUMMA
+        sync: false
+      - key: ELEVENLABS_VOICE_HALMEONI
+        sync: false
+      - key: ELEVENLABS_VOICE_AJEOSSI
+        sync: false
+      - key: ELEVENLABS_VOICE_KID
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false

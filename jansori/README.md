@@ -22,6 +22,10 @@
   2. `window.JANSORI_API` 에 서버 주소가 있으면 내 서버로 비교 (스토어 앱용)
   3. 둘 다 없으면 픽셀 비교로 대충 찾기 (간단 비교 모드)
 
+## 플레이스토어 출시
+
+순서는 [PLAYSTORE_GUIDE.md](PLAYSTORE_GUIDE.md), 스토어에 붙여넣을 글은 [store/listing.md](store/listing.md).
+
 ## 폴더
 
 ```
@@ -29,6 +33,9 @@ jansori/
   web/index.html     앱 화면 전체 (HTML 한 파일)
   server/main.py     AI 비교 서버 (FastAPI + Claude API)
   server/requirements.txt
+  server/privacy.html  개인정보처리방침 (서버 /privacy)
+  app/               안드로이드 앱 (Capacitor). src/config.js 에 서버 주소·광고·결제 키
+  store/             스토어 아이콘, 그래픽, 스크린샷, 설명글
 ```
 
 ## 서버 실행 (PC)
