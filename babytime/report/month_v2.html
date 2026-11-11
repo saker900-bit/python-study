@@ -613,7 +613,7 @@ function histChart(sel, key, o) {
   (o.refs || []).forEach(([v, label]) => { el("line", { x1: left, x2: w - 10, y1: y(v), y2: y(v), stroke: css("--ink-2"), "stroke-width": 1.5, "stroke-dasharray": "4 4" }, svg); txt(svg, w - 10, y(v) - 5, label, { "text-anchor": "end", class: "t2" }); });
   ["2026-07-01", "2026-08-01", "2026-09-01", "2026-10-01", "2026-11-01"].forEach(m => el("line", { x1: x(m), x2: x(m), y1: top, y2: H - bottom, stroke: css("--line"), "stroke-dasharray": "2 3" }, svg));
   if (o.last) [["2026-06-01", "6월"], ["2026-07-01", "7월"], ["2026-08-01", "8월"], ["2026-09-01", "9월"], ["2026-10-01", "10월"], ["2026-11-01", "11월"]].forEach(([m, l]) => {
-    const age = Math.round((new Date(m) - new Date("2026-05-20")) / 864e5 / 30.44 * 10) / 10;
+    const age = Math.round((new Date(m) - new Date("2026-05-19")) / 864e5 / 30.44 * 10) / 10;
     txt(svg, x(m) + 3, H - 18, l, { class: "t2" }); txt(svg, x(m) + 3, H - 5, `${age}개월`);
   });
   days.forEach(d => { if (d[key] != null) el("circle", { cx: x(d.date), cy: y(Math.min(d[key], o.max)), r: 2.2, fill: css("--feed"), opacity: .35 }, svg); });

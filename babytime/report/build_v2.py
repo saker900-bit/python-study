@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import babytime_analyzer as ba  # noqa: E402
 
-BIRTH = date(2026, 5, 20)  # 2026-11-04에 생후 5.5개월
+BIRTH = date(2026, 5, 19)  # 생일
 
 
 def load_texts(paths):
